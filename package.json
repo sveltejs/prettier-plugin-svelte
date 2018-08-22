@@ -1,0 +1,33 @@
+{
+    "name": "prettier-plugin-svelte",
+    "version": "0.0.0",
+    "description": "Svelte plugin for prettier",
+    "main": "dist/index.js",
+    "typings": "dist/index",
+    "scripts": {
+        "watch": "tsc -w",
+        "build": "tsc"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/UnwrittenFun/prettier-plugin-svelte.git"
+    },
+    "keywords": [
+        "prettier",
+        "svelte"
+    ],
+    "author": "James Birtles <jameshbirtles@gmail.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/UnwrittenFun/prettier-plugin-svelte/issues"
+    },
+    "homepage": "https://github.com/UnwrittenFun/prettier-plugin-svelte#readme",
+    "dependencies": {
+        "prettier": "^1.14.2",
+        "svelte": "github:UnwrittenFun/svelte#fix/object-array-pattern-end"
+    },
+    "devDependencies": {
+        "@types/prettier": "^1.13.2",
+        "typescript": "^3.0.1"
+    }
+}
