@@ -298,6 +298,7 @@ function printChildren(
     const children: Doc[] = [];
     let i = 0;
     let isFirst = true;
+    const childNodes = path.getValue().children as Node[];
     path.each(childPath => {
         const child = childPath.getValue() as Node;
         const index = i;
@@ -309,15 +310,30 @@ function printChildren(
 
         if (!(isFirst && skipFirst)) {
             if (isInlineNode(child)) {
-                !isEmptyNode(child) && children.push(softline);
+                if (!isEmptyNode(child)) {
+                    let lineType: Doc = softline;
+                    if (child.type === 'Text') {
+                        if (/^\s+/.test(child.data)) {
+                            // Remove leading spaces
+                            child.data = trimStart(child.data);
+                            if (!isFirst) {
+                                lineType = line;
+                            }
+                        }
+                    }
+
+                    children.push(lineType);
+                }
             } else {
                 children.push(hardline);
             }
         }
 
-        // Remove leading spaces
-        if (isFirst && child.type === 'Text') {
-            child.data = child.data.replace(/^\s+/, '');
+        if (child.type === 'Text') {
+            if (isLastNode(childNodes, filter, index)) {
+                // Remove trailing spaces
+                child.data = trimEnd(child.data);
+            }
         }
 
         children.push(childPath.call(print));
@@ -342,4 +358,26 @@ function isInlineNode(node: Node): boolean {
 
 function isEmptyNode(node: Node): boolean {
     return node.type === 'Text' && node.data.trim() === '';
+}
+
+function isLastNode(
+    nodes: Node[],
+    filter: (node: Node, i: number) => boolean,
+    index: number,
+): boolean {
+    for (let i = index + 1; i < nodes.length; i++) {
+        if (filter(nodes[i], i)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function trimStart(text: string): string {
+    return text.replace(/^\s+/, '');
+}
+
+function trimEnd(text: string): string {
+    return text.replace(/\s+$/, '');
 }
