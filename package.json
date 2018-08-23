@@ -6,7 +6,8 @@
     "typings": "dist/index",
     "scripts": {
         "watch": "tsc -w",
-        "build": "tsc"
+        "build": "tsc",
+        "test": "ava"
     },
     "repository": {
         "type": "git",
@@ -27,7 +28,10 @@
         "svelte": "github:UnwrittenFun/svelte#fix/object-array-pattern-end"
     },
     "devDependencies": {
+        "@types/node": "^10.7.1",
         "@types/prettier": "^1.13.2",
+        "ava": "^1.0.0-beta.7",
+        "ts-node": "^7.0.1",
         "typescript": "^3.0.1"
     }
 }
