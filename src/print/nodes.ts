@@ -201,6 +201,11 @@ export interface RawMustacheTagNode extends BaseNode {
     expression: Node;
 }
 
+export interface SpreadNode extends BaseNode {
+    type: 'Spread';
+    expression: Node;
+}
+
 export type Node =
     | FragmentNode
     | ElementNode
@@ -233,4 +238,5 @@ export type Node =
     | StyleProgramNode
     | ProgramNode
     | AnimationNode
-    | RawMustacheTagNode;
+    | RawMustacheTagNode
+    | SpreadNode;
