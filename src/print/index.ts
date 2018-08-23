@@ -244,7 +244,7 @@ export function print(path: FastPath, options: object, print: PrintFn): Doc | nu
                 node.name,
                 node.value.type === 'Identifier' && node.value.name === node.name
                     ? ''
-                    : concat(['=', printJS(path, print, 'value')]),
+                    : concat(['=', '"', printJS(path, print, 'value'), '"']),
             ]);
         case 'DebugTag':
             return concat([
