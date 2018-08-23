@@ -18,6 +18,7 @@ for (const dir of dirs) {
         const actualOutput = format(input, {
             parser: 'svelte' as any,
             plugins: [require.resolve('../../src')],
+            tabWidth: 4,
         });
         t.is(actualOutput, expectedOutput);
     });

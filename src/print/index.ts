@@ -49,7 +49,7 @@ export function print(path: FastPath, options: object, print: PrintFn): Doc | nu
                         return include;
                     },
                 }),
-                line,
+                hardline,
             ]);
         case 'Text':
             return join(
@@ -271,6 +271,13 @@ export function print(path: FastPath, options: object, print: PrintFn): Doc | nu
             return concat([
                 line,
                 'use:',
+                node.name,
+                node.expression ? concat(['=', '"', printJS(path, print, 'expression'), '"']) : '',
+            ]);
+        case 'Animation':
+            return concat([
+                line,
+                'animate:',
                 node.name,
                 node.expression ? concat(['=', '"', printJS(path, print, 'expression'), '"']) : '',
             ]);

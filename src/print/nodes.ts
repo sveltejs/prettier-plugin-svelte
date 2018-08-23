@@ -189,6 +189,11 @@ export interface ProgramNode extends BaseNode {
     type: 'Program';
     body: Node[];
 }
+export interface AnimationNode extends BaseNode {
+    type: 'Animation';
+    name: string;
+    expression?: Node;
+}
 
 export type Node =
     | FragmentNode
@@ -220,4 +225,5 @@ export type Node =
     | StyleNode
     | ScriptNode
     | StyleProgramNode
-    | ProgramNode;
+    | ProgramNode
+    | AnimationNode;
