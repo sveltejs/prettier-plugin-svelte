@@ -281,8 +281,11 @@ export function print(path: FastPath, options: object, print: PrintFn): Doc | nu
                 node.name,
                 node.expression ? concat(['=', '"', printJS(path, print, 'expression'), '"']) : '',
             ]);
+        case 'RawMustacheTag':
+            return concat(['{@html ', printJS(path, print, 'expression'), '}']);
     }
 
+    console.log(node);
     throw new Error('unknown node type: ' + node.type);
 }
 

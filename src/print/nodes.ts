@@ -189,10 +189,16 @@ export interface ProgramNode extends BaseNode {
     type: 'Program';
     body: Node[];
 }
+
 export interface AnimationNode extends BaseNode {
     type: 'Animation';
     name: string;
     expression?: Node;
+}
+
+export interface RawMustacheTagNode extends BaseNode {
+    type: 'RawMustacheTag';
+    expression: Node;
 }
 
 export type Node =
@@ -226,4 +232,5 @@ export type Node =
     | ScriptNode
     | StyleProgramNode
     | ProgramNode
-    | AnimationNode;
+    | AnimationNode
+    | RawMustacheTagNode;
