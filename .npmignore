@@ -1,0 +1,9 @@
+/test
+/node_modules
+/src
+.vscode
+.prettierrc
+ava.config.js
+tsconfig.json
+wallaby.js
+rollup.config.js

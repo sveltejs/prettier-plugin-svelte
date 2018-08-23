@@ -1,3 +1,4 @@
 node_modules
-dist
 .vscode
+plugin.js
+plugin.js.map

@@ -13,8 +13,8 @@ Format your svelte components using prettier.
 
 Install prettier-plugin-svelte as a dev dependency in your project.
 
-Then add `--plugin prettier-plugin-svelte --parser svelte` to your prettier command, e.g.
+Then format your code using prettier cli. You may need to add `--plugin-search-dir=.`
 
 ```
-prettier --write --plugin prettier-plugin-svelte --parser svelte ./**/*.html
+prettier --write --plugin-search-dir=. ./**/*.html
 ```
