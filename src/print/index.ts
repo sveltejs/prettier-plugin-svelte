@@ -299,7 +299,7 @@ function printChildren(
     let i = 0;
     let isFirst = true;
     path.each(childPath => {
-        const child = childPath.getValue();
+        const child = childPath.getValue() as Node;
         const index = i;
         i++;
 
@@ -307,9 +307,19 @@ function printChildren(
             return;
         }
 
-        if (!(isFirst && skipFirst) && child.type !== 'Text' && child.type !== 'MustacheTag') {
-            children.push(hardline);
+        if (!(isFirst && skipFirst)) {
+            if (isInlineNode(child)) {
+                !isEmptyNode(child) && children.push(softline);
+            } else {
+                children.push(hardline);
+            }
         }
+
+        // Remove leading spaces
+        if (isFirst && child.type === 'Text') {
+            child.data = child.data.replace(/^\s+/, '');
+        }
+
         children.push(childPath.call(print));
         isFirst = false;
     }, 'children');
@@ -324,4 +334,12 @@ function printJS(path: FastPath, print: PrintFn, name?: string) {
 
     path.getValue()[name].isJS = true;
     return path.call(print, name);
+}
+
+function isInlineNode(node: Node): boolean {
+    return node.type === 'Text' || node.type === 'MustacheTag';
+}
+
+function isEmptyNode(node: Node): boolean {
+    return node.type === 'Text' && node.data.trim() === '';
 }
