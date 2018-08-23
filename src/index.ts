@@ -1,4 +1,5 @@
 import { parse } from 'svelte';
+import { SupportLanguage } from 'prettier';
 import { print } from './print';
 import { embed } from './embed';
 
@@ -10,10 +11,11 @@ function locEnd(node: any) {
     return node.end;
 }
 
-export const languages = [
+export const languages: Partial<SupportLanguage>[] = [
     {
         name: 'svelte',
-        parsers: 'svelte',
+        parsers: ['svelte'],
+        extensions: ['.svelte', '.html'],
     },
 ];
 

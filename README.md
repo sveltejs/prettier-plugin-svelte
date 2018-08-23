@@ -11,8 +11,10 @@ Format your svelte components using prettier.
 
 ## How to use
 
-##### Choose one of:
+Install prettier-plugin-svelte as a dev dependency in your project.
 
-1.  Install prettier-plugin-svelte and prettier should pick it up from your node_modules folder
-1.  If you're using VS Code, it is embedded in the svelte [vs code plugin](https://github.com/UnwrittenFun/svelte-vscode)
-1.  If you're using Atom, it is embedded in the svelte [atom plugin](https://github.com/UnwrittenFun/svelte-atom)
+Then add `--plugin prettier-plugin-svelte --parser svelte` to your prettier command, e.g.
+
+```
+prettier --write --plugin prettier-plugin-svelte --parser svelte ./**/*.html
+```

@@ -7,7 +7,8 @@
     "scripts": {
         "watch": "tsc -w",
         "build": "tsc",
-        "test": "ava"
+        "test": "ava",
+        "prepublish": "npm test && npm run build"
     },
     "repository": {
         "type": "git",
