@@ -27,7 +27,7 @@ export function embed(
     switch (node.type) {
         case 'Program':
             const script = getText(node, options);
-            return concat([hardline, nukeLastLine(textToDoc(script, { parser: 'babylon' }))]);
+            return concat([hardline, nukeLastLine(textToDoc(script, { parser: 'babel' }))]);
         case 'StyleProgram':
             return concat([hardline, nukeLastLine(textToDoc(node.styles, { parser: 'css' }))]);
     }

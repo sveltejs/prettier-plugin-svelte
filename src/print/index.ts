@@ -60,7 +60,7 @@ export function print(path: FastPath, options: object, print: PrintFn): Doc | nu
                     .split(/\n/g),
             );
         case 'Element':
-        case 'Component':
+        case 'InlineComponent':
         case 'Slot':
         case 'Window':
         case 'Head':
@@ -73,7 +73,7 @@ export function print(path: FastPath, options: object, print: PrintFn): Doc | nu
                     indent(
                         group(
                             concat([
-                                node.type === 'Component' && node.expression
+                                node.type === 'InlineComponent' && node.expression
                                     ? concat([
                                           line,
                                           'this={',
@@ -287,6 +287,7 @@ export function print(path: FastPath, options: object, print: PrintFn): Doc | nu
             return concat([line, '{...', printJS(path, print, 'expression'), '}']);
     }
 
+    console.log(JSON.stringify(node, null, 4));
     throw new Error('unknown node type: ' + node.type);
 }
 

@@ -112,8 +112,8 @@ export interface RefNode extends BaseNode {
     name: string;
 }
 
-export interface ComponentNode extends BaseNode {
-    type: 'Component';
+export interface InlineComponentNode extends BaseNode {
+    type: 'InlineComponent';
     name: string;
     attributes: Node[];
     children: Node[];
@@ -225,7 +225,7 @@ export type Node =
     | BindingNode
     | DebugTagNode
     | RefNode
-    | ComponentNode
+    | InlineComponentNode
     | CommentNode
     | SlotNode
     | WindowNode
