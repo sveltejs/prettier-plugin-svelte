@@ -13,6 +13,6 @@ for (const file of files) {
             plugins: [require.resolve('../../src')],
             tabWidth: 4,
         });
-        t.is(actualOutput, input);
+        t.is(input, actualOutput);
     });
 }

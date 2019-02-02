@@ -93,24 +93,6 @@ export function print(path: FastPath, options: object, print: PrintFn): Doc | nu
                     node.children.length ? concat([softline, '</', node.name, '>']) : '',
                 ]),
             );
-        case 'Script':
-        case 'Style':
-            return group(
-                concat([
-                    '<',
-                    node.type.toLowerCase(),
-                    indent(
-                        group(concat(path.map(childPath => childPath.call(print), 'attributes'))),
-                    ),
-                    '>',
-                    indent(path.call(print, 'content')),
-                    hardline,
-                    '</',
-                    node.type.toLowerCase(),
-                    '>',
-                    hardline,
-                ]),
-            );
         case 'Identifier':
             return node.name;
         case 'Attribute': {
