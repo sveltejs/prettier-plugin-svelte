@@ -1,11 +1,15 @@
-import { FastPath, Doc, doc } from 'prettier';
+import { FastPath, Doc, doc, ParserOptions } from 'prettier';
 import { Node, MustacheTagNode, IfBlockNode } from './nodes';
 import { isASTNode } from './helpers';
+import { extractAttributes } from '../lib/extractAttributes';
+import { getText } from '../lib/getText';
+import { isBindingNodeV2 } from '../lib/nodeFuncs';
+import { getSvelteVersion } from '../lib/getSvelteVersion';
 const { concat, join, line, group, indent, softline, hardline } = doc.builders;
 
 export type PrintFn = (path: FastPath) => Doc;
 
-export function print(path: FastPath, options: object, print: PrintFn): Doc | null {
+export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
     const n = path.getValue();
     if (!n) {
         return '';
@@ -22,7 +26,23 @@ export function print(path: FastPath, options: object, print: PrintFn): Doc | nu
             n.js.type = 'Script';
             parts.push(path.call(print, 'js'));
         }
+        if (n.instance) {
+            n.instance.type = 'Script';
+            n.instance.attributes = extractAttributes(getText(n.instance, options));
+            parts.push(path.call(print, 'instance'));
+        }
+        if (n.module) {
+            n.module.type = 'Script';
+            n.module.attributes = extractAttributes(getText(n.module, options));
+            parts.push(path.call(print, 'module'));
+        }
         return group(join(hardline, parts));
+    }
+
+    const version = getSvelteVersion((options as any).sveltePath);
+    let [open, close] = ['{', '}'];
+    if (version.major < 3) {
+        [open, close] = ['"', '"'];
     }
 
     const node = n as Node;
@@ -217,16 +237,29 @@ export function print(path: FastPath, options: object, print: PrintFn): Doc | nu
                 line,
                 'on:',
                 node.name,
-                node.expression ? concat(['=', '"', printJS(path, print, 'expression'), '"']) : '',
+                node.expression
+                    ? concat(['=', open, printJS(path, print, 'expression'), close])
+                    : '',
             ]);
         case 'Binding':
+            if (isBindingNodeV2(node)) {
+                return concat([
+                    line,
+                    'bind:',
+                    node.name,
+                    node.value.type === 'Identifier' && node.value.name === node.name
+                        ? ''
+                        : concat(['=', open, printJS(path, print, 'value'), close]),
+                ]);
+            }
+
             return concat([
                 line,
                 'bind:',
                 node.name,
-                node.value.type === 'Identifier' && node.value.name === node.name
+                node.expression.type === 'Identifier' && node.expression.name === node.name
                     ? ''
-                    : concat(['=', '"', printJS(path, print, 'value'), '"']),
+                    : concat(['=', '{', printJS(path, print, 'expression'), '}']),
             ]);
         case 'DebugTag':
             return concat([
@@ -247,21 +280,27 @@ export function print(path: FastPath, options: object, print: PrintFn): Doc | nu
                 kind,
                 ':',
                 node.name,
-                node.expression ? concat(['=', '"', printJS(path, print, 'expression'), '"']) : '',
+                node.expression
+                    ? concat(['=', open, printJS(path, print, 'expression'), close])
+                    : '',
             ]);
         case 'Action':
             return concat([
                 line,
                 'use:',
                 node.name,
-                node.expression ? concat(['=', '"', printJS(path, print, 'expression'), '"']) : '',
+                node.expression
+                    ? concat(['=', open, printJS(path, print, 'expression'), close])
+                    : '',
             ]);
         case 'Animation':
             return concat([
                 line,
                 'animate:',
                 node.name,
-                node.expression ? concat(['=', '"', printJS(path, print, 'expression'), '"']) : '',
+                node.expression
+                    ? concat(['=', open, printJS(path, print, 'expression'), close])
+                    : '',
             ]);
         case 'RawMustacheTag':
             return concat(['{@html ', printJS(path, print, 'expression'), '}']);

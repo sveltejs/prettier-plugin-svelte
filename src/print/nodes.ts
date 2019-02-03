@@ -96,10 +96,16 @@ export interface EventHandlerNode extends BaseNode {
     expression?: Node;
 }
 
-export interface BindingNode extends BaseNode {
+export interface BindingNodeV2 extends BaseNode {
     type: 'Binding';
     name: string;
     value: Node;
+}
+
+export interface BindingNode extends BaseNode {
+    type: 'Binding';
+    name: string;
+    expression: Node;
 }
 
 export interface DebugTagNode extends BaseNode {
@@ -206,6 +212,18 @@ export interface SpreadNode extends BaseNode {
     expression: Node;
 }
 
+export interface InstanceScriptNode extends BaseNode {
+    type: 'InstanceScript';
+    context: string;
+    content: Node;
+}
+
+export interface ModuleScriptNode extends BaseNode {
+    type: 'ModuleScript';
+    context: string;
+    content: Node;
+}
+
 export type Node =
     | FragmentNode
     | ElementNode
@@ -222,6 +240,7 @@ export type Node =
     | PendingBlockNode
     | CatchBlockNode
     | EventHandlerNode
+    | BindingNodeV2
     | BindingNode
     | DebugTagNode
     | RefNode
@@ -239,4 +258,6 @@ export type Node =
     | ProgramNode
     | AnimationNode
     | RawMustacheTagNode
-    | SpreadNode;
+    | SpreadNode
+    | InstanceScriptNode
+    | ModuleScriptNode;

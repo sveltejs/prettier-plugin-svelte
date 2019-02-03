@@ -1,6 +1,8 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
 import { PrintFn } from './print';
 import { Node, AttributeNode, TextNode } from './print/nodes';
+import { extractAttributes } from './lib/extractAttributes';
+import { getText } from './lib/getText';
 
 const {
     builders: { concat, hardline, group, indent },
@@ -31,10 +33,6 @@ export function embed(
     }
 
     return null;
-}
-
-function getText(node: Node, options: ParserOptions) {
-    return options.originalText.slice(options.locStart(node), options.locEnd(node));
 }
 
 function expressionParser(text: string, parsers: any) {

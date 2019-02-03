@@ -24,7 +24,7 @@
     "homepage": "https://github.com/UnwrittenFun/prettier-plugin-svelte#readme",
     "dependencies": {
         "prettier": "^1.16.1",
-        "svelte": "2.16.0",
+        "svelte": "^2.0.0 || ^3.0.0-alpha",
         "tslib": "^1.9.3"
     },
     "devDependencies": {
@@ -35,6 +35,8 @@
         "rollup-plugin-commonjs": "9.2.0",
         "rollup-plugin-node-resolve": "4.0.0",
         "rollup-plugin-typescript": "1.0.0",
+        "test-svelte2": "npm:svelte@2.16.0",
+        "test-svelte3": "npm:svelte@3.0.0-alpha27",
         "ts-node": "^7.0.1",
         "typescript": "3.2.4"
     }

@@ -8,6 +8,7 @@ Format your svelte components using prettier.
 -   Format Svelte syntax, e.g. each loops, if statements, await blocks, etc.
 -   Format the javascript expressions embedded in the svelte syntax
     -   e.g. expressions inside of `{}`, event bindings `on:click=""`, and more
+-   Supports Svelte v2 and v3
 
 ## How to use
 
