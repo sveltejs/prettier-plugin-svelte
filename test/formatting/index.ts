@@ -20,6 +20,6 @@ for (const dir of dirs) {
             plugins: [require.resolve('../../src')],
             tabWidth: 4,
         });
-        t.is(actualOutput, expectedOutput);
+        t.is(expectedOutput, actualOutput);
     });
 }
