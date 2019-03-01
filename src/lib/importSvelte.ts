@@ -10,7 +10,7 @@ export function importSvelte(importPath: string) {
 
     return {
         parse(text: string) {
-            return svelte.compile(text, { generate: false, onwarn: () => undefined }).ast;
+            return svelte.compile(text, { generate: false }).ast;
         },
     };
 }
