@@ -3253,10 +3253,10 @@ supports-color@^6.1.0:
   dependencies:
     has-flag "^3.0.0"
 
-"svelte@^2.0.0 || ^3.0.0-alpha", "test-svelte2@npm:svelte@2.16.0":
-  version "2.16.0"
-  resolved "https://registry.npmjs.org/svelte/-/svelte-2.16.0.tgz#a9a10fc4103ecb19d01090fd447ca07e3022af7c"
-  integrity sha512-1x1zCZpNnuwQdH+9tTeM0QYv33TVEFIxrrd88Mv80EcaomIlA9IvFLIThc8OFsCMHwrjllbIRNmsVfwlOxI7MA==
+svelte@^3.2.0:
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/svelte/-/svelte-3.2.0.tgz#92e4208178ccd9ecfd7ca931a9c38e64434f0f73"
+  integrity sha512-i/FSWUcqVw9JBo9bY69/ZI89WCCpyhdWjvAroOroI4qnQboh0WGlgjnFOEKOTvlv1XONd8cVpRGbOYYE3Ec6TQ==
 
 symbol-observable@^0.2.2:
   version "0.2.4"
@@ -3287,11 +3287,6 @@ term-size@^1.2.0:
   integrity sha1-RYuDiH8oj8Vtb/+/rSYuJmOO+mk=
   dependencies:
     execa "^0.7.0"
-
-"test-svelte3@npm:svelte@3.0.0-alpha27":
-  version "3.0.0-alpha27"
-  resolved "https://registry.npmjs.org/svelte/-/svelte-3.0.0-alpha27.tgz#f321a5bb6d4c1a0b035bdad4212c8445a8ce0a70"
-  integrity sha512-ykVDgZWpFcCZo3QkciGkQuwLhPM0XmgcJzzz5/srOEf8hfgk+XSaZS9UB9JrQiT7horAU/kA06aYSLaScCxxKw==
 
 time-zone@^1.0.0:
   version "1.0.0"
