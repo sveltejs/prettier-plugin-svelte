@@ -14,7 +14,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     }
 
     if (isASTNode(n)) {
-        const parts = [path.call(print, 'html')];
+        const parts = [];
         if (n.css) {
             n.css.type = 'Style';
             n.css.content.type = 'StyleProgram';
@@ -34,6 +34,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             n.module.attributes = extractAttributes(getText(n.module, options));
             parts.push(path.call(print, 'module'));
         }
+        parts.push(path.call(print, 'html'));
         return group(join(hardline, parts));
     }
 
