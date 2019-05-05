@@ -15,24 +15,20 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
     if (isASTNode(n)) {
         const parts = [];
-        if (n.css) {
-            n.css.type = 'Style';
-            n.css.content.type = 'StyleProgram';
-            parts.push(path.call(print, 'css'));
-        }
-        if (n.js) {
-            n.js.type = 'Script';
-            parts.push(path.call(print, 'js'));
+        if (n.module) {
+            n.module.type = 'Script';
+            n.module.attributes = extractAttributes(getText(n.module, options));
+            parts.push(path.call(print, 'module'));
         }
         if (n.instance) {
             n.instance.type = 'Script';
             n.instance.attributes = extractAttributes(getText(n.instance, options));
             parts.push(path.call(print, 'instance'));
         }
-        if (n.module) {
-            n.module.type = 'Script';
-            n.module.attributes = extractAttributes(getText(n.module, options));
-            parts.push(path.call(print, 'module'));
+        if (n.css) {
+            n.css.type = 'Style';
+            n.css.content.type = 'StyleProgram';
+            parts.push(path.call(print, 'css'));
         }
         parts.push(path.call(print, 'html'));
         return group(join(hardline, parts));

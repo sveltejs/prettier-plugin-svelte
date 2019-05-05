@@ -25,9 +25,11 @@ export const parsers: Record<string, Parser> = {
             return require(`svelte/compiler`).parse(text);
         },
         preprocess: text => {
-            text = snipTagContent('style', text);
-            text = snipTagContent('script', text, '{}');
-            return text;
+            let styles: string[] = [];
+            let scripts: string[] = [];
+            [text, styles] = snipTagContent('style', text);
+            [text, scripts] = snipTagContent('script', text, '{}');
+            return [text.trim(), ...styles, ...scripts].join('');
         },
         locStart,
         locEnd,
