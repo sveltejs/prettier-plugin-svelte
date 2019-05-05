@@ -96,12 +96,6 @@ export interface EventHandlerNode extends BaseNode {
     expression?: Node;
 }
 
-export interface BindingNodeV2 extends BaseNode {
-    type: 'Binding';
-    name: string;
-    value: Node;
-}
-
 export interface BindingNode extends BaseNode {
     type: 'Binding';
     name: string;
@@ -240,7 +234,6 @@ export type Node =
     | PendingBlockNode
     | CatchBlockNode
     | EventHandlerNode
-    | BindingNodeV2
     | BindingNode
     | DebugTagNode
     | RefNode

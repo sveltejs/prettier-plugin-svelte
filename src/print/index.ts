@@ -3,8 +3,6 @@ import { Node, MustacheTagNode, IfBlockNode } from './nodes';
 import { isASTNode } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
-import { isBindingNodeV2 } from '../lib/nodeFuncs';
-import { getSvelteVersion } from '../lib/getSvelteVersion';
 const { concat, join, line, group, indent, softline, hardline } = doc.builders;
 
 export type PrintFn = (path: FastPath) => Doc;
@@ -39,12 +37,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         return group(join(hardline, parts));
     }
 
-    const version = getSvelteVersion((options as any).sveltePath);
-    let [open, close] = ['{', '}'];
-    if (version.major < 3) {
-        [open, close] = ['"', '"'];
-    }
-
+    const [open, close] = ['{', '}'];
     const node = n as Node;
     switch (node.type) {
         case 'Fragment':
@@ -171,7 +164,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             if (node.children.length === 1 && node.children[0].type === 'IfBlock') {
                 const ifNode = node.children[0] as IfBlockNode;
                 const def: Doc[] = [
-                    '{:elseif ',
+                    '{:else if ',
                     path.map(ifPath => printJS(path, print, 'expression'), 'children')[0],
                     '}',
                     indent(path.map(ifPath => printChildren(ifPath, print), 'children')[0]),
@@ -242,17 +235,6 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     : '',
             ]);
         case 'Binding':
-            if (isBindingNodeV2(node)) {
-                return concat([
-                    line,
-                    'bind:',
-                    node.name,
-                    node.value.type === 'Identifier' && node.value.name === node.name
-                        ? ''
-                        : concat(['=', open, printJS(path, print, 'value'), close]),
-                ]);
-            }
-
             return concat([
                 line,
                 'bind:',
