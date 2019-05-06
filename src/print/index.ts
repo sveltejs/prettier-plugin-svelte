@@ -75,6 +75,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Window':
         case 'Head':
         case 'Title':
+            const notEmpty = node.children.some(child => !isEmptyNode(child));
             return group(
                 concat([
                     '<',
@@ -96,11 +97,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         ),
                     ),
 
-                    node.children.length ? '>' : ' />',
+                    notEmpty ? '>' : ' />',
 
                     indent(printChildren(path, print)),
 
-                    node.children.length ? concat([softline, '</', node.name, '>']) : '',
+                    notEmpty ? concat([softline, '</', node.name, '>']) : '',
                 ]),
             );
         case 'Identifier':
