@@ -30,7 +30,12 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             n.css.content.type = 'StyleProgram';
             parts.push(path.call(print, 'css'));
         }
-        parts.push(path.call(print, 'html'));
+
+        const htmlDoc = path.call(print, 'html');
+        if (htmlDoc) {
+            parts.push(htmlDoc);
+        }
+
         return group(join(hardline, parts));
     }
 
@@ -39,6 +44,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     switch (node.type) {
         case 'Fragment':
             const children = node.children;
+
+            if (children.length === 0 || children.every(isEmptyNode)) {
+                return '';
+            }
+
             return concat([
                 printChildren(path, print, {
                     skipFirst: true,
