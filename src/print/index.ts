@@ -49,28 +49,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return '';
             }
 
-            return concat([
-                printChildren(path, print, {
-                    skipFirst: true,
-                    filter: (node: Node, i: number) => {
-                        if (i === 0 && node.type === 'Text' && node.data.trim() === '') {
-                            return false;
-                        }
-
-                        let include = false;
-                        for (let j = i; j < children.length; j++) {
-                            const child = children[j];
-                            if (!(child.type === 'Text' && child.data.trim() === '')) {
-                                include = true;
-                                break;
-                            }
-                        }
-
-                        return include;
-                    },
-                }),
-                hardline,
-            ]);
+            return concat([printChildren(path, print, false), hardline]);
         case 'Text':
             if (isEmptyNode(node) && /\n\r?\s*\n\r?/.test(node.data)) {
                 // empty text node that has at least one empty line (two line breaks)
@@ -305,11 +284,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     throw new Error('unknown node type: ' + node.type);
 }
 
-function printChildren(
-    path: FastPath,
-    print: PrintFn,
-    { skipFirst = false, filter = (node: Node, i: number) => true } = {},
-): Doc {
+function printChildren(path: FastPath, print: PrintFn, leadingLine = true): Doc {
     const children: Doc[] = [];
     let i = 0;
     let isFirst = true;
@@ -319,11 +294,7 @@ function printChildren(
         const index = i;
         i++;
 
-        if (!filter(child, index)) {
-            return;
-        }
-
-        if (!(isFirst && skipFirst)) {
+        if (!isFirst || leadingLine) {
             if (isInlineNode(child)) {
                 if (!isEmptyNode(child)) {
                     let lineType: Doc = softline;
@@ -345,7 +316,7 @@ function printChildren(
         }
 
         if (child.type === 'Text') {
-            if (isLastNode(childNodes, filter, index)) {
+            if (index === childNodes.length - 1) {
                 // Remove trailing spaces
                 child.data = trimEnd(child.data);
             }
@@ -373,20 +344,6 @@ function isInlineNode(node: Node): boolean {
 
 function isEmptyNode(node: Node): boolean {
     return node.type === 'Text' && node.data.trim() === '';
-}
-
-function isLastNode(
-    nodes: Node[],
-    filter: (node: Node, i: number) => boolean,
-    index: number,
-): boolean {
-    for (let i = index + 1; i < nodes.length; i++) {
-        if (filter(nodes[i], i)) {
-            return false;
-        }
-    }
-
-    return true;
 }
 
 function trimStart(text: string): string {
