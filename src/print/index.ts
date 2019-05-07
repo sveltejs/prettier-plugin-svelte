@@ -3,7 +3,7 @@ import { Node, MustacheTagNode, IfBlockNode } from './nodes';
 import { isASTNode } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
-const { concat, join, line, group, indent, softline, hardline } = doc.builders;
+const { concat, join, line, group, indent, softline, hardline, fill } = doc.builders;
 
 export type PrintFn = (path: FastPath) => Doc;
 
@@ -72,13 +72,16 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 hardline,
             ]);
         case 'Text':
-            return join(
-                hardline,
-                node.data
-                    .replace(/\n(?!\n)/g, '')
-                    .replace(/[ \t]+/g, ' ')
-                    .split(/\n/g),
-            );
+            if (isEmptyNode(node) && /\n\r?\s*\n\r?/.test(node.data)) {
+                // empty text node that has at least one empty line (two line breaks)
+                // collapse to a `line` which a single space if this node's group fits on one line
+                return line;
+            }
+
+            // join each sequence of non-whitespace characters by a `line`,
+            // which is a single space if this node's group fits on one line
+            // this is how text in vanilla HTML is handled by Prettier core
+            return fill(join(line, node.data.split(/[\t\n\f\r ]+/)).parts);
         case 'Element':
         case 'InlineComponent':
         case 'Slot':
