@@ -3,9 +3,19 @@ import { Node, MustacheTagNode, IfBlockNode } from './nodes';
 import { isASTNode } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
-const { concat, join, line, group, indent, softline, hardline, fill } = doc.builders;
+const { concat, join, line, group, indent, dedent, softline, hardline, fill, breakParent } = doc.builders;
 
 export type PrintFn = (path: FastPath) => Doc;
+
+declare module "prettier" {
+    export namespace doc {
+        namespace builders {
+            interface Line {
+                keepIfLonely?: boolean;
+            }
+        }
+    }
+}
 
 export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
     const n = path.getValue();
@@ -51,15 +61,34 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             return concat([printChildren(path, print, false), hardline]);
         case 'Text':
-            if (isEmptyNode(node) && /\n\r?\s*\n\r?/.test(node.data)) {
-                // empty text node that has at least one empty line (two line breaks)
-                // collapse to a `line` which a single space if this node's group fits on one line
-                return line;
+            if (isEmptyNode(node)) {
+                return {
+                    /**
+                     * Empty (whitespace-only) text nodes are collapsed into a single `line`,
+                     * which will be rendered as a single space if this node's group fits on a
+                     * single line. This follows how vanilla HTML is handled both by browsers and
+                     * by Prettier core.
+                     */
+                    ...line,
+
+                    /**
+                     * A text node is considered lonely if it is in a group without other inline
+                     * elements, such as the line breaks between otherwise consecutive HTML tags.
+                     * Text nodes that are both empty and lonely are discarded unless they have at
+                     * least one empty line (i.e. at least two linebreak sequences). This is to
+                     * allow for flexible grouping of HTML tags in a particular indentation level,
+                     * and is similar to how vanilla HTML is handled in Prettier core.
+                     */
+                    keepIfLonely: /\n\r?\s*\n\r?/.test(node.data)
+                };
             }
 
-            // join each sequence of non-whitespace characters by a `line`,
-            // which is a single space if this node's group fits on one line
-            // this is how text in vanilla HTML is handled by Prettier core
+            /**
+             * For non-empty text nodes each sequence of non-whitespace characters (effectively,
+             * each "word") is joined by a single `line`, which will be rendered as a single space
+             * until this node's current line is out of room, at which `fill` will break at the
+             * most convienient instance of `line`.
+             */
             return fill(join(line, node.data.split(/[\t\n\f\r ]+/)).parts);
         case 'Element':
         case 'InlineComponent':
@@ -93,7 +122,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
                     indent(printChildren(path, print)),
 
-                    notEmpty ? concat([softline, '</', node.name, '>']) : '',
+                    notEmpty ? concat(['</', node.name, '>']) : '',
                 ]),
             );
         case 'Identifier':
@@ -138,7 +167,6 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 printJS(path, print, 'expression'),
                 '}',
                 indent(printChildren(path, print)),
-                line,
             ];
 
             if (node.else) {
@@ -158,7 +186,6 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     path.map(ifPath => printJS(path, print, 'expression'), 'children')[0],
                     '}',
                     indent(path.map(ifPath => printChildren(ifPath, print), 'children')[0]),
-                    line,
                 ];
 
                 if (ifNode.else) {
@@ -167,7 +194,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return group(concat(def));
             }
 
-            return group(concat(['{:else}', indent(printChildren(path, print)), line]));
+            return group(concat(['{:else}', indent(printChildren(path, print))]));
         }
         case 'EachBlock': {
             const def: Doc[] = [
@@ -185,7 +212,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 def.push(' (', printJS(path, print, 'key'), ')');
             }
 
-            def.push('}', indent(printChildren(path, print)), line);
+            def.push('}', indent(printChildren(path, print)));
 
             if (node.else) {
                 def.push(path.call(print, 'else'));
@@ -200,13 +227,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 concat([
                     group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
                     indent(path.call(print, 'pending')),
-                    line,
                     group(concat(['{:then', node.value ? ' ' + node.value : '', '}'])),
                     indent(path.call(print, 'then')),
-                    line,
                     group(concat(['{:catch', node.error ? ' ' + node.error : '', '}'])),
                     indent(path.call(print, 'catch')),
-                    line,
                     '{/await}',
                 ]),
             );
@@ -284,48 +308,116 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     throw new Error('unknown node type: ' + node.type);
 }
 
-function printChildren(path: FastPath, print: PrintFn, leadingLine = true): Doc {
-    const children: Doc[] = [];
-    let i = 0;
-    let isFirst = true;
-    const childNodes = path.getValue().children as Node[];
+function isEmptyGroup(group: Doc[]): boolean {
+    if (group.length === 0) {
+        return true;
+    }
+
+    if (group.length > 1) {
+        return false;
+    }
+
+    const lonelyDoc = group[0];
+
+    if (typeof lonelyDoc === 'string' || lonelyDoc.type !== 'line') {
+        return false;
+    }
+
+    return !lonelyDoc.keepIfLonely;
+}
+
+/**
+ * Due to how `String.prototype.split` works, `TextNode`s with leading whitespace will be printed
+ * to a `Fill` that has two additional parts at the begnning: an empty string (`''`) and a `line`.
+ * If such a `Fill` doc is present at the beginning of an inline node group, those additional parts
+ * need to be removed to prevent additional whitespace at the beginning of the parent's inner
+ * content or after a sibling block node (i.e. HTML tags).
+ */
+function trimLeft(group: Doc[]): void {
+    if (group.length === 0) {
+        return;
+    }
+
+    const first = group[0];
+    if (typeof first === 'string' || first.type !== 'fill') {
+        return;
+    }
+
+    // find the index of the first part that isn't an empty string or a line
+    const trimIndex = first.parts.findIndex(
+        part => typeof part === 'string' ? part !== '' : part.type !== 'line'
+    );
+
+    first.parts.splice(0, trimIndex);
+}
+
+/**
+ * Due to how `String.prototype.split` works, `TextNode`s with trailing whitespace will be printed
+ * to a `Fill` that has two additional parts at the end: a `line` and an empty string (`''`). If
+ * such a `Fill` doc is present at the beginning of an inline node group, those additional parts
+ * need to be removed to prevent additional whitespace at the end of the parent's inner content or
+ * before a sibling block node (i.e. HTML tags).
+ */
+function trimRight(group: Doc[]): void {
+    if (group.length === 0) {
+        return;
+    }
+
+    const last = group[group.length - 1];
+    if (typeof last === 'string' || last.type !== 'fill') {
+        return;
+    }
+
+    last.parts.reverse();
+
+    // find the index of the first part that isn't an empty string or a line
+    const trimIndex = last.parts.findIndex(part =>
+        typeof part === 'string' ? part !== '' : part.type !== 'line'
+    );
+
+    last.parts.splice(0, trimIndex);
+    last.parts.reverse();
+}
+
+function printChildren(path: FastPath, print: PrintFn, surroundingLines = true): Doc {
+    const childDocs: doc.builders.Fill[] = [];
+    let currentGroup: Doc[] = [];
+
+    /**
+     * Sequences of inline nodes (currently, `TextNode`s and `MustacheTag`s) are collected into
+     * groups and printed as a single `Fill` doc so that linebreaks as a result of sibling block
+     * nodes (currently, all HTML elements) don't cause those inline sequences to break
+     * prematurely. This is particularly important for whitespace sensitivity, as it is often
+     * desired to have text directly wrapping a mustache tag without additional whitespace.
+     */
+    function flush() {
+        if (!isEmptyGroup(currentGroup)) {
+            trimLeft(currentGroup);
+            trimRight(currentGroup);
+            childDocs.push(fill(currentGroup));
+        }
+        currentGroup = [];
+    }
+
     path.each(childPath => {
-        const child = childPath.getValue() as Node;
-        const index = i;
-        i++;
+        const childNode = childPath.getValue() as Node;
+        const childDoc = childPath.call(print);
 
-        if (!isFirst || leadingLine) {
-            if (isInlineNode(child)) {
-                if (!isEmptyNode(child)) {
-                    let lineType: Doc = softline;
-                    if (child.type === 'Text') {
-                        if (/^\s+/.test(child.data)) {
-                            // Remove leading spaces
-                            child.data = trimStart(child.data);
-                            if (!isFirst) {
-                                lineType = line;
-                            }
-                        }
-                    }
-
-                    children.push(lineType);
-                }
-            } else {
-                children.push(hardline);
-            }
+        if (isInlineNode(childNode)) {
+            currentGroup.push(childDoc);
+        } else {
+            flush();
+            childDocs.push(fill([breakParent, childDoc]));
         }
-
-        if (child.type === 'Text') {
-            if (index === childNodes.length - 1) {
-                // Remove trailing spaces
-                child.data = trimEnd(child.data);
-            }
-        }
-
-        children.push(childPath.call(print));
-        isFirst = false;
     }, 'children');
-    return concat(children);
+
+    flush();
+
+    return concat([
+        surroundingLines ? softline : '',
+        join(hardline, childDocs),
+        surroundingLines ? dedent(softline) : ''
+    ]);
 }
 
 function printJS(path: FastPath, print: PrintFn, name?: string) {
@@ -344,12 +436,4 @@ function isInlineNode(node: Node): boolean {
 
 function isEmptyNode(node: Node): boolean {
     return node.type === 'Text' && node.data.trim() === '';
-}
-
-function trimStart(text: string): string {
-    return text.replace(/^\s+/, '');
-}
-
-function trimEnd(text: string): string {
-    return text.replace(/\s+$/, '');
 }
