@@ -98,7 +98,7 @@ function embedTag(
         contentAttribute.value.length > 0
     ) {
         const encodedContent = (contentAttribute.value[0] as TextNode).data;
-        content = Buffer.from(encodedContent, 'base64').toString('ascii');
+        content = Buffer.from(encodedContent, 'base64').toString('utf-8');
     }
     node.attributes = node.attributes.filter(n => n !== contentAttribute);
 
