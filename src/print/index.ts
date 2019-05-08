@@ -120,7 +120,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
                     notEmpty ? '>' : ' />',
 
-                    indent(printChildren(path, print)),
+                    notEmpty ? indent(printChildren(path, print)) : '',
 
                     notEmpty ? concat(['</', node.name, '>']) : '',
                 ]),
