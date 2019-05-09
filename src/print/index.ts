@@ -3,11 +3,22 @@ import { Node, MustacheTagNode, IfBlockNode } from './nodes';
 import { isASTNode } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
-const { concat, join, line, group, indent, dedent, softline, hardline, fill, breakParent } = doc.builders;
+const {
+    concat,
+    join,
+    line,
+    group,
+    indent,
+    dedent,
+    softline,
+    hardline,
+    fill,
+    breakParent,
+} = doc.builders;
 
 export type PrintFn = (path: FastPath) => Doc;
 
-declare module "prettier" {
+declare module 'prettier' {
     export namespace doc {
         namespace builders {
             interface Line {
@@ -79,7 +90,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                      * allow for flexible grouping of HTML tags in a particular indentation level,
                      * and is similar to how vanilla HTML is handled in Prettier core.
                      */
-                    keepIfLonely: /\n\r?\s*\n\r?/.test(node.data)
+                    keepIfLonely: /\n\r?\s*\n\r?/.test(node.data),
                 };
             }
 
@@ -272,7 +283,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 'let:',
                 node.name,
                 // shorthand let directives have `null` expressions
-                !node.expression || (node.expression.type === 'Identifier' && node.expression.name === node.name)
+                !node.expression ||
+                (node.expression.type === 'Identifier' && node.expression.name === node.name)
                     ? ''
                     : concat(['=', '{', printJS(path, print, 'expression'), '}']),
             ]);
@@ -363,8 +375,8 @@ function trimLeft(group: Doc[]): void {
     }
 
     // find the index of the first part that isn't an empty string or a line
-    const trimIndex = first.parts.findIndex(
-        part => typeof part === 'string' ? part !== '' : part.type !== 'line'
+    const trimIndex = first.parts.findIndex(part =>
+        typeof part === 'string' ? part !== '' : part.type !== 'line',
     );
 
     first.parts.splice(0, trimIndex);
@@ -391,7 +403,7 @@ function trimRight(group: Doc[]): void {
 
     // find the index of the first part that isn't an empty string or a line
     const trimIndex = last.parts.findIndex(part =>
-        typeof part === 'string' ? part !== '' : part.type !== 'line'
+        typeof part === 'string' ? part !== '' : part.type !== 'line',
     );
 
     last.parts.splice(0, trimIndex);
@@ -435,7 +447,7 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
     return concat([
         surroundingLines ? softline : '',
         join(hardline, childDocs),
-        surroundingLines ? dedent(softline) : ''
+        surroundingLines ? dedent(softline) : '',
     ]);
 }
 
