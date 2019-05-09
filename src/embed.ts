@@ -1,7 +1,6 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
 import { PrintFn } from './print';
 import { Node, AttributeNode, TextNode } from './print/nodes';
-import { extractAttributes } from './lib/extractAttributes';
 import { getText } from './lib/getText';
 
 const {
@@ -27,7 +26,7 @@ export function embed(
 
     switch (node.type) {
         case 'Script':
-            return embedTag(path, print, textToDoc, node, 'babel');
+            return embedTag(path, print, textToDoc, node, 'typescript');
         case 'Style':
             return embedTag(path, print, textToDoc, node, 'css');
     }
