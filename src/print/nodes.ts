@@ -94,6 +94,7 @@ export interface EventHandlerNode extends BaseNode {
     type: 'EventHandler';
     name: string;
     expression?: Node;
+    modifiers?: string[];
 }
 
 export interface BindingNode extends BaseNode {
