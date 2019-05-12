@@ -414,7 +414,7 @@ function trimRight(group: Doc[]): void {
 }
 
 function printChildren(path: FastPath, print: PrintFn, surroundingLines = true): Doc {
-    const childDocs: doc.builders.Fill[] = [];
+    const childDocs: Doc[] = [];
     let currentGroup: Doc[] = [];
 
     /**
@@ -441,7 +441,7 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
             currentGroup.push(childDoc);
         } else {
             flush();
-            childDocs.push(fill([breakParent, childDoc]));
+            childDocs.push(concat([breakParent, childDoc]));
         }
     }, 'children');
 
