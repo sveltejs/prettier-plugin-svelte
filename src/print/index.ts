@@ -373,7 +373,16 @@ function trimLeft(group: Doc[]): void {
     }
 
     const first = group[0];
-    if (typeof first === 'string' || first.type !== 'fill') {
+    if (typeof first === 'string') {
+        return;
+    }
+
+    if (first.type === 'line') {
+        group.shift();
+        return;
+    }
+
+    if (first.type !== 'fill') {
         return;
     }
 
@@ -398,7 +407,16 @@ function trimRight(group: Doc[]): void {
     }
 
     const last = group[group.length - 1];
-    if (typeof last === 'string' || last.type !== 'fill') {
+    if (typeof last === 'string') {
+        return;
+    }
+
+    if (last.type === 'line') {
+        group.pop();
+        return;
+    }
+
+    if (last.type !== 'fill') {
         return;
     }
 
