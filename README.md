@@ -18,3 +18,11 @@ Then format your code using prettier cli. You may need to add `--plugin-search-d
 ```
 prettier --write --plugin-search-dir=. ./**/*.html
 ```
+
+## Options
+
+**`sort-order`** Sort order for scripts, html, and css. Defaults to `scripts-css-html`.
+
+```
+prettier --write --sort-order scripts-html-css ./**/*.svelte
+```
