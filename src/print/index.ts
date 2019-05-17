@@ -50,14 +50,14 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     parts.push(path.call(print, 'instance'));
                 }
             },
-            css() {
+            styles() {
                 if (n.css) {
                     n.css.type = 'Style';
                     n.css.content.type = 'StyleProgram';
                     parts.push(path.call(print, 'css'));
                 }
             },
-            html() {
+            markup() {
                 const htmlDoc = path.call(print, 'html');
                 if (htmlDoc) {
                     parts.push(htmlDoc);

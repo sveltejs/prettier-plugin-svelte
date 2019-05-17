@@ -11,28 +11,28 @@ export interface PluginOptions {
 export const options: Record<keyof PluginOptions, SupportOption> = {
     sortOrder: {
         type: 'choice',
-        default: 'scripts-css-html',
-        description: 'Sort order for scripts, html, and css',
+        default: 'scripts-styles-markup',
+        description: 'Sort order for scripts, styles, and markup',
         choices: [
-            { value: 'scripts-css-html' },
-            { value: 'scripts-html-css' },
-            { value: 'html-css-scripts' },
-            { value: 'html-scripts-css' },
-            { value: 'css-html-scripts' },
-            { value: 'css-scripts-html' },
+            { value: 'scripts-styles-markup' },
+            { value: 'scripts-markup-styles' },
+            { value: 'markup-styles-scripts' },
+            { value: 'markup-scripts-styles' },
+            { value: 'styles-markup-scripts' },
+            { value: 'styles-scripts-markup' },
         ],
     },
 };
 
 export type SortOrder =
-    | 'scripts-html-css'
-    | 'scripts-css-html'
-    | 'html-scripts-css'
-    | 'html-css-scripts'
-    | 'css-scripts-html'
-    | 'css-html-scripts';
+    | 'scripts-styles-markup'
+    | 'scripts-markup-styles'
+    | 'markup-styles-scripts'
+    | 'markup-scripts-styles'
+    | 'styles-markup-scripts'
+    | 'styles-scripts-markup';
 
-export type SortOrderPart = 'scripts' | 'html' | 'css';
+export type SortOrderPart = 'scripts' | 'markup' | 'styles';
 
 const sortOrderSeparator = '-';
 
