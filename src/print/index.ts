@@ -198,7 +198,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         }
         case 'ElseBlock': {
             // Else if
-            const parent = path.getParentNode() as Node
+            const parent = path.getParentNode() as Node;
 
             if (node.children.length === 1 && node.children[0].type === 'IfBlock' && parent.type !== 'EachBlock') {
                 const ifNode = node.children[0] as IfBlockNode;
