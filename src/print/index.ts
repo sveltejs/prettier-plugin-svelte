@@ -1,5 +1,5 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
-import { Node, MustacheTagNode, IfBlockNode } from './nodes';
+import { Node, MustacheTagNode, IfBlockNode, EachBlockNode } from './nodes';
 import { isASTNode } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
@@ -198,7 +198,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         }
         case 'ElseBlock': {
             // Else if
-            if (node.children.length === 1 && node.children[0].type === 'IfBlock') {
+            const parent = path.getParentNode() as Node;
+
+            if (node.children.length === 1 && node.children[0].type === 'IfBlock' && parent.type !== 'EachBlock') {
                 const ifNode = node.children[0] as IfBlockNode;
                 const def: Doc[] = [
                     '{:else if ',
