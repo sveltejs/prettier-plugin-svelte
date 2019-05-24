@@ -320,6 +320,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 kind,
                 ':',
                 node.name,
+                node.modifiers && node.modifiers.length
+                    ? concat(['|', join('|', node.modifiers)])
+                    : '',
                 node.expression
                     ? concat(['=', open, printJS(path, print, 'expression'), close])
                     : '',
