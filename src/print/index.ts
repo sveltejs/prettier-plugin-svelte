@@ -133,11 +133,12 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                                       ])
                                     : '',
                                 ...path.map(childPath => childPath.call(print), 'attributes'),
+                                dedent(notEmpty ? softline : line),
                             ]),
                         ),
                     ),
 
-                    notEmpty ? '>' : ' />',
+                    notEmpty ? '>' : '/>',
 
                     notEmpty ? indent(printChildren(path, print)) : '',
 
