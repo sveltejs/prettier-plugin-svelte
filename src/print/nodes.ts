@@ -170,6 +170,7 @@ export interface TransitionNode extends BaseNode {
     type: 'Transition';
     name: string;
     expression?: Node;
+    modifiers?: string[];
     intro: boolean;
     outro: boolean;
 }
