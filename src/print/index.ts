@@ -114,7 +114,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Slot':
         case 'Window':
         case 'Head':
-        case 'Title':
+        case 'Title': {
             const notEmpty = node.children.some(child => !isEmptyNode(child));
             return group(
                 concat([
@@ -142,6 +142,21 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     notEmpty ? indent(printChildren(path, print)) : '',
 
                     notEmpty ? concat(['</', node.name, '>']) : '',
+                ]),
+            );
+        }
+        case 'Options':
+        case 'Body':
+            return group(
+                concat([
+                    '<',
+                    node.name,
+
+                    indent(
+                        group(concat(path.map(childPath => childPath.call(print), 'attributes'))),
+                    ),
+
+                    ' />',
                 ]),
             );
         case 'Identifier':
@@ -200,7 +215,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             // Else if
             const parent = path.getParentNode() as Node;
 
-            if (node.children.length === 1 && node.children[0].type === 'IfBlock' && parent.type !== 'EachBlock') {
+            if (
+                node.children.length === 1 &&
+                node.children[0].type === 'IfBlock' &&
+                parent.type !== 'EachBlock'
+            ) {
                 const ifNode = node.children[0] as IfBlockNode;
                 const def: Doc[] = [
                     '{:else if ',
