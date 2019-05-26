@@ -4,6 +4,7 @@ import { isASTNode } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { parseSortOrder, SortOrderPart } from '../options';
+import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
 const {
     concat,
     join,
@@ -333,8 +334,14 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             ]);
         case 'Ref':
             return concat([line, 'ref:', node.name]);
-        case 'Comment':
-            return group(concat(['<!--', node.data, '-->']));
+        case 'Comment': {
+            let text = node.data;
+            if (hasSnippedContent(text)) {
+                text = unsnipContent(text);
+            }
+
+            return group(concat(['<!--', text, '-->']));
+        }
         case 'Transition':
             const kind = node.intro && node.outro ? 'transition' : node.intro ? 'in' : 'out';
             return concat([

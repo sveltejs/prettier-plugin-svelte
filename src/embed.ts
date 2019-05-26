@@ -26,9 +26,14 @@ export function embed(
 
     switch (node.type) {
         case 'Script':
-            return embedTag(path, print, textToDoc, node, 'typescript');
+            return embedTag('script', path, print, textToDoc, node);
         case 'Style':
-            return embedTag(path, print, textToDoc, node, 'css');
+            return embedTag('style', path, print, textToDoc, node);
+        case 'Element': {
+            if (node.name === 'script' || node.name === 'style') {
+                return embedTag(node.name, path, print, textToDoc, node, true)
+            }
+        }
     }
 
     return null;
@@ -81,12 +86,14 @@ function nukeLastLine(doc: Doc): Doc {
 }
 
 function embedTag(
+    tag: string,
     path: FastPath,
     print: PrintFn,
     textToDoc: (text: string, options: object) => Doc,
     node: Node & { attributes: Node[] },
-    parser: string,
+    inline: boolean,
 ) {
+    const parser = tag === 'script' ? 'typescript' : 'css';
     const contentAttribute = (node.attributes as AttributeNode[]).find(
         n => n.name === '✂prettier:content✂',
     );
@@ -104,15 +111,15 @@ function embedTag(
     return group(
         concat([
             '<',
-            node.type.toLowerCase(),
+            tag,
             indent(group(concat(path.map(childPath => childPath.call(print), 'attributes')))),
             '>',
             indent(concat([hardline, nukeLastLine(textToDoc(content, { parser }))])),
             hardline,
             '</',
-            node.type.toLowerCase(),
+            tag,
             '>',
-            hardline,
+            inline ? '' : hardline,
         ]),
     );
 }

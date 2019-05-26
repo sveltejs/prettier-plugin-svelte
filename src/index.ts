@@ -35,11 +35,9 @@ export const parsers: Record<string, Parser> = {
             }
         },
         preprocess: text => {
-            let styles: string[] = [];
-            let scripts: string[] = [];
-            [text, styles] = snipTagContent('style', text);
-            [text, scripts] = snipTagContent('script', text, '{}');
-            return [text.trim(), ...styles, ...scripts].join('');
+            text = snipTagContent('style', text);
+            text = snipTagContent('script', text, '{}');
+            return text.trim();
         },
         locStart,
         locEnd,
