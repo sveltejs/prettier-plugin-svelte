@@ -98,7 +98,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                      * allow for flexible grouping of HTML tags in a particular indentation level,
                      * and is similar to how vanilla HTML is handled in Prettier core.
                      */
-                    keepIfLonely: /\n\r?\s*\n\r?/.test(node.data),
+                    keepIfLonely: /\n\r?\s*\n\r?/.test((node.raw || node.data)),
                 };
             }
 
@@ -108,7 +108,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
              * until this node's current line is out of room, at which `fill` will break at the
              * most convienient instance of `line`.
              */
-            return fill(join(line, node.data.split(/[\t\n\f\r ]+/)).parts);
+            return fill(join(line, (node.raw || node.data).split(/[\t\n\f\r ]+/)).parts);
         case 'Element':
         case 'InlineComponent':
         case 'Slot':
@@ -519,5 +519,5 @@ function isInlineNode(node: Node): boolean {
 }
 
 function isEmptyNode(node: Node): boolean {
-    return node.type === 'Text' && node.data.trim() === '';
+    return node.type === 'Text' && (node.raw || node.data).trim() === '';
 }
