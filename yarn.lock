@@ -335,10 +335,10 @@
   resolved "https://registry.npmjs.org/@types/node/-/node-10.12.18.tgz#1d3ca764718915584fcd9f6344621b7672665c67"
   integrity sha512-fh+pAqt4xRzPfqA6eh3Z2y6fyZavRIumvjhaCL753+TVkGKGhpPeyrJG2JftD0T9q4GF00KjefsQ+PQNDdWQaQ==
 
-"@types/prettier@^1.16.3":
-  version "1.16.3"
-  resolved "https://registry.yarnpkg.com/@types/prettier/-/prettier-1.16.3.tgz#141bdf4dcbaac06fd2b3f05e233ff23b66866f9f"
-  integrity sha512-5Ksgx9H/Yjz6oamDbmDZstWlJGPTao7shNfambjf8o7OkHxDwAi0AJLQcFwS9pDKI4gQPdiKZXze3nT1eCOViQ==
+"@types/prettier@^1.16.4":
+  version "1.16.4"
+  resolved "https://registry.npmjs.org/@types/prettier/-/prettier-1.16.4.tgz#5e5e97702cb68498aaba7349b941648daaf2385c"
+  integrity sha512-MG7ExKBo7AQ5UrL1awyYLNinNM/kyXgE4iP4Ul9fB+T7n768Z5Xem8IZeP6Bna0xze8gkDly49Rgge2HOEw4xA==
 
 abbrev@1:
   version "1.1.1"
@@ -3253,10 +3253,10 @@ supports-color@^6.1.0:
   dependencies:
     has-flag "^3.0.0"
 
-svelte@^3.2.0:
-  version "3.2.0"
-  resolved "https://registry.yarnpkg.com/svelte/-/svelte-3.2.0.tgz#92e4208178ccd9ecfd7ca931a9c38e64434f0f73"
-  integrity sha512-i/FSWUcqVw9JBo9bY69/ZI89WCCpyhdWjvAroOroI4qnQboh0WGlgjnFOEKOTvlv1XONd8cVpRGbOYYE3Ec6TQ==
+svelte@^3.4.3:
+  version "3.4.3"
+  resolved "https://registry.npmjs.org/svelte/-/svelte-3.4.3.tgz#ef1d98f56a2dcc94926ceedbbb857e7fdfc68902"
+  integrity sha512-pFDW7xIUjdJjdJAO1R9DfhAAuJUj0z8nltvAKJZGMard17sOHIxjYHG1+I74ydyHIrftesF8pk7t27EPC1JyFg==
 
 symbol-observable@^0.2.2:
   version "0.2.4"
