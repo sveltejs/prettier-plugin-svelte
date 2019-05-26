@@ -6,6 +6,7 @@ declare module 'prettier' {
 
 export interface PluginOptions {
     svelteSortOrder: SortOrder;
+    svelteBracketNewLine: boolean;
 }
 
 export const options: Record<keyof PluginOptions, SupportOption> = {
@@ -21,6 +22,11 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
             { value: 'styles-markup-scripts' },
             { value: 'styles-scripts-markup' },
         ],
+    },
+    svelteBracketNewLine: {
+        type: 'boolean',
+        default: false,
+        description: 'Put the `>` of a multiline element on a new line',
     },
 };
 
