@@ -6,7 +6,8 @@
     "scripts": {
         "build": "rollup -c",
         "test": "ava",
-        "prepublishOnly": "npm test && npm run build"
+        "prepare": "npm run build",
+        "prepublishOnly": "npm test"
     },
     "repository": {
         "type": "git",
