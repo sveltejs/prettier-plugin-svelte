@@ -64,7 +64,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 }
             },
         };
-        parseSortOrder(options.sortOrder).forEach(p => addParts[p]());
+        parseSortOrder(options.svelteSortOrder).forEach(p => addParts[p]());
         return group(join(hardline, parts));
     }
 
@@ -98,7 +98,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                      * allow for flexible grouping of HTML tags in a particular indentation level,
                      * and is similar to how vanilla HTML is handled in Prettier core.
                      */
-                    keepIfLonely: /\n\r?\s*\n\r?/.test((node.raw || node.data)),
+                    keepIfLonely: /\n\r?\s*\n\r?/.test(node.raw || node.data),
                 };
             }
 

@@ -5,11 +5,11 @@ declare module 'prettier' {
 }
 
 export interface PluginOptions {
-    sortOrder: SortOrder;
+    svelteSortOrder: SortOrder;
 }
 
 export const options: Record<keyof PluginOptions, SupportOption> = {
-    sortOrder: {
+    svelteSortOrder: {
         type: 'choice',
         default: 'scripts-styles-markup',
         description: 'Sort order for scripts, styles, and markup',
