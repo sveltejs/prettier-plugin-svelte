@@ -27,8 +27,8 @@ prettier --write --plugin-search-dir=. ./**/*.html
 
 ## Options
 
-**`sort-order`** Sort order for scripts, styles, and markup. Defaults to `scripts-styles-markup`.
+**`svelte-sort-order`** Sort order for scripts, styles, and markup. Defaults to `scripts-styles-markup`.
 
 ```
-prettier --write --sort-order scripts-markup-styles ./**/*.svelte
+prettier --write --svelte-sort-order scripts-markup-styles ./**/*.svelte
 ```
