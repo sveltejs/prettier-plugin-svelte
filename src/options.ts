@@ -8,8 +8,8 @@ declare module 'prettier' {
 export interface PluginOptions {
     svelteSortOrder: SortOrder;
     svelteBracketNewLine: boolean;
-    inlineElements: TagName[],
-    preformattedElements: TagName[];
+    svelteInlineElements: TagName[],
+    sveltePreformattedElements: TagName[];
 }
 
 export const options: Record<keyof PluginOptions, SupportOption> = {
@@ -31,7 +31,7 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
         default: false,
         description: 'Put the `>` of a multiline element on a new line',
     },
-    inlineElements: {
+    svelteInlineElements: {
         type: 'choice',
         // @ts-ignore -- typings for `SupportOption` doesn't support arrays even though that's a valid type
         // https://github.com/prettier/prettier/blob/3654108ebe028fbc3063ceccb3c4ce0d4164510a/src/main/core-options.js#L167-L178
@@ -40,7 +40,7 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
         array: true,
         choices: allElements.map(value => ({ value }))
     },
-    preformattedElements: {
+    sveltePreformattedElements: {
         type: 'choice',
         // @ts-ignore -- typings for `SupportOption` doesn't support arrays even though that's a valid type
         // https://github.com/prettier/prettier/blob/3654108ebe028fbc3063ceccb3c4ce0d4164510a/src/main/core-options.js#L167-L178

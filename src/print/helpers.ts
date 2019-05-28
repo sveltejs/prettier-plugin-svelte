@@ -31,8 +31,8 @@ function getTagOptions(options: ParserOptions) {
     let cached = tagOptionsCache.get(options);
     if (!cached) {
         cached = {
-            inline: new Set(options.inlineElements),
-            preformatted: new Set(options.preformattedElements)
+            inline: new Set(options.svelteInlineElements),
+            preformatted: new Set(options.sveltePreformattedElements)
         };
         tagOptionsCache.set(options, cached);
     }
