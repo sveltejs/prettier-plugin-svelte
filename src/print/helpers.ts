@@ -44,3 +44,16 @@ export function isPreTagContent(path: FastPath, options: ParserOptions): boolean
     const stack = path.stack as Node[];
     return stack.some(node => node.type === 'Element' && preTags.has(node.name as TagName));
 }
+
+export function isInlineNode(node: Node, options: ParserOptions): boolean {
+    if (node.type === 'Text' || node.type === 'MustacheTag') {
+        return true;
+    }
+
+    if (node.type !== 'Element') {
+        return false;
+    }
+
+    const inlineTags = getTagOptions(options).inline;
+    return inlineTags.has(node.name as TagName);
+}

@@ -1,6 +1,6 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
 import { Node, MustacheTagNode, IfBlockNode, EachBlockNode } from './nodes';
-import { isASTNode, isPreTagContent } from './helpers';
+import { isASTNode, isPreTagContent, isInlineNode } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { parseSortOrder, SortOrderPart } from '../options';
@@ -121,6 +121,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Head':
         case 'Title': {
             const notEmpty = node.children.some(child => !isEmptyNode(child));
+            const surroundingLines = !isInlineNode(node, options);
             return group(
                 concat([
                     '<',
@@ -147,7 +148,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
                     notEmpty ? '>' : `${options.svelteBracketNewLine ? '' : ' '}/>`,
 
-                    notEmpty ? indent(printChildren(path, print, options)) : '',
+                    notEmpty ? indent(printChildren(path, print, options, surroundingLines)) : '',
 
                     notEmpty ? concat(['</', node.name, '>']) : '',
                 ]),
@@ -411,7 +412,8 @@ function isEmptyGroup(group: Doc[]): boolean {
  * to a `Fill` that has two additional parts at the begnning: an empty string (`''`) and a `line`.
  * If such a `Fill` doc is present at the beginning of an inline node group, those additional parts
  * need to be removed to prevent additional whitespace at the beginning of the parent's inner
- * content or after a sibling block node (i.e. HTML tags).
+ * content or after a sibling block node (such as HTML tags not defined in the
+ * `svelteInlineElements` option).
  */
 function trimLeft(group: Doc[]): void {
     if (group.length === 0) {
@@ -445,7 +447,8 @@ function trimLeft(group: Doc[]): void {
  * to a `Fill` that has two additional parts at the end: a `line` and an empty string (`''`). If
  * such a `Fill` doc is present at the beginning of an inline node group, those additional parts
  * need to be removed to prevent additional whitespace at the end of the parent's inner content or
- * before a sibling block node (i.e. HTML tags).
+ * before a sibling block node (such as HTML tags not defined in the `svelteInlineElements`
+ * option).
  */
 function trimRight(group: Doc[]): void {
     if (group.length === 0) {
@@ -486,11 +489,12 @@ function printChildren(path: FastPath, print: PrintFn, options: ParserOptions, s
     let currentGroup: Doc[] = [];
 
     /**
-     * Sequences of inline nodes (currently, `TextNode`s and `MustacheTag`s) are collected into
-     * groups and printed as a single `Fill` doc so that linebreaks as a result of sibling block
-     * nodes (currently, all HTML elements) don't cause those inline sequences to break
-     * prematurely. This is particularly important for whitespace sensitivity, as it is often
-     * desired to have text directly wrapping a mustache tag without additional whitespace.
+     * Sequences of inline nodes (`TextNode`s, `MustacheTag`s, and the `Element`s defined in the
+     * `svelteInlineElements` option) are collected into groups and printed as a single `Fill` doc
+     * so that linebreaks as a result of sibling block nodes (currently, all HTML elements) don't
+     * cause those inline sequences to break prematurely. This is particularly important for
+     * whitespace sensitivity, as it is often desired to have text directly wrapping a mustache tag
+     * without additional whitespace.
      */
     function flush() {
         if (!isEmptyGroup(currentGroup)) {
@@ -505,7 +509,7 @@ function printChildren(path: FastPath, print: PrintFn, options: ParserOptions, s
         const childNode = childPath.getValue() as Node;
         const childDoc = childPath.call(print);
 
-        if (isInlineNode(childNode)) {
+        if (isInlineNode(childNode, options)) {
             currentGroup.push(childDoc);
         } else {
             flush();
@@ -530,10 +534,6 @@ function printJS(path: FastPath, print: PrintFn, name?: string) {
 
     path.getValue()[name].isJS = true;
     return path.call(print, name);
-}
-
-function isInlineNode(node: Node): boolean {
-    return node.type === 'Text' || node.type === 'MustacheTag';
 }
 
 function isEmptyNode(node: Node): boolean {
