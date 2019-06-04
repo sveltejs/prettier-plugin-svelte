@@ -73,7 +73,7 @@ export interface AwaitBlockNode extends BaseNode {
     error?: string;
     pending: PendingBlockNode;
     then: ThenBlockNode;
-    catch: Node;
+    catch: CatchBlockNode;
 }
 
 export interface ThenBlockNode extends BaseNode {

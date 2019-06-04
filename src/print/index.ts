@@ -267,14 +267,49 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return group(concat(def));
         }
         case 'AwaitBlock': {
+            const hasPendingBlock =
+                node.pending.children.length !== 0 && !node.pending.children.every(isEmptyNode);
+            const hasCatchBlock =
+                node.catch.children.length !== 0 && !node.catch.children.every(isEmptyNode);
+
+            if (hasPendingBlock && hasCatchBlock) {
+                return group(
+                    concat([
+                        group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
+                        indent(path.call(print, 'pending')),
+                        group(concat(['{:then', node.value ? ' ' + node.value : '', '}'])),
+                        indent(path.call(print, 'then')),
+                        group(concat(['{:catch', node.error ? ' ' + node.error : '', '}'])),
+                        indent(path.call(print, 'catch')),
+                        '{/await}',
+                    ]),
+                );
+            }
+
+            if (hasPendingBlock) {
+                return group(
+                    concat([
+                        group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
+                        indent(path.call(print, 'pending')),
+                        group(concat(['{:then', node.value ? ' ' + node.value : '', '}'])),
+                        indent(path.call(print, 'then')),
+                        '{/await}',
+                    ]),
+                );
+            }
+
             return group(
                 concat([
-                    group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
-                    indent(path.call(print, 'pending')),
-                    group(concat(['{:then', node.value ? ' ' + node.value : '', '}'])),
+                    group(
+                        concat([
+                            '{#await ',
+                            printJS(path, print, 'expression'),
+                            ' then ',
+                            node.value ? node.value : '',
+                            '}',
+                        ]),
+                    ),
                     indent(path.call(print, 'then')),
-                    group(concat(['{:catch', node.error ? ' ' + node.error : '', '}'])),
-                    indent(path.call(print, 'catch')),
                     '{/await}',
                 ]),
             );
