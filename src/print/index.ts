@@ -30,6 +30,24 @@ declare module 'prettier' {
     }
 }
 
+// @see http://xahlee.info/js/html5_non-closing_tag.html
+const SELF_CLOSING_TAGS = [
+    'area',
+    'base',
+    'br',
+    'col',
+    'embed',
+    'hr',
+    'img',
+    'input',
+    'link',
+    'meta',
+    'param',
+    'source',
+    'track',
+    'wbr',
+];
+
 export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
     const n = path.getValue();
     if (!n) {
@@ -69,7 +87,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         return group(join(hardline, parts));
     }
 
-    const [open, close] = ['{', '}'];
+    const [open, close] = options.svelteStrictMode ? ['"{', '}"'] : ['{', '}'];
     const node = n as Node;
     switch (node.type) {
         case 'Fragment':
@@ -117,6 +135,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Head':
         case 'Title': {
             const notEmpty = node.children.some(child => !isEmptyNode(child));
+            const isSelfClosingTag =
+                !notEmpty && (node.type !== 'Element' || SELF_CLOSING_TAGS.includes(node.name));
+
             return group(
                 concat([
                     '<',
@@ -135,17 +156,17 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                                     : '',
                                 ...path.map(childPath => childPath.call(print), 'attributes'),
                                 options.svelteBracketNewLine
-                                    ? dedent(notEmpty ? softline : line)
+                                    ? dedent(isSelfClosingTag ? softline : line)
                                     : '',
                             ]),
                         ),
                     ),
 
-                    notEmpty ? '>' : `${options.svelteBracketNewLine ? '' : ' '}/>`,
+                    isSelfClosingTag ? `${options.svelteBracketNewLine ? '' : ' '}/>` : '>',
 
                     notEmpty ? indent(printChildren(path, print)) : '',
 
-                    notEmpty ? concat(['</', node.name, '>']) : '',
+                    isSelfClosingTag ? '' : concat(['</', node.name, '>']),
                 ]),
             );
         }
@@ -189,7 +210,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             const def: Doc[] = [line, node.name];
             if (node.value !== true) {
                 def.push('=');
-                const quotes = !hasLoneMustacheTag;
+                const quotes = !hasLoneMustacheTag || options.svelteStrictMode;
 
                 quotes && def.push('"');
                 def.push(...path.map(childPath => childPath.call(print), 'value'));
@@ -302,7 +323,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 node.expression.type === 'Identifier' && node.expression.name === node.name
                     ? ''
-                    : concat(['=', '{', printJS(path, print, 'expression'), '}']),
+                    : concat(['=', open, printJS(path, print, 'expression'), close]),
             ]);
         case 'Class':
             return concat([
@@ -311,7 +332,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 node.expression.type === 'Identifier' && node.expression.name === node.name
                     ? ''
-                    : concat(['=', '{', printJS(path, print, 'expression'), '}']),
+                    : concat(['=', open, printJS(path, print, 'expression'), close]),
             ]);
         case 'Let':
             return concat([
@@ -322,7 +343,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 !node.expression ||
                 (node.expression.type === 'Identifier' && node.expression.name === node.name)
                     ? ''
-                    : concat(['=', '{', printJS(path, print, 'expression'), '}']),
+                    : concat(['=', open, printJS(path, print, 'expression'), close]),
             ]);
         case 'DebugTag':
             return concat([

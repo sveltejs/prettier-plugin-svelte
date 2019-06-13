@@ -6,6 +6,7 @@ declare module 'prettier' {
 
 export interface PluginOptions {
     svelteSortOrder: SortOrder;
+    svelteStrictMode: boolean;
     svelteBracketNewLine: boolean;
 }
 
@@ -22,6 +23,11 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
             { value: 'styles-markup-scripts' },
             { value: 'styles-scripts-markup' },
         ],
+    },
+    svelteStrictMode: {
+        type: 'boolean',
+        default: false,
+        description: 'More strict HTML syntax: self-closed tags, quotes in attributes',
     },
     svelteBracketNewLine: {
         type: 'boolean',
