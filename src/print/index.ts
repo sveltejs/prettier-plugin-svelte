@@ -134,9 +134,12 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Window':
         case 'Head':
         case 'Title': {
-            const notEmpty = node.children.some(child => !isEmptyNode(child));
+            const isEmpty = node.children.every(child => isEmptyNode(child));
             const isSelfClosingTag =
-                !notEmpty && (node.type !== 'Element' || SELF_CLOSING_TAGS.includes(node.name));
+                isEmpty &&
+                (!options.svelteStrictMode ||
+                    node.type !== 'Element' ||
+                    SELF_CLOSING_TAGS.indexOf(node.name) !== -1);
 
             return group(
                 concat([
@@ -149,14 +152,15 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                                 node.type === 'InlineComponent' && node.expression
                                     ? concat([
                                           line,
-                                          'this={',
+                                          'this=',
+                                          open,
                                           printJS(path, print, 'expression'),
-                                          '}',
+                                          close,
                                       ])
                                     : '',
                                 ...path.map(childPath => childPath.call(print), 'attributes'),
                                 options.svelteBracketNewLine
-                                    ? dedent(isSelfClosingTag ? softline : line)
+                                    ? dedent(isSelfClosingTag ? line : softline)
                                     : '',
                             ]),
                         ),
@@ -164,7 +168,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
                     isSelfClosingTag ? `${options.svelteBracketNewLine ? '' : ' '}/>` : '>',
 
-                    notEmpty ? indent(printChildren(path, print)) : '',
+                    isEmpty ? '' : indent(printChildren(path, print)),
 
                     isSelfClosingTag ? '' : concat(['</', node.name, '>']),
                 ]),
