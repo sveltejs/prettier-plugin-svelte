@@ -51,7 +51,7 @@ and add your preferred configuration options:
 
 ```json
 {
-  "svelteSortOrder" : 'styles-scripts-markup',
+  "svelteSortOrder" : "styles-scripts-markup",
   "svelteStrictMode": true,
   "allowShorthand": false
 }
