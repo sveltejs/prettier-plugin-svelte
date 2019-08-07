@@ -8,6 +8,7 @@ export interface PluginOptions {
     svelteSortOrder: SortOrder;
     svelteStrictMode: boolean;
     svelteBracketNewLine: boolean;
+    allowShorthand: boolean;
 }
 
 export const options: Record<keyof PluginOptions, SupportOption> = {
@@ -33,6 +34,11 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
         type: 'boolean',
         default: false,
         description: 'Put the `>` of a multiline element on a new line',
+    },
+    allowShorthand: {
+        type: 'boolean',
+        default: true,
+        description: 'Option to enable/disable component attribute shorthand if name and value are same',
     },
 };
 

@@ -151,12 +151,12 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                             concat([
                                 node.type === 'InlineComponent' && node.expression
                                     ? concat([
-                                          line,
-                                          'this=',
-                                          open,
-                                          printJS(path, print, 'expression'),
-                                          close,
-                                      ])
+                                        line,
+                                        'this=',
+                                        open,
+                                        printJS(path, print, 'expression'),
+                                        close,
+                                    ])
                                     : '',
                                 ...path.map(childPath => childPath.call(print), 'attributes'),
                                 options.svelteBracketNewLine
@@ -204,7 +204,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             if (hasLoneMustacheTag) {
                 const expression = (node.value as [MustacheTagNode])[0].expression;
                 isAttributeShorthand =
-                    expression.type === 'Identifier' && expression.name === node.name;
+                    options.allowShorthand && expression.type === 'Identifier' && expression.name === node.name;
             }
 
             if (isAttributeShorthand) {
@@ -380,7 +380,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 // shorthand let directives have `null` expressions
                 !node.expression ||
-                (node.expression.type === 'Identifier' && node.expression.name === node.name)
+                    (node.expression.type === 'Identifier' && node.expression.name === node.name)
                     ? ''
                     : concat(['=', open, printJS(path, print, 'expression'), close]),
             ]);
