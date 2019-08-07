@@ -204,7 +204,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             if (hasLoneMustacheTag) {
                 const expression = (node.value as [MustacheTagNode])[0].expression;
                 isAttributeShorthand =
-                    options.allowShorthand && expression.type === 'Identifier' && expression.name === node.name;
+                    options.svelteAllowShorthand && expression.type === 'Identifier' && expression.name === node.name;
             }
 
             if (isAttributeShorthand) {
