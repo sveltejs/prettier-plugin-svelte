@@ -151,12 +151,12 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                             concat([
                                 node.type === 'InlineComponent' && node.expression
                                     ? concat([
-                                          line,
-                                          'this=',
-                                          open,
-                                          printJS(path, print, 'expression'),
-                                          close,
-                                      ])
+                                        line,
+                                        'this=',
+                                        open,
+                                        printJS(path, print, 'expression'),
+                                        close,
+                                    ])
                                     : '',
                                 ...path.map(childPath => childPath.call(print), 'attributes'),
                                 options.svelteBracketNewLine
@@ -189,7 +189,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 ]),
             );
         case 'Identifier':
-            return node.name;
+					return node.name;
+				case 'AttributeShorthand': {
+					return node.expression.name;
+				}
         case 'Attribute': {
             const hasLoneMustacheTag =
                 node.value !== true &&
@@ -204,23 +207,23 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             if (hasLoneMustacheTag) {
                 const expression = (node.value as [MustacheTagNode])[0].expression;
                 isAttributeShorthand =
-                    expression.type === 'Identifier' && expression.name === node.name;
+									expression.type === 'Identifier' && expression.name === node.name;
             }
 
-            if (isAttributeShorthand) {
+            if (isAttributeShorthand && options.svelteAllowShorthand) {
                 return concat([line, '{', node.name, '}']);
-            }
+						} else {
+							const def: Doc[] = [line, node.name];
+							if (node.value !== true) {
+									def.push('=');
+									const quotes = !hasLoneMustacheTag || options.svelteStrictMode;
 
-            const def: Doc[] = [line, node.name];
-            if (node.value !== true) {
-                def.push('=');
-                const quotes = !hasLoneMustacheTag || options.svelteStrictMode;
-
-                quotes && def.push('"');
-                def.push(...path.map(childPath => childPath.call(print), 'value'));
-                quotes && def.push('"');
-            }
-            return concat(def);
+									quotes && def.push('"');
+									def.push(...path.map(childPath => childPath.call(print), 'value'));
+									quotes && def.push('"');
+							}
+							return concat(def);
+						}
         }
         case 'MustacheTag':
             return concat(['{', printJS(path, print, 'expression'), '}']);
@@ -380,7 +383,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 // shorthand let directives have `null` expressions
                 !node.expression ||
-                (node.expression.type === 'Identifier' && node.expression.name === node.name)
+                    (node.expression.type === 'Identifier' && node.expression.name === node.name)
                     ? ''
                     : concat(['=', open, printJS(path, print, 'expression'), close]),
             ]);
