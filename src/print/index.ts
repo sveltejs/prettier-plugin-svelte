@@ -326,6 +326,26 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 );
             }
 
+            if (hasCatchBlock) {
+                return group(
+                    concat([
+                        group(
+                            concat([
+                                '{#await ',
+                                printJS(path, print, 'expression'),
+                                ' then ',
+                                node.value ? node.value : '',
+                                '}',
+                            ]),
+                        ),
+                        indent(path.call(print, 'then')),
+                        group(concat(['{:catch', node.error ? ' ' + node.error : '', '}'])),
+                        indent(path.call(print, 'catch')),
+                        '{/await}',
+                    ]),
+                );
+            }
+
             return group(
                 concat([
                     group(
