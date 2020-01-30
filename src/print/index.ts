@@ -297,50 +297,49 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'AwaitBlock': {
             const hasPendingBlock =
                 node.pending.children.length !== 0 && !node.pending.children.every(isEmptyNode);
+            const hasThenBlock =
+                node.then.children.length !== 0 && !node.then.children.every(isEmptyNode);
             const hasCatchBlock =
                 node.catch.children.length !== 0 && !node.catch.children.every(isEmptyNode);
 
-            if (hasPendingBlock && hasCatchBlock) {
-                return group(
-                    concat([
-                        group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
-                        indent(path.call(print, 'pending')),
+            let block = []
+
+            if (!hasPendingBlock && hasThenBlock) {
+                block.push(
+                    group(concat([
+                        '{#await ',
+                        printJS(path, print, 'expression'),
+                        ' then ',
+                        node.value ? node.value : '',
+                        '}',
+                    ])),
+                    indent(path.call(print, 'then'))
+                )
+            } else {
+                block.push(group(concat(['{#await ', printJS(path, print, 'expression'), '}'])))
+
+                if (hasPendingBlock) {
+                    block.push(indent(path.call(print, 'pending')))
+                }
+
+                if (hasThenBlock) {
+                    block.push(
                         group(concat(['{:then', node.value ? ' ' + node.value : '', '}'])),
-                        indent(path.call(print, 'then')),
-                        group(concat(['{:catch', node.error ? ' ' + node.error : '', '}'])),
-                        indent(path.call(print, 'catch')),
-                        '{/await}',
-                    ]),
-                );
+                        indent(path.call(print, 'then'))
+                    )
+                }
             }
 
-            if (hasPendingBlock) {
-                return group(
-                    concat([
-                        group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
-                        indent(path.call(print, 'pending')),
-                        group(concat(['{:then', node.value ? ' ' + node.value : '', '}'])),
-                        indent(path.call(print, 'then')),
-                        '{/await}',
-                    ]),
-                );
+            if (hasCatchBlock) {
+                block.push(
+                    group(concat(['{:catch', node.error ? ' ' + node.error : '', '}'])),
+                    indent(path.call(print, 'catch'))
+                )
             }
 
-            return group(
-                concat([
-                    group(
-                        concat([
-                            '{#await ',
-                            printJS(path, print, 'expression'),
-                            ' then ',
-                            node.value ? node.value : '',
-                            '}',
-                        ]),
-                    ),
-                    indent(path.call(print, 'then')),
-                    '{/await}',
-                ]),
-            );
+            block.push('{/await}')
+
+            return group(concat(block));
         }
         case 'ThenBlock':
         case 'PendingBlock':
