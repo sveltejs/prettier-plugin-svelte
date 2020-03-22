@@ -1,5 +1,5 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
-import { Node, MustacheTagNode, IfBlockNode, EachBlockNode } from './nodes';
+import { Node, IdentifierNode, MustacheTagNode, IfBlockNode, EachBlockNode } from './nodes';
 import { isASTNode } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
@@ -300,18 +300,44 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             const hasCatchBlock =
                 node.catch.children.length !== 0 && !node.catch.children.every(isEmptyNode);
 
+            let then = expandNode(node.value);
+
             if (hasPendingBlock && hasCatchBlock) {
+                let catchVal = expandNode(node.error);
+
                 return group(
                     concat([
                         group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
                         indent(path.call(print, 'pending')),
-                        group(concat(['{:then', node.value ? ' ' + node.value : '', '}'])),
+                        group(concat(['{:then', then, '}'])),
                         indent(path.call(print, 'then')),
-                        group(concat(['{:catch', node.error ? ' ' + node.error : '', '}'])),
+                        group(concat(['{:catch', catchVal, '}'])),
                         indent(path.call(print, 'catch')),
                         '{/await}',
                     ]),
                 );
+            }
+
+            if (hasCatchBlock) {
+              let catchVal = expandNode(node.error);
+
+              return group(
+                  concat([
+                    group(
+                        concat([
+                            '{#await ',
+                            printJS(path, print, 'expression'),
+                            ' then',
+                            then,
+                            '}',
+                        ]),
+                    ),
+                    indent(path.call(print, 'then')),
+                    group(concat(['{:catch', catchVal, '}'])),
+                    indent(path.call(print, 'catch')),
+                    '{/await}',
+                  ]),
+              );
             }
 
             if (hasPendingBlock) {
@@ -319,7 +345,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     concat([
                         group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
                         indent(path.call(print, 'pending')),
-                        group(concat(['{:then', node.value ? ' ' + node.value : '', '}'])),
+                        group(concat(['{:then', then, '}'])),
                         indent(path.call(print, 'then')),
                         '{/await}',
                     ]),
@@ -332,8 +358,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         concat([
                             '{#await ',
                             printJS(path, print, 'expression'),
-                            ' then ',
-                            node.value ? node.value : '',
+                            ' then',
+                            then,
                             '}',
                         ]),
                     ),
@@ -593,4 +619,52 @@ function isInlineNode(node: Node): boolean {
 
 function isEmptyNode(node: Node): boolean {
     return node.type === 'Text' && (node.raw || node.data).trim() === '';
+}
+
+function expandNode(node) {
+    if (node === null) {
+      return '';
+    }
+
+    let output: String; 
+
+    switch (node.type) {
+        case 'ArrayPattern':
+          let elems = node.elements.map(function(n) { return expandNode(n) });
+          output = ' [' +  elems.join(',') + ' ]';
+
+          break;
+        case 'AssignmentPattern':
+          output = expandNode(node.left) + ' =' + expandNode(node.right);  
+
+          break;
+        case 'Identifier':
+          output = ' ' + node.name;
+
+          break;
+        case 'Literal':
+          output = ' ' + node.raw;
+
+          break;
+        case 'ObjectPattern':
+          let objectElems = node.properties.map(function(n) { return expandNode(n) });
+          output = ' {' + objectElems.join(',') + ' }';
+
+          break;
+        case 'Property':
+          if (node.value.type === 'ObjectPattern') {
+            output = ' ' + node.key.name + ':' + expandNode(node.value);
+          } else {
+            output = expandNode(node.value);
+          }
+
+          break;
+
+        case 'RestElement':
+          output = ' ...' + node.argument.name;
+
+          break;
+    }
+
+    return output;
 }
