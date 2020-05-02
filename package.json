@@ -11,7 +11,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/UnwrittenFun/prettier-plugin-svelte.git"
+        "url": "git+https://github.com/sveltejs/prettier-plugin-svelte.git"
     },
     "keywords": [
         "prettier",
@@ -20,9 +20,9 @@
     "author": "James Birtles <jameshbirtles@gmail.com>",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/UnwrittenFun/prettier-plugin-svelte/issues"
+        "url": "https://github.com/sveltejs/prettier-plugin-svelte/issues"
     },
-    "homepage": "https://github.com/UnwrittenFun/prettier-plugin-svelte#readme",
+    "homepage": "https://github.com/sveltejs/prettier-plugin-svelte#readme",
     "dependencies": {
         "tslib": "^1.9.3"
     },
