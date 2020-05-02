@@ -3,6 +3,10 @@
     "version": "0.7.0",
     "description": "Svelte plugin for prettier",
     "main": "plugin.js",
+    "files": [
+        "plugin.js",
+        "plugin.js.map"
+    ],
     "scripts": {
         "build": "rollup -c",
         "test": "ava",
