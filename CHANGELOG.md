@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## Unreleased
+## 1.0.0
 
 * Support Prettier 2
 * Add `svelteAllowShorthand` option
