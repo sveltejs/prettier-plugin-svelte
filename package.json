@@ -3,6 +3,10 @@
     "version": "0.7.0",
     "description": "Svelte plugin for prettier",
     "main": "plugin.js",
+    "files": [
+        "plugin.js",
+        "plugin.js.map"
+    ],
     "scripts": {
         "build": "rollup -c",
         "test": "ava",
@@ -11,7 +15,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/UnwrittenFun/prettier-plugin-svelte.git"
+        "url": "git+https://github.com/sveltejs/prettier-plugin-svelte.git"
     },
     "keywords": [
         "prettier",
@@ -20,9 +24,9 @@
     "author": "James Birtles <jameshbirtles@gmail.com>",
     "license": "MIT",
     "bugs": {
-        "url": "https://github.com/UnwrittenFun/prettier-plugin-svelte/issues"
+        "url": "https://github.com/sveltejs/prettier-plugin-svelte/issues"
     },
-    "homepage": "https://github.com/UnwrittenFun/prettier-plugin-svelte#readme",
+    "homepage": "https://github.com/sveltejs/prettier-plugin-svelte#readme",
     "devDependencies": {
         "@types/node": "^10.12.18",
         "@types/prettier": "^2.0.0",
