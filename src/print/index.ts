@@ -626,16 +626,21 @@ function expandNode(node) {
       return '';
     }
 
-    let output: String; 
+    if (typeof node === 'string') {
+        // pre-v3.20 AST
+        return ' ' + node;
+    }
+
+    let output: String;
 
     switch (node.type) {
         case 'ArrayPattern':
-          let elems = node.elements.map(function(n) { return expandNode(n) });
-          output = ' [' +  elems.join(',') + ' ]';
+          let elems = node.elements.map(expandNode);
+          output = ' [' + elems.join(',') + ' ]';
 
           break;
         case 'AssignmentPattern':
-          output = expandNode(node.left) + ' =' + expandNode(node.right);  
+          output = expandNode(node.left) + ' =' + expandNode(node.right);
 
           break;
         case 'Identifier':
@@ -647,7 +652,7 @@ function expandNode(node) {
 
           break;
         case 'ObjectPattern':
-          let objectElems = node.properties.map(function(n) { return expandNode(n) });
+          let objectElems = node.properties.map(expandNode);
           output = ' {' + objectElems.join(',') + ' }';
 
           break;
