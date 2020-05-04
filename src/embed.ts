@@ -40,7 +40,7 @@ export function embed(
 }
 
 function expressionParser(text: string, parsers: any) {
-    const ast = parsers.babylon(`(${text})`);
+    const ast = parsers.babel(`(${text})`);
     return {
         type: 'File',
         program: ast.program.body[0].expression,
