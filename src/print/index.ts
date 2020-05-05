@@ -295,23 +295,17 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return group(concat(def));
         }
         case 'AwaitBlock': {
-            const hasPendingBlock =
-                node.pending.children.length !== 0 && !node.pending.children.every(isEmptyNode);
-            const hasCatchBlock =
-                node.catch.children.length !== 0 && !node.catch.children.every(isEmptyNode);
-
-            let then = expandNode(node.value);
+            const hasPendingBlock = node.pending.children.some((n) => !isEmptyNode(n));
+            const hasCatchBlock = node.catch.children.some((n) => !isEmptyNode(n));
 
             if (hasPendingBlock && hasCatchBlock) {
-                let catchVal = expandNode(node.error);
-
                 return group(
                     concat([
                         group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
                         indent(path.call(print, 'pending')),
-                        group(concat(['{:then', then, '}'])),
+                        group(concat(['{:then', expandNode(node.value), '}'])),
                         indent(path.call(print, 'then')),
-                        group(concat(['{:catch', catchVal, '}'])),
+                        group(concat(['{:catch', expandNode(node.error), '}'])),
                         indent(path.call(print, 'catch')),
                         '{/await}',
                     ]),
@@ -319,25 +313,23 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             }
 
             if (hasCatchBlock) {
-              let catchVal = expandNode(node.error);
-
-              return group(
-                  concat([
-                    group(
-                        concat([
-                            '{#await ',
-                            printJS(path, print, 'expression'),
-                            ' then',
-                            then,
-                            '}',
-                        ]),
-                    ),
-                    indent(path.call(print, 'then')),
-                    group(concat(['{:catch', catchVal, '}'])),
-                    indent(path.call(print, 'catch')),
-                    '{/await}',
-                  ]),
-              );
+                return group(
+                    concat([
+                        group(
+                            concat([
+                                '{#await ',
+                                printJS(path, print, 'expression'),
+                                ' then',
+                                expandNode(node.value),
+                                '}',
+                            ]),
+                        ),
+                        indent(path.call(print, 'then')),
+                        group(concat(['{:catch', expandNode(node.error), '}'])),
+                        indent(path.call(print, 'catch')),
+                        '{/await}',
+                    ]),
+                );
             }
 
             if (hasPendingBlock) {
@@ -345,7 +337,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     concat([
                         group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
                         indent(path.call(print, 'pending')),
-                        group(concat(['{:then', then, '}'])),
+                        group(concat(['{:then', expandNode(node.value), '}'])),
                         indent(path.call(print, 'then')),
                         '{/await}',
                     ]),
@@ -359,7 +351,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                             '{#await ',
                             printJS(path, print, 'expression'),
                             ' then',
-                            then,
+                            expandNode(node.value),
                             '}',
                         ]),
                     ),
@@ -621,9 +613,9 @@ function isEmptyNode(node: Node): boolean {
     return node.type === 'Text' && (node.raw || node.data).trim() === '';
 }
 
-function expandNode(node) {
+function expandNode(node): string {
     if (node === null) {
-      return '';
+        return '';
     }
 
     if (typeof node === 'string') {
@@ -631,45 +623,27 @@ function expandNode(node) {
         return ' ' + node;
     }
 
-    let output: String;
-
     switch (node.type) {
         case 'ArrayPattern':
-          let elems = node.elements.map(expandNode);
-          output = ' [' + elems.join(',') + ' ]';
-
-          break;
+            return ' [' + node.elements.map(expandNode).join(',').slice(1) + ']';
         case 'AssignmentPattern':
-          output = expandNode(node.left) + ' =' + expandNode(node.right);
-
-          break;
+            return expandNode(node.left) + ' =' + expandNode(node.right);
         case 'Identifier':
-          output = ' ' + node.name;
-
-          break;
+            return ' ' + node.name;
         case 'Literal':
-          output = ' ' + node.raw;
-
-          break;
+            return ' ' + node.raw;
         case 'ObjectPattern':
-          let objectElems = node.properties.map(expandNode);
-          output = ' {' + objectElems.join(',') + ' }';
-
-          break;
+            return ' {' + node.properties.map(expandNode).join(',') + ' }';
         case 'Property':
-          if (node.value.type === 'ObjectPattern') {
-            output = ' ' + node.key.name + ':' + expandNode(node.value);
-          } else {
-            output = expandNode(node.value);
-          }
-
-          break;
-
+            if (node.value.type === 'ObjectPattern') {
+                return ' ' + node.key.name + ':' + expandNode(node.value);
+            } else {
+                return expandNode(node.value);
+            }
         case 'RestElement':
-          output = ' ...' + node.argument.name;
-
-          break;
+            return ' ...' + node.argument.name;
     }
 
-    return output;
+    console.log(JSON.stringify(node, null, 4));
+    throw new Error('unknown node type: ' + node.type);
 }
