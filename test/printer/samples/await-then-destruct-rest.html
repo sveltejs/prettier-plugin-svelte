@@ -10,7 +10,7 @@
     <p>rest: {JSON.stringify(rest)}</p>
 {/await}
 
-{#await array then [ a, b, ...rest ]}
+{#await array then [a, b, ...rest]}
     <p>a: {a}</p>
     <p>b: {b}</p>
     <p>rest: {JSON.stringify(rest)}</p>
@@ -25,7 +25,7 @@
 
 {#await arrayReject then value}
     resolved
-{:catch [ a, b, ...rest ]}
+{:catch [a, b, ...rest]}
     <p>a: {a}</p>
     <p>b: {b}</p>
     <p>rest: {JSON.stringify(rest)}</p>
