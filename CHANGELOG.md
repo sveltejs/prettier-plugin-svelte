@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## Unreleased
+## 1.1.0
 
 * Support `<!-- prettier-ignore -->` comments ([#59](https://github.com/sveltejs/prettier-plugin-svelte/issues/59))
 * Fix `{#await}` printing with `{:catch}` but no pending block ([#76](https://github.com/sveltejs/prettier-plugin-svelte/pull/76))
