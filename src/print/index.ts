@@ -92,6 +92,19 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
     const [open, close] = options.svelteStrictMode ? ['"{', '}"'] : ['{', '}'];
     const node = n as Node;
+
+    if (ignoreNext && (node.type !== 'Text' || !isEmptyNode(node))) {
+        ignoreNext = false
+        return concat(
+            options.originalText.slice(
+                options.locStart(node),
+                options.locEnd(node)
+            )
+            .split('\n')
+            .flatMap((o, i) => i == 0 ? o : [literalline, o])
+        );
+    }
+
     switch (node.type) {
         case 'Fragment':
             const children = node.children;
@@ -138,18 +151,6 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Head':
         case 'Title': {
             const isEmpty = node.children.every(child => isEmptyNode(child));
-
-            if (ignoreNext) {
-                ignoreNext = false
-                return concat(
-                    options.originalText.slice(
-                        options.locStart(node),
-                        options.locEnd(node)
-                    )
-                    .split('\n')
-                    .flatMap((o, i) => i == 0 ? o : [literalline, o])
-                );
-            }
 
             const isSelfClosingTag =
                 isEmpty &&
