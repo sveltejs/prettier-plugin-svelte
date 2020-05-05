@@ -1,5 +1,10 @@
 # prettier-plugin-svelte changelog
 
+## Unreleased
+
+* Support `{#await}` destructuring ([#83](https://github.com/sveltejs/prettier-plugin-svelte/pull/83))
+* Fix other `{#await}` handling in Svelte versions since 3.20 ([#83](https://github.com/sveltejs/prettier-plugin-svelte/pull/83))
+
 ## 1.0.0
 
 * Support Prettier 2
