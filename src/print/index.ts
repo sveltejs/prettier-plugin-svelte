@@ -16,6 +16,7 @@ const {
     hardline,
     fill,
     breakParent,
+    literalline
 } = doc.builders;
 
 export type PrintFn = (path: FastPath) => Doc;
@@ -47,6 +48,8 @@ const SELF_CLOSING_TAGS = [
     'track',
     'wbr',
 ];
+
+let ignoreNext = false;
 
 export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
     const n = path.getValue();
@@ -89,6 +92,19 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
     const [open, close] = options.svelteStrictMode ? ['"{', '}"'] : ['{', '}'];
     const node = n as Node;
+
+    if (ignoreNext && (node.type !== 'Text' || !isEmptyNode(node))) {
+        ignoreNext = false
+        return concat(
+            options.originalText.slice(
+                options.locStart(node),
+                options.locEnd(node)
+            )
+            .split('\n')
+            .flatMap((o, i) => i == 0 ? o : [literalline, o])
+        );
+    }
+
     switch (node.type) {
         case 'Fragment':
             const children = node.children;
@@ -135,6 +151,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Head':
         case 'Title': {
             const isEmpty = node.children.every(child => isEmptyNode(child));
+
             const isSelfClosingTag =
                 isEmpty &&
                 (!options.svelteStrictMode ||
@@ -417,6 +434,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return concat([line, 'ref:', node.name]);
         case 'Comment': {
             let text = node.data;
+            ignoreNext = text.trim() === 'prettier-ignore'
             if (hasSnippedContent(text)) {
                 text = unsnipContent(text);
             }
