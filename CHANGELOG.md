@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Support `<!-- prettier-ignore -->` comments ([#59](https://github.com/sveltejs/prettier-plugin-svelte/issues/59))
+* Fix `{#await}` printing with `{:catch}` but no pending block ([#76](https://github.com/sveltejs/prettier-plugin-svelte/pull/76))
 * Support `{#await}` destructuring ([#83](https://github.com/sveltejs/prettier-plugin-svelte/pull/83))
 * Fix other `{#await}` handling in Svelte versions since 3.20 ([#83](https://github.com/sveltejs/prettier-plugin-svelte/pull/83))
 
