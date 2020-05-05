@@ -16,7 +16,7 @@ const {
     hardline,
     fill,
     breakParent,
-    literalline
+    literalline,
 } = doc.builders;
 
 export type PrintFn = (path: FastPath) => Doc;
@@ -313,56 +313,13 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         }
         case 'AwaitBlock': {
             const hasPendingBlock = node.pending.children.some((n) => !isEmptyNode(n));
+            const hasThenBlock = node.then.children.some((n) => !isEmptyNode(n));
             const hasCatchBlock = node.catch.children.some((n) => !isEmptyNode(n));
 
-            if (hasPendingBlock && hasCatchBlock) {
-                return group(
-                    concat([
-                        group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
-                        indent(path.call(print, 'pending')),
-                        group(concat(['{:then', expandNode(node.value), '}'])),
-                        indent(path.call(print, 'then')),
-                        group(concat(['{:catch', expandNode(node.error), '}'])),
-                        indent(path.call(print, 'catch')),
-                        '{/await}',
-                    ]),
-                );
-            }
+            let block = [];
 
-            if (hasCatchBlock) {
-                return group(
-                    concat([
-                        group(
-                            concat([
-                                '{#await ',
-                                printJS(path, print, 'expression'),
-                                ' then',
-                                expandNode(node.value),
-                                '}',
-                            ]),
-                        ),
-                        indent(path.call(print, 'then')),
-                        group(concat(['{:catch', expandNode(node.error), '}'])),
-                        indent(path.call(print, 'catch')),
-                        '{/await}',
-                    ]),
-                );
-            }
-
-            if (hasPendingBlock) {
-                return group(
-                    concat([
-                        group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
-                        indent(path.call(print, 'pending')),
-                        group(concat(['{:then', expandNode(node.value), '}'])),
-                        indent(path.call(print, 'then')),
-                        '{/await}',
-                    ]),
-                );
-            }
-
-            return group(
-                concat([
+            if (!hasPendingBlock && hasThenBlock) {
+                block.push(
                     group(
                         concat([
                             '{#await ',
@@ -373,9 +330,32 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         ]),
                     ),
                     indent(path.call(print, 'then')),
-                    '{/await}',
-                ]),
-            );
+                );
+            } else {
+                block.push(group(concat(['{#await ', printJS(path, print, 'expression'), '}'])));
+
+                if (hasPendingBlock) {
+                    block.push(indent(path.call(print, 'pending')));
+                }
+
+                if (hasThenBlock) {
+                    block.push(
+                        group(concat(['{:then', expandNode(node.value), '}'])),
+                        indent(path.call(print, 'then')),
+                    );
+                }
+            }
+
+            if (hasCatchBlock) {
+                block.push(
+                    group(concat(['{:catch', expandNode(node.error), '}'])),
+                    indent(path.call(print, 'catch')),
+                );
+            }
+
+            block.push('{/await}');
+
+            return group(concat(block));
         }
         case 'ThenBlock':
         case 'PendingBlock':
@@ -434,7 +414,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return concat([line, 'ref:', node.name]);
         case 'Comment': {
             let text = node.data;
-            ignoreNext = text.trim() === 'prettier-ignore'
+            ignoreNext = text.trim() === 'prettier-ignore';
             if (hasSnippedContent(text)) {
                 text = unsnipContent(text);
             }
