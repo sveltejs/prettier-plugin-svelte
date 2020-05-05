@@ -1,5 +1,5 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
-import { Node, MustacheTagNode, IfBlockNode, EachBlockNode } from './nodes';
+import { Node, IdentifierNode, MustacheTagNode, IfBlockNode, EachBlockNode } from './nodes';
 import { isASTNode } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
@@ -295,19 +295,37 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return group(concat(def));
         }
         case 'AwaitBlock': {
-            const hasPendingBlock =
-                node.pending.children.length !== 0 && !node.pending.children.every(isEmptyNode);
-            const hasCatchBlock =
-                node.catch.children.length !== 0 && !node.catch.children.every(isEmptyNode);
+            const hasPendingBlock = node.pending.children.some((n) => !isEmptyNode(n));
+            const hasCatchBlock = node.catch.children.some((n) => !isEmptyNode(n));
 
             if (hasPendingBlock && hasCatchBlock) {
                 return group(
                     concat([
                         group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
                         indent(path.call(print, 'pending')),
-                        group(concat(['{:then', node.value ? ' ' + node.value : '', '}'])),
+                        group(concat(['{:then', expandNode(node.value), '}'])),
                         indent(path.call(print, 'then')),
-                        group(concat(['{:catch', node.error ? ' ' + node.error : '', '}'])),
+                        group(concat(['{:catch', expandNode(node.error), '}'])),
+                        indent(path.call(print, 'catch')),
+                        '{/await}',
+                    ]),
+                );
+            }
+
+            if (hasCatchBlock) {
+                return group(
+                    concat([
+                        group(
+                            concat([
+                                '{#await ',
+                                printJS(path, print, 'expression'),
+                                ' then',
+                                expandNode(node.value),
+                                '}',
+                            ]),
+                        ),
+                        indent(path.call(print, 'then')),
+                        group(concat(['{:catch', expandNode(node.error), '}'])),
                         indent(path.call(print, 'catch')),
                         '{/await}',
                     ]),
@@ -319,7 +337,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     concat([
                         group(concat(['{#await ', printJS(path, print, 'expression'), '}'])),
                         indent(path.call(print, 'pending')),
-                        group(concat(['{:then', node.value ? ' ' + node.value : '', '}'])),
+                        group(concat(['{:then', expandNode(node.value), '}'])),
                         indent(path.call(print, 'then')),
                         '{/await}',
                     ]),
@@ -332,8 +350,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         concat([
                             '{#await ',
                             printJS(path, print, 'expression'),
-                            ' then ',
-                            node.value ? node.value : '',
+                            ' then',
+                            expandNode(node.value),
                             '}',
                         ]),
                     ),
@@ -593,4 +611,39 @@ function isInlineNode(node: Node): boolean {
 
 function isEmptyNode(node: Node): boolean {
     return node.type === 'Text' && (node.raw || node.data).trim() === '';
+}
+
+function expandNode(node): string {
+    if (node === null) {
+        return '';
+    }
+
+    if (typeof node === 'string') {
+        // pre-v3.20 AST
+        return ' ' + node;
+    }
+
+    switch (node.type) {
+        case 'ArrayPattern':
+            return ' [' + node.elements.map(expandNode).join(',').slice(1) + ']';
+        case 'AssignmentPattern':
+            return expandNode(node.left) + ' =' + expandNode(node.right);
+        case 'Identifier':
+            return ' ' + node.name;
+        case 'Literal':
+            return ' ' + node.raw;
+        case 'ObjectPattern':
+            return ' {' + node.properties.map(expandNode).join(',') + ' }';
+        case 'Property':
+            if (node.value.type === 'ObjectPattern') {
+                return ' ' + node.key.name + ':' + expandNode(node.value);
+            } else {
+                return expandNode(node.value);
+            }
+        case 'RestElement':
+            return ' ...' + node.argument.name;
+    }
+
+    console.log(JSON.stringify(node, null, 4));
+    throw new Error('unknown node type: ' + node.type);
 }

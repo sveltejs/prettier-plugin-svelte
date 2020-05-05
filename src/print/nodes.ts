@@ -69,8 +69,8 @@ export interface EachBlockNode extends BaseNode {
 export interface AwaitBlockNode extends BaseNode {
     type: 'AwaitBlock';
     expression: Node;
-    value?: string;
-    error?: string;
+    value?: Node;
+    error?: Node;
     pending: PendingBlockNode;
     then: ThenBlockNode;
     catch: CatchBlockNode;
