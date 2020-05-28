@@ -18,8 +18,7 @@ export function embed(
     if (node.isJS) {
         return removeLines(
             textToDoc(getText(node, options), {
-                parser: expressionParser,
-                singleQuote: true,
+                parser: expressionParser
             }),
         );
     }
