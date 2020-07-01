@@ -44,6 +44,7 @@ function expressionParser(text: string, parsers: any) {
     return {
         type: 'File',
         program: ast.program.body[0].expression,
+        comments: ast.comments,
     };
 }
 
