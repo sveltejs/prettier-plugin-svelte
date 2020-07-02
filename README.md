@@ -21,8 +21,8 @@ and add your preferred configuration options:
 
 
 - **`svelteSortOrder`**
-  - Default: `scripts-styles-markup`
-  - Sort order for scripts, styles, and markup.
+  - Default: `scripts-markup-styles`
+  - Sort order for scripts, markup and styles.
 
 - **`svelteStrictMode`**
   - Default: `false`
