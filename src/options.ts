@@ -14,11 +14,11 @@ export interface PluginOptions {
 export const options: Record<keyof PluginOptions, SupportOption> = {
     svelteSortOrder: {
         type: 'choice',
-        default: 'scripts-styles-markup',
+        default: 'scripts-markup-styles',
         description: 'Sort order for scripts, styles, and markup',
         choices: [
-            { value: 'scripts-styles-markup' },
             { value: 'scripts-markup-styles' },
+            { value: 'scripts-styles-markup' },
             { value: 'markup-styles-scripts' },
             { value: 'markup-scripts-styles' },
             { value: 'styles-markup-scripts' },
@@ -43,8 +43,8 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
 };
 
 export type SortOrder =
-    | 'scripts-styles-markup'
     | 'scripts-markup-styles'
+    | 'scripts-styles-markup'
     | 'markup-styles-scripts'
     | 'markup-scripts-styles'
     | 'styles-markup-scripts'
