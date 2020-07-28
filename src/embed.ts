@@ -24,14 +24,15 @@ export function embed(
         );
     }
 
+    const indentContent = options.svelteIndentScriptAndStyle;
     switch (node.type) {
         case 'Script':
-            return embedTag('script', path, print, textToDoc, node, false, options);
+            return embedTag('script', path, print, textToDoc, node, false, indentContent);
         case 'Style':
-            return embedTag('style', path, print, textToDoc, node, false, options);
+            return embedTag('style', path, print, textToDoc, node, false, indentContent);
         case 'Element': {
             if (node.name === 'script' || node.name === 'style') {
-                return embedTag(node.name, path, print, textToDoc, node, true, options);
+                return embedTag(node.name, path, print, textToDoc, node, true, indentContent);
             }
         }
     }
@@ -92,7 +93,7 @@ function embedTag(
     textToDoc: (text: string, options: object) => Doc,
     node: Node & { attributes: Node[] },
     inline: boolean,
-    options: ParserOptions,
+    indentContent: boolean,
 ) {
     const parser = tag === 'script' ? 'typescript' : 'css';
     const contentAttribute = (node.attributes as AttributeNode[]).find(
@@ -117,7 +118,7 @@ function embedTag(
             tag,
             indent(group(concat(path.map(childPath => childPath.call(print), 'attributes')))),
             '>',
-            options.svelteIndentScriptAndStyle ? indent(docContent) : docContent,
+            indentContent ? indent(docContent) : docContent,
             hardline,
             '</',
             tag,
