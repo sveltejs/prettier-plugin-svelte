@@ -9,6 +9,7 @@ export interface PluginOptions {
     svelteStrictMode: boolean;
     svelteBracketNewLine: boolean;
     svelteAllowShorthand: boolean;
+    svelteIndentScriptAndStyle: boolean;
 }
 
 export const options: Record<keyof PluginOptions, SupportOption> = {
@@ -39,6 +40,11 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
         type: 'boolean',
         default: true,
         description: 'Option to enable/disable component attribute shorthand if attribute name and expressions are same',
+    },
+    svelteIndentScriptAndStyle: {
+        type: 'boolean',
+        default: true,
+        description: 'Indent the contents of script and style tags inside component files',
     },
 };
 
