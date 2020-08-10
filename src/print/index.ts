@@ -1,5 +1,5 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
-import { Node, IdentifierNode, MustacheTagNode, IfBlockNode, EachBlockNode } from './nodes';
+import { Node, MustacheTagNode, IfBlockNode } from './nodes';
 import { isASTNode } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
@@ -552,9 +552,69 @@ function trimRight(group: Doc[]): void {
     last.parts.reverse();
 }
 
+function isWhitespaceChar(ch: string) {
+    return ' \t\n\r'.indexOf(ch) >= 0 
+}
+
+function canBreakAfter(node: Node) {
+    switch (node.type) {
+        case 'Text':
+            return isWhitespaceChar(node.raw[node.raw.length - 1]);
+        case 'Element':
+            return false;
+        default:
+            return true;
+    }
+}
+
+function canBreakBefore(node: Node) {
+    switch (node.type) {
+        case 'Text':
+            return isWhitespaceChar(node.raw[0]);
+        case 'Element':
+            return false;
+        default:
+            return true;
+    }
+}
+
 function printChildren(path: FastPath, print: PrintFn, surroundingLines = true): Doc {
-    const childDocs: Doc[] = [];
-    let currentGroup: Doc[] = [];
+    let childDocs: Doc[] = [];
+    let currentGroup: { doc: Doc; node: Node }[] = [];
+    // the index of the last child doc we could adding a linebreak after
+    let lastBreakIndex = -1;
+
+    function concatNonBreakableDocs() {
+        if (lastBreakIndex < childDocs.length - 1) {
+            childDocs = childDocs.slice(0, lastBreakIndex).concat(concat(childDocs.slice(lastBreakIndex)));
+        }
+
+        lastBreakIndex = -1;
+    }
+
+    /**
+     * @param childDoc null means "consider to be whitespace"
+     */
+    function outputChildDoc(childDoc: Doc | null, fromNodes: Node[]) {
+        const firstNode = fromNodes[0];
+        const lastNode = fromNodes[fromNodes.length - 1];
+
+        if (lastBreakIndex >= 0 && (!childDoc || canBreakBefore(firstNode))) {
+            concatNonBreakableDocs();
+        }
+
+        if (lastBreakIndex < 0 && childDoc && !canBreakAfter(lastNode)) {
+            lastBreakIndex = childDocs.length;
+        }
+
+        if (childDoc) {
+            childDocs.push(childDoc);
+        }
+    }
+
+    function lastChildDocProduced() {
+        outputChildDoc(null, []);
+    }
 
     /**
      * Sequences of inline nodes (currently, `TextNode`s and `MustacheTag`s) are collected into
@@ -564,27 +624,35 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
      * desired to have text directly wrapping a mustache tag without additional whitespace.
      */
     function flush() {
-        if (!isEmptyGroup(currentGroup)) {
-            trimLeft(currentGroup);
-            trimRight(currentGroup);
-            childDocs.push(fill(currentGroup));
+        const groupDocs = currentGroup.map((item) => item.doc);
+        const groupNodes = currentGroup.map((item) => item.node);
+
+        if (!isEmptyGroup(groupDocs)) {
+            trimLeft(groupDocs);
+            trimRight(groupDocs);
+
+            outputChildDoc(fill(groupDocs), groupNodes);
+        } else {
+            outputChildDoc(null, groupNodes);
         }
+
         currentGroup = [];
     }
 
-    path.each(childPath => {
+    path.each((childPath) => {
         const childNode = childPath.getValue() as Node;
         const childDoc = childPath.call(print);
 
         if (isInlineNode(childNode)) {
-            currentGroup.push(childDoc);
+            currentGroup.push({ doc: childDoc, node: childNode });
         } else {
             flush();
-            childDocs.push(concat([breakParent, childDoc]));
+            outputChildDoc(concat([breakParent, childDoc]), [childNode]);
         }
     }, 'children');
 
     flush();
+    lastChildDocProduced()
 
     return concat([
         surroundingLines ? softline : '',
