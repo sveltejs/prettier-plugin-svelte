@@ -5,6 +5,7 @@ import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { parseSortOrder, SortOrderPart } from '../options';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
+import { inlineElements, TagName } from '../lib/elements';
 const {
     concat,
     join,
@@ -185,7 +186,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
                     isSelfClosingTag ? `${options.svelteBracketNewLine ? '' : ' '}/>` : '>',
 
-                    isEmpty ? '' : indent(printChildren(path, print)),
+                    isEmpty ? '' : indent(printChildren(path, print, !isInlineElement(node))),
 
                     isSelfClosingTag ? '' : concat(['</', node.name, '>']),
                 ]),
@@ -547,7 +548,7 @@ function trimRight(group: Doc[]): void {
     const trimIndex = last.parts.findIndex(part =>
         typeof part === 'string' ? part !== '' : part.type !== 'line',
     );
-
+    
     last.parts.splice(0, trimIndex);
     last.parts.reverse();
 }
@@ -556,12 +557,16 @@ function isWhitespaceChar(ch: string) {
     return ' \t\n\r'.indexOf(ch) >= 0 
 }
 
+function isInlineElement(node: Node) {
+    return node.type === 'Element' && inlineElements.includes(node.name as TagName)
+}
+
 function canBreakAfter(node: Node) {
     switch (node.type) {
         case 'Text':
             return isWhitespaceChar(node.raw[node.raw.length - 1]);
         case 'Element':
-            return false;
+            return !isInlineElement(node);
         default:
             return true;
     }
@@ -572,7 +577,7 @@ function canBreakBefore(node: Node) {
         case 'Text':
             return isWhitespaceChar(node.raw[0]);
         case 'Element':
-            return false;
+            return !isInlineElement(node);
         default:
             return true;
     }
@@ -623,13 +628,15 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
      * prematurely. This is particularly important for whitespace sensitivity, as it is often
      * desired to have text directly wrapping a mustache tag without additional whitespace.
      */
-    function flush() {
+    function flush({shouldTrim}: {shouldTrim: boolean} = {shouldTrim: false}) {
         const groupDocs = currentGroup.map((item) => item.doc);
         const groupNodes = currentGroup.map((item) => item.node);
 
         if (!isEmptyGroup(groupDocs)) {
-            trimLeft(groupDocs);
-            trimRight(groupDocs);
+            if (shouldTrim) {
+                trimLeft(groupDocs);
+                trimRight(groupDocs);
+            }
 
             outputChildDoc(fill(groupDocs), groupNodes);
         } else {
@@ -651,7 +658,7 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
         }
     }, 'children');
 
-    flush();
+    flush({shouldTrim: surroundingLines});
     lastChildDocProduced()
 
     return concat([
