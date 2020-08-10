@@ -581,7 +581,7 @@ function canBreakBefore(node: Node) {
 function printChildren(path: FastPath, print: PrintFn, surroundingLines = true): Doc {
     let childDocs: Doc[] = [];
     let currentGroup: { doc: Doc; node: Node }[] = [];
-    // the index of the last child doc we could adding a linebreak after
+    // the index of the last child doc we could add a linebreak after
     let lastBreakIndex = -1;
 
     function concatNonBreakableDocs() {
