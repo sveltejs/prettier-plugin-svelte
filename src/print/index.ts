@@ -229,7 +229,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             if (isAttributeShorthand && options.svelteAllowShorthand) {
                 return concat([line, '{', node.name, '}']);
-			} else {
+            } else {
                 const def: Doc[] = [line, node.name];
                 if (node.value !== true) {
                     def.push('=');
