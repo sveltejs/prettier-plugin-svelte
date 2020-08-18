@@ -13,7 +13,7 @@ for (const dir of dirs) {
         `test/formatting/samples/${dir}/output.html`,
         'utf-8',
     ).replace(/\r?\n/g, '\n');
-    const options = readOptions(`test/printer/samples/${dir}/options.json`);
+    const options = readOptions(`test/formatting/samples/${dir}/options.json`);
 
     test(`formatting: ${dir}`, t => {
         const actualOutput = format(input, {
