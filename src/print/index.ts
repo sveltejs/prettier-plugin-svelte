@@ -550,12 +550,24 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
     // the index of the last child doc we could add a linebreak after
     let lastBreakIndex = -1;
 
-    function concatNonBreakableDocs() {
-        if (lastBreakIndex < childDocs.length - 1) {
+    function breakPossible(addLine: boolean) {
+        if (lastBreakIndex >= 0 && lastBreakIndex < childDocs.length - 1) {
             childDocs = childDocs.slice(0, lastBreakIndex).concat(concat(childDocs.slice(lastBreakIndex)));
         }
 
+        if (addLine) {
+            childDocs.push(softline)
+        }
+
         lastBreakIndex = -1;
+    }
+
+    function renameMe(doc: Doc) {
+        if (typeof doc !== 'object' ){
+            return false
+        }
+
+        return doc.type === 'line' && !doc.keepIfLonely
     }
 
     /**
@@ -565,8 +577,10 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
         const firstNode = fromNodes[0];
         const lastNode = fromNodes[fromNodes.length - 1];
 
-        if (lastBreakIndex >= 0 && (!childDoc || canBreakBefore(firstNode))) {
-            concatNonBreakableDocs();
+        if ((!childDoc || canBreakBefore(firstNode))) {
+            breakPossible(childDocs.length > 0 && childDoc != null && !renameMe(childDoc)            
+                && (!childDocs[childDocs.length-1] || !isLine(childDocs[childDocs.length-1]))
+            );
         }
 
         if (lastBreakIndex < 0 && childDoc && !canBreakAfter(lastNode)) {
@@ -630,6 +644,8 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
         currentGroup = [];
     }
 
+    let i = 0
+
     path.each((childPath) => {
         const childNode = childPath.getValue() as Node;
         const childDoc = childPath.call(print);
@@ -638,21 +654,25 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
             currentGroup.push({ doc: childDoc, node: childNode });
         } else {
             flush();
-            outputChildDoc(concat([breakParent, childDoc]), [childNode]);
+
+            outputChildDoc(isLine(childDoc) ? childDoc: concat([breakParent, childDoc]), [childNode]);
         }
     }, 'children');
 
     flush({ shouldTrim: surroundingLines });
     lastChildDocProduced();
 
-    const childrenWithLines = childDocs.reduce<Doc[]>(
-        (children, child, i) => children.concat(i > 0 && !isLine(child) ? softline : []).concat(child),
-        [],
-    );
+    if (surroundingLines) {
+        const isWhitespace = (doc: Doc) =>
+            typeof doc === 'string' ? doc === '' : doc.type === 'line';
+
+        trimLeft(childDocs, isWhitespace);
+        trimRight(childDocs, isWhitespace);
+    }
 
     return concat([
         surroundingLines ? softline : '',
-        ...childrenWithLines,
+        ...childDocs,
         surroundingLines ? dedent(softline) : '',
     ]);
 }
@@ -668,7 +688,7 @@ function printJS(path: FastPath, print: PrintFn, name?: string) {
 }
 
 function isInlineNode(node: Node): boolean {
-    return node.type === 'Text' || node.type === 'MustacheTag';
+    return (node.type === 'Text' && ((node.raw || node.data).trim() !== '' || (node.raw || node.data) === '')) || node.type === 'MustacheTag';
 }
 
 function isEmptyNode(node: Node): boolean {
