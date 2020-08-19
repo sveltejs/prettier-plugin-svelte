@@ -6,6 +6,7 @@ import { getText } from '../lib/getText';
 import { parseSortOrder, SortOrderPart } from '../options';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
 import { inlineElements, TagName } from '../lib/elements';
+import { trimLeft, trimRight } from '../lib/trim'; 
 const {
     concat,
     join,
@@ -98,7 +99,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         ignoreNext = false
         return concat(
             options.originalText.slice(
-                options.locStart(node),
+                options.locStart(node), 
                 options.locEnd(node)
             )
             .split('\n')
@@ -114,7 +115,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return '';
             }
 
-            return concat([printChildren(path, print, false), hardline]);
+            const printed = printChildren(path, print, false);
+
+            (printed as doc.builders.Concat).parts.push(hardline);
+
+            return printed;
         case 'Text':
             if (isEmptyNode(node)) {
                 return {
@@ -144,7 +149,15 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
              * until this node's current line is out of room, at which `fill` will break at the
              * most convienient instance of `line`.
              */
-            return fill(join(line, (node.raw || node.data).split(/[\t\n\f\r ]+/)).parts);
+            const parts = (node.raw || node.data).split(/[\t\n\f\r ]+/);
+
+            const els = parts.reduce<Doc[]>(
+                (res, part, i) =>
+                    res.concat((i > 0 ? [line] : []) as Doc[]).concat(part !== '' ? [part] : []),
+                [],
+            );
+
+            return fill(els);
         case 'Element':
         case 'InlineComponent':
         case 'Slot':
@@ -169,14 +182,29 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                             concat([
                                 node.type === 'InlineComponent' && node.expression
                                     ? concat([
-                                        line,
-                                        'this=',
-                                        open,
-                                        printJS(path, print, 'expression'),
-                                        close,
-                                    ])
+                                          line,
+                                          'this=',
+                                          open,
+                                          printJS(path, print, 'expression'),
+                                          close,
+                                      ])
                                     : '',
-                                ...path.map(childPath => childPath.call(print), 'attributes'),
+                                ...path.map(childPath => {
+                                    const attribute = childPath.call(print);
+
+                                    if (
+                                        typeof attribute != 'string' &&
+                                        attribute.type === 'concat' &&
+                                        (attribute.parts[0] as any).type === 'line'
+                                    ) {
+                                        return concat([
+                                            attribute.parts[0],
+                                            group(concat(attribute.parts.slice(1))),
+                                        ]);
+                                    }
+
+                                    return group(attribute);
+                                }, 'attributes'),
                                 options.svelteBracketNewLine
                                     ? dedent(isSelfClosingTag ? line : softline)
                                     : '',
@@ -207,10 +235,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 ]),
             );
         case 'Identifier':
-					return node.name;
-				case 'AttributeShorthand': {
-					return node.expression.name;
-				}
+            return node.name;
+        case 'AttributeShorthand': {
+            return node.expression.name;
+        }
         case 'Attribute': {
             const hasLoneMustacheTag =
                 node.value !== true &&
@@ -225,23 +253,23 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             if (hasLoneMustacheTag) {
                 const expression = (node.value as [MustacheTagNode])[0].expression;
                 isAttributeShorthand =
-									expression.type === 'Identifier' && expression.name === node.name;
+                    expression.type === 'Identifier' && expression.name === node.name;
             }
 
             if (isAttributeShorthand && options.svelteAllowShorthand) {
                 return concat([line, '{', node.name, '}']);
-						} else {
-							const def: Doc[] = [line, node.name];
-							if (node.value !== true) {
-									def.push('=');
-									const quotes = !hasLoneMustacheTag || options.svelteStrictMode;
+            } else {
+                const def: Doc[] = [line, node.name];
+                if (node.value !== true) {
+                    def.push('=');
+                    const quotes = !hasLoneMustacheTag || options.svelteStrictMode;
 
-									quotes && def.push('"');
-									def.push(...path.map(childPath => childPath.call(print), 'value'));
-									quotes && def.push('"');
-							}
-							return concat(def);
-						}
+                    quotes && def.push('"');
+                    def.push(...path.map(childPath => childPath.call(print), 'value'));
+                    quotes && def.push('"');
+                }
+                return concat(def);
+            }
         }
         case 'MustacheTag':
             return concat(['{', printJS(path, print, 'expression'), '}']);
@@ -399,7 +427,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 // shorthand let directives have `null` expressions
                 !node.expression ||
-                    (node.expression.type === 'Identifier' && node.expression.name === node.name)
+                (node.expression.type === 'Identifier' && node.expression.name === node.name)
                     ? ''
                     : concat(['=', open, printJS(path, print, 'expression'), close]),
             ]);
@@ -482,83 +510,16 @@ function isEmptyGroup(group: Doc[]): boolean {
     return !lonelyDoc.keepIfLonely;
 }
 
-/**
- * Due to how `String.prototype.split` works, `TextNode`s with leading whitespace will be printed
- * to a `Fill` that has two additional parts at the begnning: an empty string (`''`) and a `line`.
- * If such a `Fill` doc is present at the beginning of an inline node group, those additional parts
- * need to be removed to prevent additional whitespace at the beginning of the parent's inner
- * content or after a sibling block node (i.e. HTML tags).
- */
-function trimLeft(group: Doc[]): void {
-    if (group.length === 0) {
-        return;
-    }
-
-    const first = group[0];
-    if (typeof first === 'string') {
-        return;
-    }
-
-    if (first.type === 'line') {
-        group.shift();
-        return;
-    }
-
-    if (first.type !== 'fill') {
-        return;
-    }
-
-    // find the index of the first part that isn't an empty string or a line
-    const trimIndex = first.parts.findIndex(part =>
-        typeof part === 'string' ? part !== '' : part.type !== 'line',
-    );
-
-    first.parts.splice(0, trimIndex);
-}
-
-/**
- * Due to how `String.prototype.split` works, `TextNode`s with trailing whitespace will be printed
- * to a `Fill` that has two additional parts at the end: a `line` and an empty string (`''`). If
- * such a `Fill` doc is present at the beginning of an inline node group, those additional parts
- * need to be removed to prevent additional whitespace at the end of the parent's inner content or
- * before a sibling block node (i.e. HTML tags).
- */
-function trimRight(group: Doc[]): void {
-    if (group.length === 0) {
-        return;
-    }
-
-    const last = group[group.length - 1];
-    if (typeof last === 'string') {
-        return;
-    }
-
-    if (last.type === 'line') {
-        group.pop();
-        return;
-    }
-
-    if (last.type !== 'fill') {
-        return;
-    }
-
-    last.parts.reverse();
-
-    // find the index of the first part that isn't an empty string or a line
-    const trimIndex = last.parts.findIndex(part =>
-        typeof part === 'string' ? part !== '' : part.type !== 'line',
-    );
-    
-    last.parts.splice(0, trimIndex);
-    last.parts.reverse();
-}
+function isLine(doc: Doc) {    
+    return typeof doc === 'object' && doc.type === 'line' 
+} 
 
 function isWhitespaceChar(ch: string) {
-    return ' \t\n\r'.indexOf(ch) >= 0 
+    return ' \t\n\r'.indexOf(ch) >= 0;
 }
 
 function isInlineElement(node: Node) {
-    return node.type === 'Element' && inlineElements.includes(node.name as TagName)
+    return node.type === 'Element' && inlineElements.includes(node.name as TagName);
 }
 
 function canBreakAfter(node: Node) {
@@ -628,17 +589,40 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
      * prematurely. This is particularly important for whitespace sensitivity, as it is often
      * desired to have text directly wrapping a mustache tag without additional whitespace.
      */
-    function flush({shouldTrim}: {shouldTrim: boolean} = {shouldTrim: false}) {
-        const groupDocs = currentGroup.map((item) => item.doc);
+    function flush({ shouldTrim }: { shouldTrim: boolean } = { shouldTrim: false }) {
+        let groupDocs = currentGroup.map((item) => item.doc);
         const groupNodes = currentGroup.map((item) => item.node);
+        
+        if (shouldTrim) {
+            /**
+             * Due to how `String.prototype.split` works, `TextNode`s with leading whitespace will be printed
+             * to a `Fill` that has two additional parts at the begnning: an empty string (`''`) and a `line`.
+             * If such a `Fill` doc is present at the beginning of an inline node group, those additional parts
+             * need to be removed to prevent additional whitespace at the beginning of the parent's inner
+             * content or after a sibling block node (i.e. HTML tags).
+             * The equivalent goes for trailing whitespace.
+             */
+            const isWhitespace = (doc: Doc) =>
+                typeof doc === 'string' ? doc === '' : doc.type === 'line';
+
+            trimLeft(groupDocs, isWhitespace);
+            trimRight(groupDocs, isWhitespace);
+        }
 
         if (!isEmptyGroup(groupDocs)) {
-            if (shouldTrim) {
-                trimLeft(groupDocs);
-                trimRight(groupDocs);
+            /**
+             * Trailing lines must not be nested or lines might break in unexpected places.
+             */
+            const trailingLines = trimRight(groupDocs, isLine)
+
+            if (groupDocs.length) {
+                outputChildDoc(fill(groupDocs), groupNodes);
             }
 
-            outputChildDoc(fill(groupDocs), groupNodes);
+            if (trailingLines) {                
+                trailingLines.forEach((trailingLine) =>
+                    outputChildDoc(trailingLine, groupNodes))
+            }
         } else {
             outputChildDoc(null, groupNodes);
         }
@@ -658,12 +642,17 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
         }
     }, 'children');
 
-    flush({shouldTrim: surroundingLines});
-    lastChildDocProduced()
+    flush({ shouldTrim: surroundingLines });
+    lastChildDocProduced();
+
+    const childrenWithLines = childDocs.reduce<Doc[]>(
+        (children, child, i) => children.concat(i > 0 && !isLine(child) ? softline : []).concat(child),
+        [],
+    );
 
     return concat([
         surroundingLines ? softline : '',
-        join(hardline, childDocs),
+        ...childrenWithLines,
         surroundingLines ? dedent(softline) : '',
     ]);
 }
