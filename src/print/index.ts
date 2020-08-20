@@ -99,7 +99,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         ignoreNext = false
         return concat(
             options.originalText.slice(
-                options.locStart(node), 
+                options.locStart(node),
                 options.locEnd(node)
             )
             .split('\n')
@@ -115,11 +115,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return '';
             }
 
-            const printed = printChildren(path, print, false);
-
-            (printed as doc.builders.Concat).parts.push(hardline);
-
-            return printed;
+            return concat([... printChildren(path, print, {shouldTrim:true}), hardline])
         case 'Text':
             if (isEmptyNode(node)) {
                 return {
@@ -149,15 +145,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
              * until this node's current line is out of room, at which `fill` will break at the
              * most convienient instance of `line`.
              */
-            const parts = (node.raw || node.data).split(/[\t\n\f\r ]+/);
-
-            const els = parts.reduce<Doc[]>(
-                (res, part, i) =>
-                    res.concat((i > 0 ? [line] : []) as Doc[]).concat(part !== '' ? [part] : []),
-                [],
-            );
-
-            return fill(els);
+            return fill(join(line, (node.raw || node.data).split(/[\t\n\f\r ]+/)).parts);
         case 'Element':
         case 'InlineComponent':
         case 'Slot':
@@ -182,29 +170,14 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                             concat([
                                 node.type === 'InlineComponent' && node.expression
                                     ? concat([
-                                          line,
-                                          'this=',
-                                          open,
-                                          printJS(path, print, 'expression'),
-                                          close,
-                                      ])
+                                        line,
+                                        'this=',
+                                        open,
+                                        printJS(path, print, 'expression'),
+                                        close,
+                                    ])
                                     : '',
-                                ...path.map(childPath => {
-                                    const attribute = childPath.call(print);
-
-                                    if (
-                                        typeof attribute != 'string' &&
-                                        attribute.type === 'concat' &&
-                                        (attribute.parts[0] as any).type === 'line'
-                                    ) {
-                                        return concat([
-                                            attribute.parts[0],
-                                            group(concat(attribute.parts.slice(1))),
-                                        ]);
-                                    }
-
-                                    return group(attribute);
-                                }, 'attributes'),
+                                ...path.map(childPath => childPath.call(print), 'attributes'),
                                 options.svelteBracketNewLine
                                     ? dedent(isSelfClosingTag ? line : softline)
                                     : '',
@@ -214,7 +187,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
                     isSelfClosingTag ? `${options.svelteBracketNewLine ? '' : ' '}/>` : '>',
 
-                    isEmpty ? '' : indent(printChildren(path, print, !isInlineElement(node))),
+                    isEmpty
+                        ? ''
+                        : isInlineElement(node)
+                        ? concat(printChildren(path, print, { shouldTrim: false }))
+                        : printIndentedChildren(path, print),
 
                     isSelfClosingTag ? '' : concat(['</', node.name, '>']),
                 ]),
@@ -278,7 +255,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 '{#if ',
                 printJS(path, print, 'expression'),
                 '}',
-                indent(printChildren(path, print)),
+                printIndentedChildren(path, print),
             ];
 
             if (node.else) {
@@ -303,7 +280,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     '{:else if ',
                     path.map(ifPath => printJS(path, print, 'expression'), 'children')[0],
                     '}',
-                    indent(path.map(ifPath => printChildren(ifPath, print), 'children')[0]),
+                    path.map(ifPath => printIndentedChildren(ifPath, print), 'children')[0],
                 ];
 
                 if (ifNode.else) {
@@ -312,7 +289,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return group(concat(def));
             }
 
-            return group(concat(['{:else}', indent(printChildren(path, print))]));
+            return group(concat(['{:else}', printIndentedChildren(path, print)]));
         }
         case 'EachBlock': {
             const def: Doc[] = [
@@ -330,7 +307,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 def.push(' (', printJS(path, print, 'key'), ')');
             }
 
-            def.push('}', indent(printChildren(path, print)));
+            def.push('}', printIndentedChildren(path, print));
 
             if (node.else) {
                 def.push(path.call(print, 'else'));
@@ -389,7 +366,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'ThenBlock':
         case 'PendingBlock':
         case 'CatchBlock':
-            return printChildren(path, print);
+            return concat([ softline, ...printChildren(path, print, {shouldTrim: true}), dedent(softline)]);
         case 'EventHandler':
             return concat([
                 line,
@@ -427,7 +404,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 // shorthand let directives have `null` expressions
                 !node.expression ||
-                (node.expression.type === 'Identifier' && node.expression.name === node.name)
+                    (node.expression.type === 'Identifier' && node.expression.name === node.name)
                     ? ''
                     : concat(['=', open, printJS(path, print, 'expression'), close]),
             ]);
@@ -514,6 +491,10 @@ function isLine(doc: Doc) {
     return typeof doc === 'object' && doc.type === 'line' 
 } 
 
+function isLineWithFriends(doc: Doc) {
+    return isLine(doc) && !(doc as doc.builders.Line).keepIfLonely
+}
+
 function isWhitespaceChar(ch: string) {
     return ' \t\n\r'.indexOf(ch) >= 0;
 }
@@ -544,30 +525,24 @@ function canBreakBefore(node: Node) {
     }
 }
 
-function printChildren(path: FastPath, print: PrintFn, surroundingLines = true): Doc {
+function printChildren(
+    path: FastPath,
+    print: PrintFn,
+    { shouldTrim=true}: { shouldTrim: boolean} 
+): Doc[] {
     let childDocs: Doc[] = [];
     let currentGroup: { doc: Doc; node: Node }[] = [];
     // the index of the last child doc we could add a linebreak after
     let lastBreakIndex = -1;
 
-    function breakPossible(addLine: boolean) {
+    function breakPossible() {
         if (lastBreakIndex >= 0 && lastBreakIndex < childDocs.length - 1) {
-            childDocs = childDocs.slice(0, lastBreakIndex).concat(concat(childDocs.slice(lastBreakIndex)));
-        }
-
-        if (addLine) {
-            childDocs.push(softline)
+            childDocs = childDocs
+                .slice(0, lastBreakIndex)
+                .concat(concat(childDocs.slice(lastBreakIndex)));
         }
 
         lastBreakIndex = -1;
-    }
-
-    function renameMe(doc: Doc) {
-        if (typeof doc !== 'object' ){
-            return false
-        }
-
-        return doc.type === 'line' && !doc.keepIfLonely
     }
 
     /**
@@ -577,10 +552,19 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
         const firstNode = fromNodes[0];
         const lastNode = fromNodes[fromNodes.length - 1];
 
-        if ((!childDoc || canBreakBefore(firstNode))) {
-            breakPossible(childDocs.length > 0 && childDoc != null && !renameMe(childDoc)            
-                && (!childDocs[childDocs.length-1] || !isLine(childDocs[childDocs.length-1]))
-            );
+        if (!childDoc || canBreakBefore(firstNode)) {
+            breakPossible();
+
+            const lastChild = childDocs[childDocs.length - 1];
+
+            if (
+                childDoc != null &&
+                !isLineWithFriends(childDoc) &&
+                lastChild != null &&
+                !isLine(lastChild)
+            ) {
+                childDocs.push(softline);
+            }
         }
 
         if (lastBreakIndex < 0 && childDoc && !canBreakAfter(lastNode)) {
@@ -606,7 +590,7 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
     function flush({ shouldTrim }: { shouldTrim: boolean } = { shouldTrim: false }) {
         let groupDocs = currentGroup.map((item) => item.doc);
         const groupNodes = currentGroup.map((item) => item.node);
-        
+
         if (shouldTrim) {
             /**
              * Due to how `String.prototype.split` works, `TextNode`s with leading whitespace will be printed
@@ -624,27 +608,13 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
         }
 
         if (!isEmptyGroup(groupDocs)) {
-            /**
-             * Trailing lines must not be nested or lines might break in unexpected places.
-             */
-            const trailingLines = trimRight(groupDocs, isLine)
-
-            if (groupDocs.length) {
-                outputChildDoc(fill(groupDocs), groupNodes);
-            }
-
-            if (trailingLines) {                
-                trailingLines.forEach((trailingLine) =>
-                    outputChildDoc(trailingLine, groupNodes))
-            }
+            outputChildDoc(fill(groupDocs), groupNodes);
         } else {
             outputChildDoc(null, groupNodes);
         }
 
         currentGroup = [];
     }
-
-    let i = 0
 
     path.each((childPath) => {
         const childNode = childPath.getValue() as Node;
@@ -655,14 +625,18 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
         } else {
             flush();
 
-            outputChildDoc(isLine(childDoc) ? childDoc: concat([breakParent, childDoc]), [childNode]);
+            // TODO: do we need breakparent? can we have one for all children?
+            outputChildDoc(isLine(childDoc) ? childDoc : concat([breakParent, childDoc]), [
+                childNode,
+            ]);
         }
     }, 'children');
 
-    flush({ shouldTrim: surroundingLines });
+    flush({ shouldTrim});
     lastChildDocProduced();
 
-    if (surroundingLines) {
+    // TODO: duplicated
+    if (shouldTrim) {
         const isWhitespace = (doc: Doc) =>
             typeof doc === 'string' ? doc === '' : doc.type === 'line';
 
@@ -670,11 +644,16 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
         trimRight(childDocs, isWhitespace);
     }
 
-    return concat([
-        surroundingLines ? softline : '',
-        ...childDocs,
-        surroundingLines ? dedent(softline) : '',
-    ]);
+    return childDocs
+}
+
+function printIndentedChildren(
+    path: FastPath,
+    print: PrintFn,
+): Doc {
+    return indent(
+        concat([softline, ...printChildren(path, print, { shouldTrim: true }), dedent(softline)]),
+    );
 }
 
 function printJS(path: FastPath, print: PrintFn, name?: string) {
@@ -688,7 +667,16 @@ function printJS(path: FastPath, print: PrintFn, name?: string) {
 }
 
 function isInlineNode(node: Node): boolean {
-    return (node.type === 'Text' && ((node.raw || node.data).trim() !== '' || (node.raw || node.data) === '')) || node.type === 'MustacheTag';
+    switch (node.type) {
+        case 'Text':
+            const text = node.raw || node.data;
+
+            return text === '' || text.trim() !== '';
+        case 'MustacheTag':
+            return true;
+        default:
+            return false;
+    }
 }
 
 function isEmptyNode(node: Node): boolean {
