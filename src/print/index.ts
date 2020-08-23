@@ -489,32 +489,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
     throw new Error('unknown node type: ' + node.type);
 }
 
-/**
- * Split the text into words separated by whitespace. Replace the whitespaces by lines,
- * collapsing multiple whitespaces into a single line. 
- * 
- * If the text starts or ends with multiple newlines, those newlines should be "keepIfLonely" 
- * since we want double newlines in the output.
- */
-function splitTextToDocs(text: string): Doc[] {
-    let docs: Doc[] = text.split(/[\t\n\f\r ]+/)
-
-    docs = join(line, docs).parts.filter(s => s !== '')
-
-    // if the text starts with two newlines, the first doc is already a newline. make it "keepIfLonely"
-    if (text.match(/^([\t\f\r ]*\n){2}/)) {
-        docs[0] = keepIfLonelyLine
-    }
-
-    // if the text ends with two newlines, the last doc is already a newline. make it "keepIfLonely"
-    if (text.match(/(\n[\t\f\r ]*){2}$/)) {
-        docs[docs.length-1] = keepIfLonelyLine
-    }
-
-    return docs
-}
-
-function printChildren(path: FastPath, print: PrintFn, surroundingLines = true): Doc {	
+function printChildren(path: FastPath, print: PrintFn): Doc[] {	
     let childDocs: Doc[] = [];
     let currentGroup: { doc: Doc; node: Node }[] = [];
     // the index of the last child doc we could add a linebreak after
@@ -653,6 +628,31 @@ function printIndentedPreservingWhitespace(
     print: PrintFn
 ) {
     return indent(concat(dedentFinalNewline(printChildren(path, print))))
+}
+
+/**
+ * Split the text into words separated by whitespace. Replace the whitespaces by lines,
+ * collapsing multiple whitespaces into a single line. 
+ * 
+ * If the text starts or ends with multiple newlines, those newlines should be "keepIfLonely" 
+ * since we want double newlines in the output.
+ */
+function splitTextToDocs(text: string): Doc[] {
+    let docs: Doc[] = text.split(/[\t\n\f\r ]+/)
+
+    docs = join(line, docs).parts.filter(s => s !== '')
+
+    // if the text starts with two newlines, the first doc is already a newline. make it "keepIfLonely"
+    if (text.match(/^([\t\f\r ]*\n){2}/)) {
+        docs[0] = keepIfLonelyLine
+    }
+
+    // if the text ends with two newlines, the last doc is already a newline. make it "keepIfLonely"
+    if (text.match(/(\n[\t\f\r ]*){2}$/)) {
+        docs[docs.length-1] = keepIfLonelyLine
+    }
+
+    return docs
 }
 
 /**
