@@ -6,7 +6,9 @@ import { getText } from '../lib/getText';
 import { parseSortOrder, SortOrderPart } from '../options';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
 import { inlineElements, TagName } from '../lib/elements';
-import { trimLeft, trimRight } from '../lib/trim'; 
+import { trimLeft, trimRight, isEmptyGroup } from '../lib/trim'; 
+import { nodeToString, docToString, cloneDoc } from '../../test/debugprint';
+
 const {
     concat,
     join,
@@ -53,7 +55,46 @@ const SELF_CLOSING_TAGS = [
 
 let ignoreNext = false;
 
+const printDocToString = doc.printer.printDocToString
+
+let nesting = -1
+
+function debugPrint(s: string) {
+    return
+    let indent = '';
+
+    for (let i = 0; i < nesting; i++) {
+        indent += '    ';
+    }
+
+    console.log('\r' + indent + s);
+}
+
 export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
+    nesting++;
+
+    try {
+        debugPrint('<- ' + nodeToString(path.getValue()));
+
+        const doc = printInner(path, options, print);
+
+        // console.log('-> ' + JSON.stringify(doc))
+
+        const { formatted } = printDocToString(cloneDoc(doc), {
+            useTabs: false,
+            tabWidth: 2,
+            printWidth: 80,
+        });
+
+        debugPrint('->' + formatted.replace(/\n/g, '\\n').replace(/\t/g, '\\t'));
+
+        return doc;
+    } finally {
+        nesting--;
+    }
+}
+
+export function printInner(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
     const n = path.getValue();
     if (!n) {
         return '';
@@ -145,7 +186,28 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
              * until this node's current line is out of room, at which `fill` will break at the
              * most convienient instance of `line`.
              */
-            return fill(join(line, (node.raw || node.data).split(/[\t\n\f\r ]+/)).parts);
+            const text = (node.raw || node.data)
+            
+            let parts:Doc[] = text.split(/[\t\n\f\r ]+/)
+            parts = join(line, parts).parts
+
+            if (parts[0] == '') {
+                parts.splice(0, 1)
+            }
+
+            if (parts[parts.length-1] == '') {
+                parts.splice(parts.length-1)
+            }
+
+            if (text.match(/^[\t\f\r ]*\n[\t\f\r ]*\n/)) {
+                parts[0] = {...line, keepIfLonely:true, hard: true}
+            }
+
+            if (text.match(/\n[\t\f\r ]*\n[\t\f\r ]*$/)) {
+                parts[parts.length-1] = {...line, keepIfLonely:true, hard: true}
+            }
+
+            return fill(parts);
         case 'Element':
         case 'InlineComponent':
         case 'Slot':
@@ -469,29 +531,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     throw new Error('unknown node type: ' + node.type);
 }
 
-function isEmptyGroup(group: Doc[]): boolean {
-    if (group.length === 0) {
-        return true;
-    }
-
-    if (group.length > 1) {
-        return false;
-    }
-
-    const lonelyDoc = group[0];
-
-    if (typeof lonelyDoc === 'string' || lonelyDoc.type !== 'line') {
-        return false;
-    }
-
-    return !lonelyDoc.keepIfLonely;
-}
-
 function isLine(doc: Doc) {    
     return typeof doc === 'object' && doc.type === 'line' 
 } 
 
-function isLineWithFriends(doc: Doc) {
+function isLineDiscardedIfLonely(doc: Doc) {
     return isLine(doc) && !(doc as doc.builders.Line).keepIfLonely
 }
 
@@ -552,6 +596,8 @@ function printChildren(
         const firstNode = fromNodes[0];
         const lastNode = fromNodes[fromNodes.length - 1];
 
+        debugPrint(`output ${childDoc !== null ? docToString(childDoc) : 'null'} cbb: ${!childDoc || canBreakBefore(firstNode)} `)
+
         if (!childDoc || canBreakBefore(firstNode)) {
             breakPossible();
 
@@ -559,7 +605,7 @@ function printChildren(
 
             if (
                 childDoc != null &&
-                !isLineWithFriends(childDoc) &&
+                !isLineDiscardedIfLonely(childDoc) &&
                 lastChild != null &&
                 !isLine(lastChild)
             ) {
@@ -587,24 +633,24 @@ function printChildren(
      * prematurely. This is particularly important for whitespace sensitivity, as it is often
      * desired to have text directly wrapping a mustache tag without additional whitespace.
      */
-    function flush({ shouldTrim }: { shouldTrim: boolean } = { shouldTrim: false }) {
+    function flush() {
         let groupDocs = currentGroup.map((item) => item.doc);
         const groupNodes = currentGroup.map((item) => item.node);
 
-        if (shouldTrim) {
-            /**
-             * Due to how `String.prototype.split` works, `TextNode`s with leading whitespace will be printed
-             * to a `Fill` that has two additional parts at the begnning: an empty string (`''`) and a `line`.
-             * If such a `Fill` doc is present at the beginning of an inline node group, those additional parts
-             * need to be removed to prevent additional whitespace at the beginning of the parent's inner
-             * content or after a sibling block node (i.e. HTML tags).
-             * The equivalent goes for trailing whitespace.
-             */
-            const isWhitespace = (doc: Doc) =>
-                typeof doc === 'string' ? doc === '' : doc.type === 'line';
+        debugPrint(`flush ${groupDocs.map(docToString).join(', ')}`)
 
-            trimLeft(groupDocs, isWhitespace);
-            trimRight(groupDocs, isWhitespace);
+        let trimmedRight
+
+        if (shouldTrim) {
+            const trimmedLeft = trimLeft(groupDocs, isLine);
+
+            if (trimmedLeft) {
+                for (let doc of trimmedLeft) {
+                    outputChildDoc(doc, groupNodes)
+                }
+            }
+
+            trimmedRight = trimRight(groupDocs, isLine);
         }
 
         if (!isEmptyGroup(groupDocs)) {
@@ -613,26 +659,37 @@ function printChildren(
             outputChildDoc(null, groupNodes);
         }
 
+        if (trimmedRight) {
+            for (let doc of trimmedRight) {
+                outputChildDoc(doc, groupNodes)
+            }
+        }
+
         currentGroup = [];
     }
 
+    let childCount = 1
     path.each((childPath) => {
         const childNode = childPath.getValue() as Node;
         const childDoc = childPath.call(print);
 
         if (isInlineNode(childNode)) {
+            debugPrint(`${childCount}. push ${docToString(childDoc)}`)
             currentGroup.push({ doc: childDoc, node: childNode });
         } else {
             flush();
+            debugPrint(`${childCount}. output ${docToString(childDoc)}`)
 
             // TODO: do we need breakparent? can we have one for all children?
             outputChildDoc(isLine(childDoc) ? childDoc : concat([breakParent, childDoc]), [
                 childNode,
             ]);
         }
+
+        childCount ++
     }, 'children');
 
-    flush({ shouldTrim});
+    flush();
     lastChildDocProduced();
 
     // TODO: duplicated
@@ -640,8 +697,17 @@ function printChildren(
         const isWhitespace = (doc: Doc) =>
             typeof doc === 'string' ? doc === '' : doc.type === 'line';
 
-        trimLeft(childDocs, isWhitespace);
-        trimRight(childDocs, isWhitespace);
+        const trimmedLeft = trimLeft(childDocs, isWhitespace);
+
+        if (trimmedLeft) {
+            debugPrint(`trimmed left ${trimmedLeft.map(docToString).join(', ')}`)
+        }
+
+        const trimmedRight = trimRight(childDocs, isWhitespace);
+
+        if (trimmedRight) {
+            debugPrint(`trimmed right ${trimmedRight.map(docToString).join(', ')}`)
+        }
     }
 
     return childDocs
