@@ -61,6 +61,7 @@ let nesting = -1
 
 function debugPrint(s: string) {
     return
+    
     let indent = '';
 
     for (let i = 0; i < nesting; i++) {
@@ -156,7 +157,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
                 return '';
             }
 
-            return concat([... printChildren(path, print, {shouldTrim:true}), hardline])
+            return concat([... trim(printChildren(path, print)), hardline])
         case 'Text':
             if (isEmptyNode(node)) {
                 return {
@@ -232,14 +233,14 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
                             concat([
                                 node.type === 'InlineComponent' && node.expression
                                     ? concat([
-                                        line,
-                                        'this=',
-                                        open,
-                                        printJS(path, print, 'expression'),
-                                        close,
-                                    ])
+                                          line,
+                                          'this=',
+                                          open,
+                                          printJS(path, print, 'expression'),
+                                          close,
+                                      ])
                                     : '',
-                                ...path.map(childPath => childPath.call(print), 'attributes'),
+                                ...path.map((childPath) => childPath.call(print), 'attributes'),
                                 options.svelteBracketNewLine
                                     ? dedent(isSelfClosingTag ? line : softline)
                                     : '',
@@ -247,15 +248,17 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
                         ),
                     ),
 
-                    isSelfClosingTag ? `${options.svelteBracketNewLine ? '' : ' '}/>` : '>',
-
-                    isEmpty
-                        ? ''
-                        : isInlineElement(node)
-                        ? concat(printChildren(path, print, { shouldTrim: false }))
-                        : printIndentedChildren(path, print),
-
-                    isSelfClosingTag ? '' : concat(['</', node.name, '>']),
+                    ...(isSelfClosingTag
+                        ? [options.svelteBracketNewLine ? '' : line, `/>`]
+                        : [
+                              '>',
+                              isEmpty
+                                  ? ''
+                                  : isInlineElement(node)
+                                  ? indent(concat(dedentFinalNewline(printChildren(path, print))))
+                                  : printIndentedChildren(path, print),
+                              `</${node.name}>`,
+                          ]),
                 ]),
             );
         }
@@ -428,7 +431,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
         case 'ThenBlock':
         case 'PendingBlock':
         case 'CatchBlock':
-            return concat([ softline, ...printChildren(path, print, {shouldTrim: true}), dedent(softline)]);
+            return concat([ softline, ...trim(printChildren(path, print)), dedent(softline)]);
         case 'EventHandler':
             return concat([
                 line,
@@ -571,8 +574,7 @@ function canBreakBefore(node: Node) {
 
 function printChildren(
     path: FastPath,
-    print: PrintFn,
-    { shouldTrim=true}: { shouldTrim: boolean} 
+    print: PrintFn
 ): Doc[] {
     let childDocs: Doc[] = [];
     let currentGroup: { doc: Doc; node: Node }[] = [];
@@ -639,19 +641,15 @@ function printChildren(
 
         debugPrint(`flush ${groupDocs.map(docToString).join(', ')}`)
 
-        let trimmedRight
+        const trimmedLeft = trimLeft(groupDocs, isLine);
 
-        if (shouldTrim) {
-            const trimmedLeft = trimLeft(groupDocs, isLine);
-
-            if (trimmedLeft) {
-                for (let doc of trimmedLeft) {
-                    outputChildDoc(doc, groupNodes)
-                }
+        if (trimmedLeft) {
+            for (let doc of trimmedLeft) {
+                outputChildDoc(doc, groupNodes)
             }
-
-            trimmedRight = trimRight(groupDocs, isLine);
         }
+
+        const trimmedRight = trimRight(groupDocs, isLine);
 
         outputChildDoc(!isEmptyGroup(groupDocs) ? fill(groupDocs) : null, groupNodes);
 
@@ -688,31 +686,43 @@ function printChildren(
     flush();
     lastChildDocProduced();
 
-    // TODO: duplicated
-    if (shouldTrim) {
-        const trimmedLeft = trimLeft(childDocs, isLine);
-
-        if (trimmedLeft) {
-            debugPrint(`trimmed left ${trimmedLeft.map(docToString).join(', ')}`)
-        }
-
-        const trimmedRight = trimRight(childDocs, isLine);
-
-        if (trimmedRight) {
-            debugPrint(`trimmed right ${trimmedRight.map(docToString).join(', ')}`)
-        }
-    }
-
     return childDocs
 }
 
 function printIndentedChildren(
     path: FastPath,
-    print: PrintFn,
+    print: PrintFn
 ): Doc {
     return indent(
-        concat([softline, ...printChildren(path, print, { shouldTrim: true }), dedent(softline)]),
+        concat([softline, ...trim(printChildren(path, print)), dedent(softline)]),
     );
+}
+
+function trim(docs: Doc[]): Doc[] {
+    const trimmedLeft = trimLeft(docs, isLine);
+
+    if (trimmedLeft) {
+        debugPrint(`trimmed left ${trimmedLeft.map(docToString).join(', ')}`)
+    }
+
+    const trimmedRight = trimRight(docs, isLine);
+
+    if (trimmedRight) {
+        debugPrint(`trimmed right ${trimmedRight.map(docToString).join(', ')}`)
+    }
+
+    return docs
+}
+
+function dedentFinalNewline(docs: Doc[]): Doc[] {
+    const trimmedRight = trimRight(docs, isLine);
+
+    if (trimmedRight) {
+        return [...docs, dedent(trimmedRight[trimmedRight.length-1])] 
+    }
+    else {
+        return docs
+    }
 }
 
 function printJS(path: FastPath, print: PrintFn, name?: string) {
