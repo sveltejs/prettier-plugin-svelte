@@ -205,7 +205,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
                     ),
 
                     ...(isSelfClosingTag
-                        ? [options.svelteBracketNewLine ? '' : line, `/>`]
+                        ? [options.svelteBracketNewLine ? '' : ' ', `/>`]
                         : [
                               '>',
                               isEmpty
@@ -490,11 +490,11 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
 }
 
 /**
- * Split the text into words separated by whitespace. Replace the whitespaces by lines.
- * Collapse multiple whitespaces into lines. 
+ * Split the text into words separated by whitespace. Replace the whitespaces by lines,
+ * collapsing multiple whitespaces into a single line. 
  * 
  * If the text starts or ends with multiple newlines, those newlines should be "keepIfLonely" 
- * since we want double newlines in the output (but only there)
+ * since we want double newlines in the output.
  */
 function splitTextToDoc(text: string): Doc[] {
     let docs: Doc[] = text.split(/[\t\n\f\r ]+/)
