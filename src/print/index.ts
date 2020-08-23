@@ -653,11 +653,7 @@ function printChildren(
             trimmedRight = trimRight(groupDocs, isLine);
         }
 
-        if (!isEmptyGroup(groupDocs)) {
-            outputChildDoc(fill(groupDocs), groupNodes);
-        } else {
-            outputChildDoc(null, groupNodes);
-        }
+        outputChildDoc(!isEmptyGroup(groupDocs) ? fill(groupDocs) : null, groupNodes);
 
         if (trimmedRight) {
             for (let doc of trimmedRight) {
@@ -694,16 +690,13 @@ function printChildren(
 
     // TODO: duplicated
     if (shouldTrim) {
-        const isWhitespace = (doc: Doc) =>
-            typeof doc === 'string' ? doc === '' : doc.type === 'line';
-
-        const trimmedLeft = trimLeft(childDocs, isWhitespace);
+        const trimmedLeft = trimLeft(childDocs, isLine);
 
         if (trimmedLeft) {
             debugPrint(`trimmed left ${trimmedLeft.map(docToString).join(', ')}`)
         }
 
-        const trimmedRight = trimRight(childDocs, isWhitespace);
+        const trimmedRight = trimRight(childDocs, isLine);
 
         if (trimmedRight) {
             debugPrint(`trimmed right ${trimmedRight.map(docToString).join(', ')}`)
