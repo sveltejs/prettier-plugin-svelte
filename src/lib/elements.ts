@@ -1,5 +1,23 @@
 export type TagName = keyof HTMLElementTagNameMap | 'svg';
 
+// @see http://xahlee.info/js/html5_non-closing_tag.html
+export const selfClosingTags = [
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'param',
+  'source',
+  'track',
+  'wbr',
+];
+
 // https://developer.mozilla.org/en-US/docs/Web/HTML/Inline_elements#Elements
 export const inlineElements: TagName[] = [
   'a',

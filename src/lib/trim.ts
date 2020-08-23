@@ -1,4 +1,21 @@
 import { Doc } from 'prettier';
+import { debugPrint, docToString } from '../../test/debugprint';
+
+export function trim(docs: Doc[], isWhitespace: (doc: Doc) => boolean): Doc[] {
+    const trimmedLeft = trimLeft(docs, isWhitespace);
+
+    if (trimmedLeft) {
+        debugPrint(`trimmed left ${trimmedLeft.map(docToString).join(', ')}`)
+    }
+
+    const trimmedRight = trimRight(docs, isWhitespace);
+
+    if (trimmedRight) {
+        debugPrint(`trimmed right ${trimmedRight.map(docToString).join(', ')}`)
+    }
+
+    return docs
+}
 
 /**
  * Trims the leading nodes matching `isWhitespace` independent of nesting level (though all nodes need to be a the same level)

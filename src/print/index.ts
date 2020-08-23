@@ -5,9 +5,17 @@ import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { parseSortOrder, SortOrderPart } from '../options';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
-import { inlineElements, TagName } from '../lib/elements';
-import { trimLeft, trimRight, isEmptyGroup } from '../lib/trim'; 
-import { nodeToString, docToString, cloneDoc } from '../../test/debugprint';
+import { selfClosingTags } from '../lib/elements';
+import { trim, trimLeft, trimRight, isEmptyGroup } from '../lib/trim'; 
+import { nodeToString, docToString, cloneDoc, increaseNesting, debugPrint, decreaseNesting } from '../../test/debugprint';
+import {
+    canBreakBefore,
+    canBreakAfter,
+    isInlineElement,
+    isInlineNode,
+    isEmptyNode,
+} from './node-helpers';
+import { isLine, isLineDiscardedIfLonely } from './doc-helpers';
 
 const {
     concat,
@@ -35,44 +43,13 @@ declare module 'prettier' {
     }
 }
 
-// @see http://xahlee.info/js/html5_non-closing_tag.html
-const SELF_CLOSING_TAGS = [
-    'area',
-    'base',
-    'br',
-    'col',
-    'embed',
-    'hr',
-    'img',
-    'input',
-    'link',
-    'meta',
-    'param',
-    'source',
-    'track',
-    'wbr',
-];
-
 let ignoreNext = false;
 
+const keepIfLonelyLine = {...line, keepIfLonely:true, hard: true}
 const printDocToString = doc.printer.printDocToString
 
-let nesting = -1
-
-function debugPrint(s: string) {
-    return
-    
-    let indent = '';
-
-    for (let i = 0; i < nesting; i++) {
-        indent += '    ';
-    }
-
-    console.log('\r' + indent + s);
-}
-
 export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
-    nesting++;
+    increaseNesting()
 
     try {
         debugPrint('<- ' + nodeToString(path.getValue()));
@@ -91,7 +68,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
         return doc;
     } finally {
-        nesting--;
+        decreaseNesting();
     }
 }
 
@@ -157,7 +134,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
                 return '';
             }
 
-            return concat([... trim(printChildren(path, print)), hardline])
+            return concat([... trim(printChildren(path, print), isLine), hardline])
         case 'Text':
             if (isEmptyNode(node)) {
                 return {
@@ -185,30 +162,9 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
              * For non-empty text nodes each sequence of non-whitespace characters (effectively,
              * each "word") is joined by a single `line`, which will be rendered as a single space
              * until this node's current line is out of room, at which `fill` will break at the
-             * most convienient instance of `line`.
+             * most convenient instance of `line`.
              */
-            const text = (node.raw || node.data)
-            
-            let parts:Doc[] = text.split(/[\t\n\f\r ]+/)
-            parts = join(line, parts).parts
-
-            if (parts[0] == '') {
-                parts.splice(0, 1)
-            }
-
-            if (parts[parts.length-1] == '') {
-                parts.splice(parts.length-1)
-            }
-
-            if (text.match(/^[\t\f\r ]*\n[\t\f\r ]*\n/)) {
-                parts[0] = {...line, keepIfLonely:true, hard: true}
-            }
-
-            if (text.match(/\n[\t\f\r ]*\n[\t\f\r ]*$/)) {
-                parts[parts.length-1] = {...line, keepIfLonely:true, hard: true}
-            }
-
-            return fill(parts);
+            return fill(splitTextToDoc(node.raw || node.data));
         case 'Element':
         case 'InlineComponent':
         case 'Slot':
@@ -221,7 +177,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
                 isEmpty &&
                 (!options.svelteStrictMode ||
                     node.type !== 'Element' ||
-                    SELF_CLOSING_TAGS.indexOf(node.name) !== -1);
+                    selfClosingTags.indexOf(node.name) !== -1);
 
             return group(
                 concat([
@@ -255,8 +211,8 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
                               isEmpty
                                   ? ''
                                   : isInlineElement(node)
-                                  ? indent(concat(dedentFinalNewline(printChildren(path, print))))
-                                  : printIndentedChildren(path, print),
+                                  ? printIndentedPreservingWhitespace(path, print)
+                                  : printIndentedWithNewlines(path, print),
                               `</${node.name}>`,
                           ]),
                 ]),
@@ -320,7 +276,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
                 '{#if ',
                 printJS(path, print, 'expression'),
                 '}',
-                printIndentedChildren(path, print),
+                printIndentedWithNewlines(path, print),
             ];
 
             if (node.else) {
@@ -345,7 +301,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
                     '{:else if ',
                     path.map(ifPath => printJS(path, print, 'expression'), 'children')[0],
                     '}',
-                    path.map(ifPath => printIndentedChildren(ifPath, print), 'children')[0],
+                    path.map(ifPath => printIndentedWithNewlines(ifPath, print), 'children')[0],
                 ];
 
                 if (ifNode.else) {
@@ -354,7 +310,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
                 return group(concat(def));
             }
 
-            return group(concat(['{:else}', printIndentedChildren(path, print)]));
+            return group(concat(['{:else}', printIndentedWithNewlines(path, print)]));
         }
         case 'EachBlock': {
             const def: Doc[] = [
@@ -372,7 +328,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
                 def.push(' (', printJS(path, print, 'key'), ')');
             }
 
-            def.push('}', printIndentedChildren(path, print));
+            def.push('}', printIndentedWithNewlines(path, print));
 
             if (node.else) {
                 def.push(path.call(print, 'else'));
@@ -431,7 +387,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
         case 'ThenBlock':
         case 'PendingBlock':
         case 'CatchBlock':
-            return concat([ softline, ...trim(printChildren(path, print)), dedent(softline)]);
+            return concat([ softline, ...trim(printChildren(path, print), isLine), dedent(softline)]);
         case 'EventHandler':
             return concat([
                 line,
@@ -530,46 +486,32 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
             return concat([line, '{...', printJS(path, print, 'expression'), '}']);
     }
 
-    console.log(JSON.stringify(node, null, 4));
     throw new Error('unknown node type: ' + node.type);
 }
 
-function isLine(doc: Doc) {    
-    return typeof doc === 'object' && doc.type === 'line' 
-} 
+/**
+ * Split the text into words separated by whitespace. Replace the whitespaces by lines.
+ * Collapse multiple whitespaces into lines. 
+ * 
+ * If the text starts or ends with multiple newlines, those newlines should be "keepIfLonely" 
+ * since we want double newlines in the output (but only there)
+ */
+function splitTextToDoc(text: string): Doc[] {
+    let docs: Doc[] = text.split(/[\t\n\f\r ]+/)
 
-function isLineDiscardedIfLonely(doc: Doc) {
-    return isLine(doc) && !(doc as doc.builders.Line).keepIfLonely
-}
+    docs = join(line, docs).parts.filter(s => s !== '')
 
-function isWhitespaceChar(ch: string) {
-    return ' \t\n\r'.indexOf(ch) >= 0;
-}
-
-function isInlineElement(node: Node) {
-    return node.type === 'Element' && inlineElements.includes(node.name as TagName);
-}
-
-function canBreakAfter(node: Node) {
-    switch (node.type) {
-        case 'Text':
-            return isWhitespaceChar(node.raw[node.raw.length - 1]);
-        case 'Element':
-            return !isInlineElement(node);
-        default:
-            return true;
+    // if the text starts with two newlines, the first doc is already a newline. make it "keepIfLonely"
+    if (text.match(/^([\t\f\r ]*\n){2}/)) {
+        docs[0] = keepIfLonelyLine
     }
-}
 
-function canBreakBefore(node: Node) {
-    switch (node.type) {
-        case 'Text':
-            return isWhitespaceChar(node.raw[0]);
-        case 'Element':
-            return !isInlineElement(node);
-        default:
-            return true;
+    // if the text ends with two newlines, the last doc is already a newline. make it "keepIfLonely"
+    if (text.match(/(\n[\t\f\r ]*){2}$/)) {
+        docs[docs.length-1] = keepIfLonelyLine
     }
+
+    return docs
 }
 
 function printChildren(
@@ -581,7 +523,12 @@ function printChildren(
     // the index of the last child doc we could add a linebreak after
     let lastBreakIndex = -1;
 
-    function breakPossible() {
+    /**
+     * Call when reaching a point where a linebreak is possible. Will
+     * put all `childDocs` since the last possible linebreak position
+     * into a `concat` to avoid them breaking.
+     */
+    function linebreakPossible() {
         if (lastBreakIndex >= 0 && lastBreakIndex < childDocs.length - 1) {
             childDocs = childDocs
                 .slice(0, lastBreakIndex)
@@ -592,6 +539,7 @@ function printChildren(
     }
 
     /**
+     * Add a document to the output.
      * @param childDoc null means "consider to be whitespace"
      */
     function outputChildDoc(childDoc: Doc | null, fromNodes: Node[]) {
@@ -601,7 +549,7 @@ function printChildren(
         debugPrint(`output ${childDoc !== null ? docToString(childDoc) : 'null'} cbb: ${!childDoc || canBreakBefore(firstNode)} `)
 
         if (!childDoc || canBreakBefore(firstNode)) {
-            breakPossible();
+            linebreakPossible();
 
             const lastChild = childDocs[childDocs.length - 1];
 
@@ -649,14 +597,13 @@ function printChildren(
             }
         }
 
-        const trimmedRight = trimRight(groupDocs, isLine);
+        // pull out any nested trailing lines and put them at the top level
+        const trailingLines = trimRight(groupDocs, isLine);
 
         outputChildDoc(!isEmptyGroup(groupDocs) ? fill(groupDocs) : null, groupNodes);
 
-        if (trimmedRight) {
-            for (let doc of trimmedRight) {
-                outputChildDoc(doc, groupNodes)
-            }
+        for (let doc of trailingLines || []) {
+            outputChildDoc(doc, groupNodes)
         }
 
         currentGroup = [];
@@ -689,31 +636,34 @@ function printChildren(
     return childDocs
 }
 
-function printIndentedChildren(
+/**
+ * Print the nodes in `path` indented and with leading and trailing newlines.
+ */
+function printIndentedWithNewlines(
     path: FastPath,
     print: PrintFn
 ): Doc {
     return indent(
-        concat([softline, ...trim(printChildren(path, print)), dedent(softline)]),
+        concat([softline, ...trim(printChildren(path, print), isLine), dedent(softline)]),
     );
 }
 
-function trim(docs: Doc[]): Doc[] {
-    const trimmedLeft = trimLeft(docs, isLine);
-
-    if (trimmedLeft) {
-        debugPrint(`trimmed left ${trimmedLeft.map(docToString).join(', ')}`)
-    }
-
-    const trimmedRight = trimRight(docs, isLine);
-
-    if (trimmedRight) {
-        debugPrint(`trimmed right ${trimmedRight.map(docToString).join(', ')}`)
-    }
-
-    return docs
+/**
+ * Print the nodes in `path` indented but without adding any leading or trailing newlines.
+ */
+function printIndentedPreservingWhitespace(
+    path: FastPath,
+    print: PrintFn
+) {
+    return indent(concat(dedentFinalNewline(printChildren(path, print))))
 }
 
+/**
+ * If there is a trailing newline, pull it out and put it inside a `dedent`. This is used
+ * when we want to preserve whitespace, but still indent the newline if there is one 
+ * (e.g. for `<b>1\n</b>` the `</b>` will be on its own line; for `<b>1</b>` it can't 
+ * because it would introduce new whitespace)
+ */
 function dedentFinalNewline(docs: Doc[]): Doc[] {
     const trimmedRight = trimRight(docs, isLine);
 
@@ -733,23 +683,6 @@ function printJS(path: FastPath, print: PrintFn, name?: string) {
 
     path.getValue()[name].isJS = true;
     return path.call(print, name);
-}
-
-function isInlineNode(node: Node): boolean {
-    switch (node.type) {
-        case 'Text':
-            const text = node.raw || node.data;
-
-            return text === '' || text.trim() !== '';
-        case 'MustacheTag':
-            return true;
-        default:
-            return false;
-    }
-}
-
-function isEmptyNode(node: Node): boolean {
-    return node.type === 'Text' && (node.raw || node.data).trim() === '';
 }
 
 function expandNode(node): string {
