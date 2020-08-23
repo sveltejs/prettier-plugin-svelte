@@ -7,7 +7,6 @@ import { parseSortOrder, SortOrderPart } from '../options';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
 import { selfClosingTags } from '../lib/elements';
 import { trim, trimLeft, trimRight } from '../lib/trim'; 
-import { nodeToString, docToString, cloneDoc, increaseNesting, debugPrint, decreaseNesting } from '../../test/debugprint';
 import {
     canBreakBefore,
     canBreakAfter,
@@ -46,33 +45,8 @@ declare module 'prettier' {
 let ignoreNext = false;
 
 const keepIfLonelyLine = {...line, keepIfLonely:true, hard: true}
-const printDocToString = doc.printer.printDocToString
 
 export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
-    increaseNesting()
-
-    try {
-        debugPrint('<- ' + nodeToString(path.getValue()));
-
-        const doc = printInner(path, options, print);
-
-        // console.log('-> ' + JSON.stringify(doc))
-
-        const { formatted } = printDocToString(cloneDoc(doc), {
-            useTabs: false,
-            tabWidth: 2,
-            printWidth: 80,
-        });
-
-        debugPrint('->' + formatted.replace(/\n/g, '\\n').replace(/\t/g, '\\t'));
-
-        return doc;
-    } finally {
-        decreaseNesting();
-    }
-}
-
-export function printInner(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
     const n = path.getValue();
     if (!n) {
         return '';
@@ -518,8 +492,6 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
         const firstNode = fromNodes[0];
         const lastNode = fromNodes[fromNodes.length - 1];
 
-        debugPrint(`output ${childDoc !== null ? docToString(childDoc) : 'null'} cbb: ${!childDoc || canBreakBefore(firstNode)} `)
-
         if (!childDoc || canBreakBefore(firstNode)) {
             linebreakPossible();
 
@@ -562,8 +534,6 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
         let groupDocs = currentGroup.map((item) => item.doc);
         const groupNodes = currentGroup.map((item) => item.node);
 
-        debugPrint(`flush ${groupDocs.map(docToString).join(', ')}`)
-
         for (let doc of extractOutermostNewlines(groupDocs)) {
             outputChildDoc(doc, groupNodes)
         }
@@ -571,24 +541,19 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
         currentGroup = [];
     }
 
-    let childCount = 1
     path.each((childPath) => {
         const childNode = childPath.getValue() as Node;
         const childDoc = childPath.call(print);
 
         if (isInlineNode(childNode)) {
-            debugPrint(`${childCount}. push ${docToString(childDoc)}`)
             currentGroup.push({ doc: childDoc, node: childNode });
         } else {
             flush();
-            debugPrint(`${childCount}. output ${docToString(childDoc)}`)
 
             outputChildDoc(isLine(childDoc) ? childDoc : concat([breakParent, childDoc]), [
                 childNode,
             ]);
         }
-
-        childCount ++
     }, 'children');
 
     flush();
