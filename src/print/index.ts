@@ -512,7 +512,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
 
     /**
      * Add a document to the output.
-     * @param childDoc null means "consider to be whitespace"
+     * @param childDoc null means do not add anything but allow for the possibility of a linebreak here.
      */
     function outputChildDoc(childDoc: Doc | null, fromNodes: Node[]) {
         const firstNode = fromNodes[0];
@@ -525,6 +525,8 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
 
             const lastChild = childDocs[childDocs.length - 1];
 
+            // separate children by softlines, but not if the children are already lines.
+            // one exception: allow for a line break before "keepIfLonely" lines because they represent an empty line
             if (
                 childDoc != null &&
                 !isLineDiscardedIfLonely(childDoc) &&
@@ -545,6 +547,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
     }
 
     function lastChildDocProduced() {
+        // line breaks are ok after last child
         outputChildDoc(null, []);
     }
 
@@ -561,20 +564,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
 
         debugPrint(`flush ${groupDocs.map(docToString).join(', ')}`)
 
-        const trimmedLeft = trimLeft(groupDocs, isLine);
-
-        if (trimmedLeft) {
-            for (let doc of trimmedLeft) {
-                outputChildDoc(doc, groupNodes)
-            }
-        }
-
-        // pull out any nested trailing lines and put them at the top level
-        const trailingLines = trimRight(groupDocs, isLine);
-
-        outputChildDoc(!isEmptyGroup(groupDocs) ? fill(groupDocs) : null, groupNodes);
-
-        for (let doc of trailingLines || []) {
+        for (let doc of extractOutermostNewlines(groupDocs)) {
             outputChildDoc(doc, groupNodes)
         }
 
@@ -593,7 +583,6 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
             flush();
             debugPrint(`${childCount}. output ${docToString(childDoc)}`)
 
-            // TODO: do we need breakparent? can we have one for all children?
             outputChildDoc(isLine(childDoc) ? childDoc : concat([breakParent, childDoc]), [
                 childNode,
             ]);
@@ -670,6 +659,20 @@ function dedentFinalNewline(docs: Doc[]): Doc[] {
     else {
         return docs
     }
+}
+
+/** 
+  * Pull out any nested leading or trailing lines and put them at the top level.
+  */ 
+function extractOutermostNewlines(docs: Doc[]): Doc[] {
+    const leadingLines: Doc[] = trimLeft(docs, isLine) || [];
+    const trailingLines: Doc[] = trimRight(docs, isLine) || [];
+
+    return [
+        ...leadingLines,
+        ...(!isEmptyGroup(docs) ? [fill(docs)] : ([] as Doc[])),
+        ...trailingLines,
+    ];
 }
 
 function printJS(path: FastPath, print: PrintFn, name?: string) {

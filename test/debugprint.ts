@@ -1,6 +1,26 @@
 import { Node } from '../src/print/nodes';
 import { Doc } from 'prettier';
 
+let nesting = -1;
+
+export function increaseNesting() {
+    nesting++;
+}
+
+export function decreaseNesting() {
+    nesting--;
+}
+
+export function debugPrint(s: string) {
+    let indent = '';
+
+    for (let i = 0; i < nesting; i++) {
+        indent += '    ';
+    }
+
+    console.log('\r' + indent + s);
+}
+
 export function cloneDoc(doc: Doc): Doc {
     return JSON.parse(JSON.stringify(doc));
 }
@@ -10,13 +30,11 @@ export function docToString(doc: Doc): string {
         return `"${doc}"`;
     } else if (doc.type === 'line') {
         if (doc.soft) {
-          return 'softline'
-        }
-        else if (doc.hard) {
-          return 'hardline'
-        }
-        else {
-          return `line${doc.keepIfLonely ? ':keepIfLonely' : ''}`;
+            return 'softline';
+        } else if (doc.hard) {
+            return 'hardline';
+        } else {
+            return `line${doc.keepIfLonely ? ':keepIfLonely' : ''}`;
         }
     } else {
         const contents = (doc as any).contents;

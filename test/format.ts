@@ -23,15 +23,9 @@ const bug = `<div>
 </div>
 `;
 
-const doubleWhite = `<div>
-    Foo
-
-    <div />
-
-    <div />
-
-    Bar
-</div>
+const doubleWhite = `{#if foo}
+    <p>foo</p>
+{/if}
 `;
 
 const doNotAddSpace = `<p>

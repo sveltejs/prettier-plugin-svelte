@@ -1,6 +1,10 @@
 import { Doc } from 'prettier';
 import { debugPrint, docToString } from '../../test/debugprint';
 
+/**
+ * Trims both leading and trailing nodes matching `isWhitespace` independent of nesting level 
+ * (though all trimmed adjacent nodes need to be a the same level). Modifies the `docs` array.
+ */
 export function trim(docs: Doc[], isWhitespace: (doc: Doc) => boolean): Doc[] {
     const trimmedLeft = trimLeft(docs, isWhitespace);
 
@@ -19,10 +23,10 @@ export function trim(docs: Doc[], isWhitespace: (doc: Doc) => boolean): Doc[] {
 
 /**
  * Trims the leading nodes matching `isWhitespace` independent of nesting level (though all nodes need to be a the same level)
- * and returnes the trimmed nodes.
+ * and returnes the removed nodes.
  */
 export function trimLeft(group: Doc[], isWhitespace: (doc: Doc) => boolean): Doc[] | undefined {
-    let firstNonWhitespace = group.findIndex((doc) => !isWhitespace(doc), group);
+    let firstNonWhitespace = group.findIndex((doc) => !isWhitespace(doc));
 
     if (firstNonWhitespace < 0 && group.length) {
         firstNonWhitespace = group.length
@@ -41,7 +45,7 @@ export function trimLeft(group: Doc[], isWhitespace: (doc: Doc) => boolean): Doc
 
 /**
  * Trims the trailing nodes matching `isWhitespace` independent of nesting level (though all nodes need to be a the same level)
- * and returnes the trimmed nodes.
+ * and returnes the removed nodes.
  */
 export function trimRight(group: Doc[], isWhitespace: (doc: Doc) => boolean): Doc[] | undefined {
     let lastNonWhitespace = group.length ? findLastIndex((doc) => !isWhitespace(doc), group) : 0;
@@ -71,32 +75,4 @@ function findLastIndex<T>(filter: (item: T) => boolean, items: T[]) {
     }
 
     return -1;
-}
-
-export function isEmptyDoc(doc: Doc): boolean {
-    if (typeof doc === 'string') {
-        return doc.length == 0;
-    }
-
-    if (doc.type === 'line') {
-        return !doc.keepIfLonely;
-    }
-
-    const { contents } = doc as { contents?: Doc };
-
-    if (contents) {
-        return isEmptyDoc(contents);
-    }
-
-    const { parts } = doc as { parts?: Doc[] };
-
-    if (parts) {
-        return isEmptyGroup(parts);
-    }
-
-    return false;
-}
-
-export function isEmptyGroup(group: Doc[]): boolean {
-    return !group.find(doc => !isEmptyDoc(doc))
 }
