@@ -6,7 +6,7 @@ import { getText } from '../lib/getText';
 import { parseSortOrder, SortOrderPart } from '../options';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
 import { selfClosingTags } from '../lib/elements';
-import { trim, trimLeft, trimRight, isEmptyGroup } from '../lib/trim'; 
+import { trim, trimLeft, trimRight } from '../lib/trim'; 
 import { nodeToString, docToString, cloneDoc, increaseNesting, debugPrint, decreaseNesting } from '../../test/debugprint';
 import {
     canBreakBefore,
@@ -15,7 +15,7 @@ import {
     isInlineNode,
     isEmptyNode,
 } from './node-helpers';
-import { isLine, isLineDiscardedIfLonely } from './doc-helpers';
+import { isLine, isLineDiscardedIfLonely, isEmptyGroup } from './doc-helpers';
 
 const {
     concat,
@@ -164,7 +164,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
              * until this node's current line is out of room, at which `fill` will break at the
              * most convenient instance of `line`.
              */
-            return fill(splitTextToDoc(node.raw || node.data));
+            return fill(splitTextToDocs(node.raw || node.data));
         case 'Element':
         case 'InlineComponent':
         case 'Slot':
@@ -496,7 +496,7 @@ export function printInner(path: FastPath, options: ParserOptions, print: PrintF
  * If the text starts or ends with multiple newlines, those newlines should be "keepIfLonely" 
  * since we want double newlines in the output.
  */
-function splitTextToDoc(text: string): Doc[] {
+function splitTextToDocs(text: string): Doc[] {
     let docs: Doc[] = text.split(/[\t\n\f\r ]+/)
 
     docs = join(line, docs).parts.filter(s => s !== '')
@@ -514,10 +514,7 @@ function splitTextToDoc(text: string): Doc[] {
     return docs
 }
 
-function printChildren(
-    path: FastPath,
-    print: PrintFn
-): Doc[] {
+function printChildren(path: FastPath, print: PrintFn, surroundingLines = true): Doc {	
     let childDocs: Doc[] = [];
     let currentGroup: { doc: Doc; node: Node }[] = [];
     // the index of the last child doc we could add a linebreak after
