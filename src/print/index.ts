@@ -113,7 +113,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return '';
             }
 
-            return concat([printChildren(path, print, false), hardline]);
+            return concat([printChildren(path, print, null), hardline]);
         case 'Text':
             if (isEmptyNode(node)) {
                 return {
@@ -249,7 +249,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 '{#if ',
                 printJS(path, print, 'expression'),
                 '}',
-                indent(printChildren(path, print)),
+                indent(printChildren(path, print, hardline)),
             ];
 
             if (node.else) {
@@ -274,7 +274,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     '{:else if ',
                     path.map(ifPath => printJS(path, print, 'expression'), 'children')[0],
                     '}',
-                    indent(path.map(ifPath => printChildren(ifPath, print), 'children')[0]),
+                    indent(path.map(ifPath => printChildren(ifPath, print, hardline), 'children')[0]),
                 ];
 
                 if (ifNode.else) {
@@ -283,7 +283,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return group(concat(def));
             }
 
-            return group(concat(['{:else}', indent(printChildren(path, print))]));
+            return group(concat(['{:else}', indent(printChildren(path, print, hardline))]));
         }
         case 'EachBlock': {
             const def: Doc[] = [
@@ -301,7 +301,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 def.push(' (', printJS(path, print, 'key'), ')');
             }
 
-            def.push('}', indent(printChildren(path, print)));
+            def.push('}', indent(printChildren(path, print, hardline)));
 
             if (node.else) {
                 def.push(path.call(print, 'else'));
@@ -552,7 +552,7 @@ function trimRight(group: Doc[]): void {
     last.parts.reverse();
 }
 
-function printChildren(path: FastPath, print: PrintFn, surroundingLines = true): Doc {
+function printChildren(path: FastPath, print: PrintFn, surroundingLines: Doc|null = softline): Doc {
     const childDocs: Doc[] = [];
     let currentGroup: Doc[] = [];
 
@@ -587,9 +587,9 @@ function printChildren(path: FastPath, print: PrintFn, surroundingLines = true):
     flush();
 
     return concat([
-        surroundingLines ? softline : '',
+        surroundingLines || '',
         join(hardline, childDocs),
-        surroundingLines ? dedent(softline) : '',
+        surroundingLines ? dedent(surroundingLines) : '',
     ]);
 }
 
