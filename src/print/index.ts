@@ -259,7 +259,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             def.push('{/if}');
 
-            return group(concat(def));
+            return concat([group(concat(def)), breakParent]);
         }
         case 'ElseBlock': {
             // Else if
@@ -310,7 +310,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             def.push('{/each}');
 
-            return group(concat(def));
+            return concat([group(concat(def)), breakParent]);
         }
         case 'AwaitBlock': {
             const hasPendingBlock = node.pending.children.some((n) => !isEmptyNode(n));

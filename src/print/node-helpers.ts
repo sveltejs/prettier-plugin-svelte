@@ -38,7 +38,11 @@ export function isInlineNode(node: Node): boolean {
 
           return text === '' || text.trim() !== '';
       case 'MustacheTag':
+      case 'EachBlock':
+      case 'IfBlock':
           return true;
+      case 'Element':
+          return isInlineElement(node);
       default:
           return false;
   }
