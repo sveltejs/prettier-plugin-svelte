@@ -44,7 +44,7 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
     svelteIndentScriptAndStyle: {
         type: 'boolean',
         default: true,
-        description: 'Indent the contents of script and style tags inside component files',
+        description: 'Whether or not to indent the code inside <script> and <style> tags in Svelte files',
     },
 };
 
