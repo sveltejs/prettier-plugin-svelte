@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## Unreleased
+## 1.1.1
 
 * Fix bug that breaks plugin when using Prettier v2.1.x ([#123](https://github.com/sveltejs/prettier-plugin-svelte/issues/123))
 * Fix incorrectly escaped regexp which broke style tags followed by "s" ([#118](https://github.com/sveltejs/prettier-plugin-svelte/issues/118))
