@@ -285,3 +285,26 @@ export type Node =
     | ModuleScriptNode
     | BodyNode
     | OptionsNode;
+
+/**
+ * The Svelte AST root node
+ */
+export interface ASTNode {
+    html: Node;
+    css?: Node & {
+        attributes: Node[];
+        children: Node[];
+        content: Node & {
+            styles: string;
+        };
+    };
+    js?: ScriptNode;
+    instance?: ScriptNode;
+    module?: ScriptNode;
+    /**
+     * This is not actually part of the Svelte parser output,
+     * but we add it afterwards to make sure we can distinguish
+     * the root node from other nodes afterwards.
+     */
+    __isRoot: boolean;
+}
