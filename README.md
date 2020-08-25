@@ -38,7 +38,7 @@ and add your preferred configuration options:
 
 - **`svelteIndentScriptAndStyle`**
   - Default: `true`
-  - Indent the contents of script and style tags inside component files (svelte equivalent of [vueIndentScriptAndStyle](https://prettier.io/docs/en/options.html#vue-files-script-and-style-tags-indentation))
+  - Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte files. This saves an indentation level, but might break code folding in your editor.
 
   For example:
 
