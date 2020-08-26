@@ -1,19 +1,9 @@
-import { Node, ScriptNode, InstanceScriptNode, ModuleScriptNode } from './nodes';
+import { ASTNode } from './nodes';
 
-export interface ASTNode {
-    html: Node;
-    css?: Node & {
-        attributes: Node[];
-        children: Node[];
-        content: Node & {
-            styles: string;
-        };
-    };
-    js?: ScriptNode;
-    instance?: ScriptNode;
-    module?: ScriptNode;
-}
-
+/**
+ * Determines whether or not given node
+ * is the root of the Svelte AST.
+ */
 export function isASTNode(n: any): n is ASTNode {
-    return 'html' in n && 'tokens' in n;
+    return n && n.__isRoot;
 }

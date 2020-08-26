@@ -1,5 +1,6 @@
 import { SupportLanguage, Parser, Printer } from 'prettier';
 import { print } from './print';
+import { ASTNode } from './print/nodes';
 import { embed } from './embed';
 import { snipTagContent } from './lib/snipTagContent';
 
@@ -21,9 +22,9 @@ export const languages: Partial<SupportLanguage>[] = [
 
 export const parsers: Record<string, Parser> = {
     svelte: {
-        parse: text => {
+        parse: (text) => {
             try {
-                return require(`svelte/compiler`).parse(text);
+                return <ASTNode>{ ...require(`svelte/compiler`).parse(text), __isRoot: true };
             } catch (err) {
                 err.loc = {
                     start: err.start,
@@ -34,7 +35,7 @@ export const parsers: Record<string, Parser> = {
                 throw err;
             }
         },
-        preprocess: text => {
+        preprocess: (text) => {
             text = snipTagContent('style', text);
             text = snipTagContent('script', text, '{}');
             return text.trim();
