@@ -1,5 +1,5 @@
 export function snipTagContent(tagName: string, source: string, placeholder = ''): string {
-    const regex = new RegExp(`[\s\n]*<${tagName}([^]*?)>([^]*?)<\/${tagName}>[\s\n]*`, 'gi');
+    const regex = new RegExp(`[\\s\n]*<${tagName}([^]*?)>([^]*?)<\/${tagName}>[\\s\n]*`, 'gi');
     return source.replace(regex, (_, attributes, content) => {
         const encodedContent = Buffer.from(content).toString('base64');
         return `<${tagName}${attributes} ✂prettier:content✂="${encodedContent}">${placeholder}</${tagName}>`;

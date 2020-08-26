@@ -470,6 +470,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return concat([line, '{...', printJS(path, print, 'expression'), '}']);
     }
 
+    console.error(JSON.stringify(node, null, 4));
     throw new Error('unknown node type: ' + node.type);
 }
 
@@ -695,6 +696,6 @@ function expandNode(node): string {
             return ' ...' + node.argument.name;
     }
 
-    console.log(JSON.stringify(node, null, 4));
+    console.error(JSON.stringify(node, null, 4));
     throw new Error('unknown node type: ' + node.type);
 }
