@@ -8,9 +8,12 @@ export function isLineDiscardedIfLonely(doc: Doc) {
   return isLine(doc) && !(doc as doc.builders.Line).keepIfLonely
 }
 
+/**
+ * Check if the doc is empty, i.e. consists of nothing more than empty strings (possibly nested).
+ */
 export function isEmptyDoc(doc: Doc): boolean {
   if (typeof doc === 'string') {
-      return doc.length == 0;
+      return doc.length === 0;
   }
 
   if (doc.type === 'line') {
