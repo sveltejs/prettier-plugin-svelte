@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## Unreleased
+
+* Fix white space issues ([#58](https://github.com/sveltejs/prettier-plugin-svelte/issues/58), [#103](https://github.com/sveltejs/prettier-plugin-svelte/issues/103), [#24](https://github.com/sveltejs/prettier-plugin-svelte/issues/24))
+
 ## 1.1.1
 
 * Fix bug that breaks plugin when using Prettier v2.1.x ([#123](https://github.com/sveltejs/prettier-plugin-svelte/issues/123))
