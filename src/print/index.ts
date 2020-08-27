@@ -5,7 +5,7 @@ import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { parseSortOrder, SortOrderPart } from '../options';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
-import { selfClosingTags } from '../lib/elements';
+import { selfClosingTags, formattableAttributes } from '../lib/elements';
 import { trim, trimLeft, trimRight } from '../lib/trim'; 
 import {
     canBreakBefore,
@@ -247,7 +247,16 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     const quotes = !hasLoneMustacheTag || options.svelteStrictMode;
 
                     quotes && def.push('"');
-                    def.push(...path.map(childPath => childPath.call(print), 'value'));
+
+                    const valueDocs = path.map(childPath => childPath.call(print), 'value')
+
+                    if (!quotes || !formattableAttributes.includes(node.name)) {
+                        def.push(concat(valueDocs));
+                    }
+                    else {
+                        def.push(indent(group(concat(trim(valueDocs, isLine)))));
+                    }
+
                     quotes && def.push('"');
                 }
                 return concat(def);
