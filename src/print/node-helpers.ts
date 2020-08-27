@@ -35,8 +35,9 @@ export function isInlineNode(node: Node): boolean {
   switch (node.type) {
       case 'Text':
           const text = node.raw || node.data;
+          const isAllWhitespace = text.trim() === ''
 
-          return text === '' || text.trim() !== '';
+          return !isAllWhitespace || text === '';
       case 'MustacheTag':
       case 'EachBlock':
       case 'IfBlock':

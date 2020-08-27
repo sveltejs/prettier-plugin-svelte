@@ -6,7 +6,6 @@ import { getText } from '../lib/getText';
 import { parseSortOrder, SortOrderPart } from '../options';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
 import { selfClosingTags, formattableAttributes } from '../lib/elements';
-import { trim, trimLeft, trimRight } from '../lib/trim';
 import {
     canBreakBefore,
     canBreakAfter,
@@ -14,7 +13,14 @@ import {
     isInlineNode,
     isEmptyNode,
 } from './node-helpers';
-import { isLine, isLineDiscardedIfLonely, isEmptyGroup } from './doc-helpers';
+import {
+    isLine,
+    isLineDiscardedIfLonely,
+    isEmptyGroup,
+    trim,
+    trimLeft,
+    trimRight,
+} from './doc-helpers';
 
 const {
     concat,
