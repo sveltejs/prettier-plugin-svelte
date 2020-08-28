@@ -1,11 +1,11 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
 import { Node, MustacheTagNode, IfBlockNode } from './nodes';
-import { isASTNode } from './helpers';
+import { isASTNode, isPreTagContent } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { parseSortOrder, SortOrderPart } from '../options';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
-import { selfClosingTags } from '../lib/elements';
+import { selfClosingTags, formattableAttributes } from '../lib/elements';
 import {
     canBreakBefore,
     canBreakAfter,
@@ -112,37 +112,45 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return '';
             }
 
-            return concat([...trim(printChildren(path, print), isLine), hardline]);
-        case 'Text':
-            if (isEmptyNode(node)) {
-                return {
-                    /**
-                     * Empty (whitespace-only) text nodes are collapsed into a single `line`,
-                     * which will be rendered as a single space if this node's group fits on a
-                     * single line. This follows how vanilla HTML is handled both by browsers and
-                     * by Prettier core.
-                     */
-                    ...line,
-
-                    /**
-                     * A text node is considered lonely if it is in a group without other inline
-                     * elements, such as the line breaks between otherwise consecutive HTML tags.
-                     * Text nodes that are both empty and lonely are discarded unless they have at
-                     * least one empty line (i.e. at least two linebreak sequences). This is to
-                     * allow for flexible grouping of HTML tags in a particular indentation level,
-                     * and is similar to how vanilla HTML is handled in Prettier core.
-                     */
-                    keepIfLonely: /\n\r?\s*\n\r?/.test(node.raw || node.data),
-                };
+            if (!isPreTagContent(path)) {
+                return concat([...trim(printChildren(path, print), isLine), hardline]);
+            } else {
+                return concat(printChildren(path, print));
             }
+        case 'Text':
+            if (!isPreTagContent(path)) {
+                if (isEmptyNode(node)) {
+                    return {
+                        /**
+                         * Empty (whitespace-only) text nodes are collapsed into a single `line`,
+                         * which will be rendered as a single space if this node's group fits on a
+                         * single line. This follows how vanilla HTML is handled both by browsers and
+                         * by Prettier core.
+                         */
+                        ...line,
 
-            /**
-             * For non-empty text nodes each sequence of non-whitespace characters (effectively,
-             * each "word") is joined by a single `line`, which will be rendered as a single space
-             * until this node's current line is out of room, at which `fill` will break at the
-             * most convenient instance of `line`.
-             */
-            return fill(splitTextToDocs(node.raw || node.data));
+                        /**
+                         * A text node is considered lonely if it is in a group without other inline
+                         * elements, such as the line breaks between otherwise consecutive HTML tags.
+                         * Text nodes that are both empty and lonely are discarded unless they have at
+                         * least one empty line (i.e. at least two linebreak sequences). This is to
+                         * allow for flexible grouping of HTML tags in a particular indentation level,
+                         * and is similar to how vanilla HTML is handled in Prettier core.
+                         */
+                        keepIfLonely: /\n\r?\s*\n\r?/.test(node.raw || node.data),
+                    };
+                }
+
+                /**
+                 * For non-empty text nodes each sequence of non-whitespace characters (effectively,
+                 * each "word") is joined by a single `line`, which will be rendered as a single space
+                 * until this node's current line is out of room, at which `fill` will break at the
+                 * most convenient instance of `line`.
+                 */
+                return fill(splitTextToDocs(node.raw || node.data));
+            } else {
+                return node.data;
+            }
         case 'Element':
         case 'InlineComponent':
         case 'Slot':
@@ -188,7 +196,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                               '>',
                               isEmpty
                                   ? ''
-                                  : isInlineElement(node)
+                                  : isInlineElement(node) || isPreTagContent(path)
                                   ? printIndentedPreservingWhitespace(path, print)
                                   : printIndentedWithNewlines(path, print),
                               `</${node.name}>`,
@@ -241,7 +249,15 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     const quotes = !hasLoneMustacheTag || options.svelteStrictMode;
 
                     quotes && def.push('"');
-                    def.push(...path.map((childPath) => childPath.call(print), 'value'));
+
+                    const valueDocs = path.map((childPath) => childPath.call(print), 'value');
+
+                    if (!quotes || !formattableAttributes.includes(node.name)) {
+                        def.push(concat(valueDocs));
+                    } else {
+                        def.push(indent(group(concat(trim(valueDocs, isLine)))));
+                    }
+
                     quotes && def.push('"');
                 }
                 return concat(def);
@@ -478,6 +494,8 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
     // the index of the last child doc we could add a linebreak after
     let lastBreakIndex = -1;
 
+    const isPreformat = isPreTagContent(path);
+
     /**
      * Call when reaching a point where a linebreak is possible. Will
      * put all `childDocs` since the last possible linebreak position
@@ -498,28 +516,30 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
      * @param childDoc null means do not add anything but allow for the possibility of a linebreak here.
      */
     function outputChildDoc(childDoc: Doc | null, fromNodes: Node[]) {
-        const firstNode = fromNodes[0];
-        const lastNode = fromNodes[fromNodes.length - 1];
+        if (!isPreformat) {
+            const firstNode = fromNodes[0];
+            const lastNode = fromNodes[fromNodes.length - 1];
 
-        if (!childDoc || canBreakBefore(firstNode)) {
-            linebreakPossible();
+            if (!childDoc || canBreakBefore(firstNode)) {
+                linebreakPossible();
 
-            const lastChild = childDocs[childDocs.length - 1];
+                const lastChild = childDocs[childDocs.length - 1];
 
-            // separate children by softlines, but not if the children are already lines.
-            // one exception: allow for a line break before "keepIfLonely" lines because they represent an empty line
-            if (
-                childDoc != null &&
-                !isLineDiscardedIfLonely(childDoc) &&
-                lastChild != null &&
-                !isLine(lastChild)
-            ) {
-                childDocs.push(softline);
+                // separate children by softlines, but not if the children are already lines.
+                // one exception: allow for a line break before "keepIfLonely" lines because they represent an empty line
+                if (
+                    childDoc != null &&
+                    !isLineDiscardedIfLonely(childDoc) &&
+                    lastChild != null &&
+                    !isLine(lastChild)
+                ) {
+                    childDocs.push(softline);
+                }
             }
-        }
 
-        if (lastBreakIndex < 0 && childDoc && !canBreakAfter(lastNode)) {
-            lastBreakIndex = childDocs.length;
+            if (lastBreakIndex < 0 && childDoc && !canBreakAfter(lastNode)) {
+                lastBreakIndex = childDocs.length;
+            }
         }
 
         if (childDoc) {

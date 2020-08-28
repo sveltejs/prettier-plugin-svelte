@@ -72,3 +72,10 @@ export const inlineElements: TagName[] = [
   'video',
   'wbr'
 ];
+
+/**
+ * HTML attributes that we may safely reformat (trim whitespace, add or remove newlines)
+ */
+export const formattableAttributes = [
+  'class'
+]
