@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Fix white space issues ([#58](https://github.com/sveltejs/prettier-plugin-svelte/issues/58), [#103](https://github.com/sveltejs/prettier-plugin-svelte/issues/103), [#24](https://github.com/sveltejs/prettier-plugin-svelte/issues/24))
+* Don't format inside `<pre>` and attributes except `class` ([#28](https://github.com/sveltejs/prettier-plugin-svelte/issues/28))
 
 ## 1.1.1
 
