@@ -494,7 +494,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
     // the index of the last child doc we could add a linebreak after
     let lastBreakIndex = -1;
 
-    let isPreformat = isPreTagContent(path);
+    const isPreformat = isPreTagContent(path);
 
     /**
      * Call when reaching a point where a linebreak is possible. Will
