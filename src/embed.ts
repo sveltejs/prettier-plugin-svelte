@@ -1,12 +1,14 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
 import { PrintFn } from './print';
-import { Node, AttributeNode, TextNode } from './print/nodes';
+import { Node, AttributeNode, TextNode, ElementNode } from './print/nodes';
 import { getText } from './lib/getText';
 
 const {
     builders: { concat, hardline, group, indent },
     utils: { removeLines },
 } = doc;
+
+const supportedLanguages = ['ts','js', 'css', 'scss']
 
 export function embed(
     path: FastPath,
@@ -85,6 +87,32 @@ function nukeLastLine(doc: Doc): Doc {
     return doc;
 }
 
+function isTextNode(node: Node): node is TextNode {
+    return node.type === 'Text'
+}
+
+function getLangAttribute(node: Node): string | null {
+    const attributes = (node as ElementNode)['attributes'] as AttributeNode[];
+
+    const langAttribute = attributes.find(
+        (attribute) => attribute.name === 'lang',
+    ) as AttributeNode | null;
+
+    if (langAttribute) {
+        const value = langAttribute.value
+
+        const textValue =
+            typeof value === 'object' &&
+            value.find(isTextNode) ;
+
+        if (textValue && typeof textValue === 'object') {
+            return textValue.data;
+        }
+    }
+
+    return null;
+}
+
 function embedTag(
     tag: string,
     path: FastPath,
@@ -93,10 +121,15 @@ function embedTag(
     node: Node & { attributes: Node[] },
     inline: boolean,
 ) {
+    const lang = getLangAttribute(node);
+
+    const isSupportedLanguage = !lang || supportedLanguages.includes(lang);
+
     const parser = tag === 'script' ? 'typescript' : 'css';
     const contentAttribute = (node.attributes as AttributeNode[]).find(
-        n => n.name === '✂prettier:content✂',
+        (n) => n.name === '✂prettier:content✂',
     );
+
     let content = '';
     if (
         contentAttribute &&
@@ -106,16 +139,20 @@ function embedTag(
         const encodedContent = (contentAttribute.value[0] as TextNode).data;
         content = Buffer.from(encodedContent, 'base64').toString('utf-8');
     }
-    node.attributes = node.attributes.filter(n => n !== contentAttribute);
+    node.attributes = node.attributes.filter((n) => n !== contentAttribute);
 
     return group(
         concat([
             '<',
             tag,
-            indent(group(concat(path.map(childPath => childPath.call(print), 'attributes')))),
+            indent(group(concat(path.map((childPath) => childPath.call(print), 'attributes')))),
             '>',
-            indent(concat([hardline, nukeLastLine(textToDoc(content, { parser }))])),
-            hardline,
+            isSupportedLanguage
+                ? concat([
+                      indent(concat([hardline, nukeLastLine(textToDoc(content, { parser }))])),
+                      hardline,
+                  ])
+                : content,
             '</',
             tag,
             '>',
