@@ -8,7 +8,7 @@ const {
     utils: { removeLines },
 } = doc;
 
-const supportedLanguages = ['ts','js', 'css', 'scss']
+const supportedLanguages = ['ts', 'js', 'css', 'scss'];
 
 export function embed(
     path: FastPath,
