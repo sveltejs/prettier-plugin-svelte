@@ -1,14 +1,13 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
 import { PrintFn } from './print';
-import { Node, AttributeNode, TextNode, ElementNode } from './print/nodes';
+import { Node, AttributeNode, TextNode } from './print/nodes';
 import { getText } from './lib/getText';
+import { isNodeSupportedLanguage } from './print/node-helpers';
 
 const {
     builders: { concat, hardline, group, indent },
     utils: { removeLines },
 } = doc;
-
-const supportedLanguages = ['ts', 'js', 'css', 'scss'];
 
 export function embed(
     path: FastPath,
@@ -33,7 +32,7 @@ export function embed(
             return embedTag('style', path, print, textToDoc, node);
         case 'Element': {
             if (node.name === 'script' || node.name === 'style') {
-                return embedTag(node.name, path, print, textToDoc, node, true)
+                return embedTag(node.name, path, print, textToDoc, node, true);
             }
         }
     }
@@ -87,32 +86,6 @@ function nukeLastLine(doc: Doc): Doc {
     return doc;
 }
 
-function isTextNode(node: Node): node is TextNode {
-    return node.type === 'Text'
-}
-
-function getLangAttribute(node: Node): string | null {
-    const attributes = (node as ElementNode)['attributes'] as AttributeNode[];
-
-    const langAttribute = attributes.find(
-        (attribute) => attribute.name === 'lang',
-    ) as AttributeNode | null;
-
-    if (langAttribute) {
-        const value = langAttribute.value
-
-        const textValue =
-            typeof value === 'object' &&
-            value.find(isTextNode) ;
-
-        if (textValue && typeof textValue === 'object') {
-            return textValue.data;
-        }
-    }
-
-    return null;
-}
-
 function embedTag(
     tag: string,
     path: FastPath,
@@ -121,9 +94,7 @@ function embedTag(
     node: Node & { attributes: Node[] },
     inline: boolean,
 ) {
-    const lang = getLangAttribute(node);
-
-    const isSupportedLanguage = !lang || supportedLanguages.includes(lang);
+    const isSupportedLanguage = isNodeSupportedLanguage(node);
 
     const parser = tag === 'script' ? 'typescript' : 'css';
     const contentAttribute = (node.attributes as AttributeNode[]).find(

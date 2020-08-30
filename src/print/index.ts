@@ -12,6 +12,8 @@ import {
     isInlineElement,
     isInlineNode,
     isEmptyNode,
+    printRaw,
+    isNodeSupportedLanguage,
 } from './node-helpers';
 import {
     isLine,
@@ -157,6 +159,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Window':
         case 'Head':
         case 'Title': {
+            const isSupportedLanguage = !(
+                node.name === 'template' && !isNodeSupportedLanguage(node)
+            );
             const isEmpty = node.children.every((child) => isEmptyNode(child));
 
             const isSelfClosingTag =
@@ -164,6 +169,18 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 (!options.svelteStrictMode ||
                     node.type !== 'Element' ||
                     selfClosingTags.indexOf(node.name) !== -1);
+
+            let body: Doc;
+
+            if (isEmpty) {
+                body = '';
+            } else if (!isSupportedLanguage) {
+                body = printRaw(node);
+            } else if (isInlineElement(node) || isPreTagContent(path)) {
+                body = printIndentedPreservingWhitespace(path, print);
+            } else {
+                body = printIndentedWithNewlines(path, print);
+            }
 
             return group(
                 concat([
@@ -192,15 +209,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
                     ...(isSelfClosingTag
                         ? [options.svelteBracketNewLine ? '' : ' ', `/>`]
-                        : [
-                              '>',
-                              isEmpty
-                                  ? ''
-                                  : isInlineElement(node) || isPreTagContent(path)
-                                  ? printIndentedPreservingWhitespace(path, print)
-                                  : printIndentedWithNewlines(path, print),
-                              `</${node.name}>`,
-                          ]),
+                        : ['>', body, `</${node.name}>`]),
                 ]),
             );
         }
