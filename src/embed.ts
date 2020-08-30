@@ -27,14 +27,15 @@ export function embed(
         );
     }
 
+    const indentContent = options.svelteIndentScriptAndStyle;
     switch (node.type) {
         case 'Script':
-            return embedTag('script', path, print, textToDoc, node);
+            return embedTag('script', path, print, textToDoc, node, false, indentContent);
         case 'Style':
-            return embedTag('style', path, print, textToDoc, node);
+            return embedTag('style', path, print, textToDoc, node, false, indentContent);
         case 'Element': {
             if (node.name === 'script' || node.name === 'style') {
-                return embedTag(node.name, path, print, textToDoc, node, true);
+                return embedTag(node.name, path, print, textToDoc, node, true, indentContent);
             }
         }
     }
@@ -94,7 +95,8 @@ function embedTag(
     print: PrintFn,
     textToDoc: (text: string, options: object) => Doc,
     node: Node & { attributes: Node[] },
-    inline: boolean = false,
+    inline: boolean,
+    indentContent: boolean,
 ) {
     const parser = tag === 'script' ? 'typescript' : 'css';
 
@@ -111,17 +113,19 @@ function embedTag(
         (n) => n.name !== snippedTagContentAttribute,
     );
 
-    let formatted: Doc = content;
+    let body: Doc = content;
 
     if (isNodeSupportedLanguage(node)) {
         try {
-            formatted = concat([
-                indent(concat([hardline, nukeLastLine(textToDoc(content, { parser }))])),
+            const indentIfDesired = (doc: Doc) => (indentContent ? indent(doc) : doc);
+
+            body = concat([
+                indentIfDesired(concat([hardline, nukeLastLine(textToDoc(content, { parser }))])),
                 hardline,
             ]);
         } catch (error) {
-            // We will wind up here if there is a syntax error in the embedded code. If we throw an error, 
-            // prettier will try to print the node with the printer. That will fail with a hard-to-interpret 
+            // We will wind up here if there is a syntax error in the embedded code. If we throw an error,
+            // prettier will try to print the node with the printer. That will fail with a hard-to-interpret
             // error message (e.g. "Unsupported node type", referring to `<script>`).
             // Therefore, fall back on just returning the unformatted text.
 
@@ -141,7 +145,7 @@ function embedTag(
             tag,
             indent(group(concat(path.map((childPath) => childPath.call(print), 'attributes')))),
             '>',
-            formatted,
+            body,
             '</',
             tag,
             '>',

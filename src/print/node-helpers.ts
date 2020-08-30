@@ -1,13 +1,14 @@
-import { Node, ElementNode, TextNode, AttributeNode } from './nodes';
+import {
+    Node,
+    ElementNode,
+    TextNode,
+    AttributeNode,
+    MustacheTagNode,
+    AttributeShorthandNode,
+} from './nodes';
 import { inlineElements, TagName } from '../lib/elements';
 
-const unsupportedLanguages = [
-    'coffee',
-    'coffeescript',
-    'pug',
-    'styl',
-    'stylus'
-];
+const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus'];
 
 export function isInlineElement(node: Node) {
     return node.type === 'Element' && inlineElements.includes(node.name as TagName);
@@ -118,4 +119,28 @@ export function isNodeSupportedLanguage(node: Node) {
     const lang = getLangAttribute(node);
 
     return !(lang && unsupportedLanguages.includes(lang));
+}
+
+export function isLoneMustacheTag(node: true | Node[]): node is [MustacheTagNode] {
+    return node !== true && node.length === 1 && node[0].type === 'MustacheTag';
+}
+
+export function isAttributeShorthand(node: true | Node[]): node is [AttributeShorthandNode] {
+    return node !== true && node.length === 1 && node[0].type === 'AttributeShorthand';
+}
+
+/**
+ * True if node is of type `{a}` or `a={a}`
+ */
+export function isOrCanBeConvertedToShorthand(node: AttributeNode): boolean {
+    if (isAttributeShorthand(node.value)) {
+        return true;
+    }
+
+    if (isLoneMustacheTag(node.value)) {
+        const expression = node.value[0].expression;
+        return expression.type === 'Identifier' && expression.name === node.name;
+    }
+
+    return false;
 }

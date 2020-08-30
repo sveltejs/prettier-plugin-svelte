@@ -1,5 +1,5 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
-import { Node, MustacheTagNode, IfBlockNode } from './nodes';
+import { Node, IfBlockNode, AttributeNode } from './nodes';
 import { isASTNode, isPreTagContent } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
@@ -14,6 +14,8 @@ import {
     isEmptyNode,
     printRaw,
     isNodeSupportedLanguage,
+    isLoneMustacheTag,
+    isOrCanBeConvertedToShorthand,
 } from './node-helpers';
 import {
     isLine,
@@ -233,43 +235,26 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return node.expression.name;
         }
         case 'Attribute': {
-            const hasLoneMustacheTag =
-                node.value !== true &&
-                node.value.length === 1 &&
-                node.value[0].type === 'MustacheTag';
-            let isAttributeShorthand =
-                node.value !== true &&
-                node.value.length === 1 &&
-                node.value[0].type === 'AttributeShorthand';
-
-            // Convert a={a} into {a}
-            if (hasLoneMustacheTag) {
-                const expression = (node.value as [MustacheTagNode])[0].expression;
-                isAttributeShorthand =
-                    expression.type === 'Identifier' && expression.name === node.name;
-            }
-
-            if (isAttributeShorthand && options.svelteAllowShorthand) {
-                return concat([line, '{', node.name, '}']);
-            } else {
-                const def: Doc[] = [line, node.name];
-                if (node.value !== true) {
-                    def.push('=');
-                    const quotes = !hasLoneMustacheTag || options.svelteStrictMode;
-
-                    quotes && def.push('"');
-
-                    const valueDocs = path.map((childPath) => childPath.call(print), 'value');
-
-                    if (!quotes || !formattableAttributes.includes(node.name)) {
-                        def.push(concat(valueDocs));
-                    } else {
-                        def.push(indent(group(concat(trim(valueDocs, isLine)))));
-                    }
-
-                    quotes && def.push('"');
+            if (isOrCanBeConvertedToShorthand(node)) {
+                if (options.svelteStrictMode) {
+                    return concat([line, node.name, '="{', node.name, '}"']);
+                } else if (options.svelteAllowShorthand) {
+                    return concat([line, '{', node.name, '}']);
+                } else {
+                    return concat([line, node.name, '={', node.name, '}']);
                 }
-                return concat(def);
+            } else {
+                if (node.value === true) {
+                    return concat([line, node.name]);
+                }
+
+                const quotes = !isLoneMustacheTag(node.value) || options.svelteStrictMode;
+                const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
+                if (quotes) {
+                    return concat([line, node.name, '=', '"', attrNodeValue, '"']);
+                } else {
+                    return concat([line, node.name, '=', attrNodeValue]);
+                }
             }
         }
         case 'MustacheTag':
@@ -497,6 +482,21 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     throw new Error('unknown node type: ' + node.type);
 }
 
+function printAttributeNodeValue(
+    path: FastPath<any>,
+    print: PrintFn,
+    quotes: boolean,
+    node: AttributeNode,
+) {
+    const valueDocs = path.map((childPath) => childPath.call(print), 'value');
+
+    if (!quotes || !formattableAttributes.includes(node.name)) {
+        return concat(valueDocs);
+    } else {
+        return indent(group(concat(trim(valueDocs, isLine))));
+    }
+}
+
 function printChildren(path: FastPath, print: PrintFn): Doc[] {
     let childDocs: Doc[] = [];
     let currentGroup: { doc: Doc; node: Node }[] = [];
@@ -706,6 +706,8 @@ function expandNode(node): string {
         case 'Property':
             if (node.value.type === 'ObjectPattern') {
                 return ' ' + node.key.name + ':' + expandNode(node.value);
+            } else if (node.value.type === 'Identifier' && node.key.name !== node.value.name) {
+                return expandNode(node.key) + ':' + expandNode(node.value);
             } else {
                 return expandNode(node.value);
             }
