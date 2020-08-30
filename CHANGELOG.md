@@ -1,5 +1,16 @@
 # prettier-plugin-svelte changelog
 
+## Unreleased
+
+* Fix white space issues ([#58](https://github.com/sveltejs/prettier-plugin-svelte/issues/58), [#103](https://github.com/sveltejs/prettier-plugin-svelte/issues/103), [#24](https://github.com/sveltejs/prettier-plugin-svelte/issues/24))
+* Don't format inside `<pre>` and attributes except `class` ([#28](https://github.com/sveltejs/prettier-plugin-svelte/issues/28))
+
+## 1.1.1
+
+* Fix bug that breaks plugin when using Prettier v2.1.x ([#123](https://github.com/sveltejs/prettier-plugin-svelte/issues/123))
+* Fix incorrectly escaped regexp which broke style tags followed by "s" ([#118](https://github.com/sveltejs/prettier-plugin-svelte/issues/118))
+* Write to console.error to prevent crash and erasion of files ([#115](https://github.com/sveltejs/prettier-plugin-svelte/issues/115))
+
 ## 1.1.0
 
 * Support `<!-- prettier-ignore -->` comments ([#59](https://github.com/sveltejs/prettier-plugin-svelte/issues/59))
