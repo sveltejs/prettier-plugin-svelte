@@ -1,12 +1,12 @@
 # prettier-plugin-svelte changelog
 
-## Unreleased
+## 1.2.0
 
-* Fix white space issues ([#58](https://github.com/sveltejs/prettier-plugin-svelte/issues/58), [#103](https://github.com/sveltejs/prettier-plugin-svelte/issues/103), [#24](https://github.com/sveltejs/prettier-plugin-svelte/issues/24))
-* Don't format inside `<pre>` and attributes except `class` ([#28](https://github.com/sveltejs/prettier-plugin-svelte/issues/28))
-* Add curly braces when attribute shorthand is used but not allowed ([#110](https://github.com/sveltejs/prettier-plugin-svelte/issues/110))
+* Don't format contents of `<pre>` or its attributes, apart from `class` ([#28](https://github.com/sveltejs/prettier-plugin-svelte/issues/28))
+* Fix whitespace issues ([#58](https://github.com/sveltejs/prettier-plugin-svelte/issues/58), [#103](https://github.com/sveltejs/prettier-plugin-svelte/issues/103), [#24](https://github.com/sveltejs/prettier-plugin-svelte/issues/24))
+* Add option to disable first level of indentation in `<script>` and `<style>` tags ([#105](https://github.com/sveltejs/prettier-plugin-svelte/issues/105))
+* Fix output when rewriting shorthand attributes to not use the shorthand syntax ([#110](https://github.com/sveltejs/prettier-plugin-svelte/issues/110))
 * Add support for object destructuring reassignment ([#113](https://github.com/sveltejs/prettier-plugin-svelte/issues/113))
-* Add option to disable first level of indent in script and style tags ([#105](https://github.com/sveltejs/prettier-plugin-svelte/issues/105))
 
 ## 1.1.1
 
