@@ -1,8 +1,9 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
 import { PrintFn } from './print';
-import { Node, AttributeNode, TextNode } from './print/nodes';
+import { Node, AttributeNode } from './print/nodes';
 import { getText } from './lib/getText';
-import { isNodeSupportedLanguage } from './print/node-helpers';
+import { isNodeSupportedLanguage, getAttributeTextValue } from './print/node-helpers';
+import { snippedTagContentAttribute } from './lib/snipTagContent';
 
 const {
     builders: { concat, hardline, group, indent },
@@ -92,25 +93,22 @@ function embedTag(
     print: PrintFn,
     textToDoc: (text: string, options: object) => Doc,
     node: Node & { attributes: Node[] },
-    inline: boolean,
+    inline: boolean = false,
 ) {
     const isSupportedLanguage = isNodeSupportedLanguage(node);
 
     const parser = tag === 'script' ? 'typescript' : 'css';
-    const contentAttribute = (node.attributes as AttributeNode[]).find(
-        (n) => n.name === '✂prettier:content✂',
-    );
 
+    const encodedContent = getAttributeTextValue(snippedTagContentAttribute, node);
     let content = '';
-    if (
-        contentAttribute &&
-        Array.isArray(contentAttribute.value) &&
-        contentAttribute.value.length > 0
-    ) {
-        const encodedContent = (contentAttribute.value[0] as TextNode).data;
+
+    if (encodedContent) {
         content = Buffer.from(encodedContent, 'base64').toString('utf-8');
     }
-    node.attributes = node.attributes.filter((n) => n !== contentAttribute);
+
+    node.attributes = (node.attributes as AttributeNode[]).filter(
+        (n) => n.name !== snippedTagContentAttribute,
+    );
 
     return group(
         concat([

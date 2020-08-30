@@ -88,7 +88,7 @@ function getAttributeValue(attributeName: string, node: Node) {
     return langAttribute && langAttribute.value;
 }
 
-function getAttributeTextValue(attributeName: string, node: Node): string | null {
+export function getAttributeTextValue(attributeName: string, node: Node): string | null {
     const value = getAttributeValue(attributeName, node);
 
     if (value != null && typeof value === 'object') {
