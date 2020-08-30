@@ -17,6 +17,9 @@ export function embed(
     options: ParserOptions,
 ): Doc | null {
     const node: Node = path.getNode();
+
+    console.log(`embed node.type=${node.type} node.isJS=${node.isJS}`);
+
     if (node.isJS) {
         return removeLines(
             textToDoc(getText(node, options), {
@@ -95,8 +98,6 @@ function embedTag(
     node: Node & { attributes: Node[] },
     inline: boolean = false,
 ) {
-    const isSupportedLanguage = isNodeSupportedLanguage(node);
-
     const parser = tag === 'script' ? 'typescript' : 'css';
 
     const encodedContent = getAttributeTextValue(snippedTagContentAttribute, node);
@@ -106,9 +107,35 @@ function embedTag(
         content = Buffer.from(encodedContent, 'base64').toString('utf-8');
     }
 
+    const originalAttributes = node.attributes;
+
     node.attributes = (node.attributes as AttributeNode[]).filter(
         (n) => n.name !== snippedTagContentAttribute,
     );
+
+    let formatted: Doc = content;
+
+    if (isNodeSupportedLanguage(node)) {
+        try {
+            formatted = concat([
+                indent(concat([hardline, nukeLastLine(textToDoc(content, { parser }))])),
+                hardline,
+            ]);
+        } catch (error) {
+            // We will wind up here if there is a syntax error in the embedded code. If we throw an error, 
+            // prettier will try to print the node with the printer. That will fail with a hard-to-interpret 
+            // error message (e.g. "Unsupported node type", referring to `<script>`).
+            // Therefore, fall back on just returning the unformatted text.
+
+            if (process.env.PRETTIER_DEBUG) {
+                node.attributes = originalAttributes;
+
+                throw error;
+            }
+
+            console.error(error);
+        }
+    }
 
     return group(
         concat([
@@ -116,12 +143,7 @@ function embedTag(
             tag,
             indent(group(concat(path.map((childPath) => childPath.call(print), 'attributes')))),
             '>',
-            isSupportedLanguage
-                ? concat([
-                      indent(concat([hardline, nukeLastLine(textToDoc(content, { parser }))])),
-                      hardline,
-                  ])
-                : content,
+            formatted,
             '</',
             tag,
             '>',

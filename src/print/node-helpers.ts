@@ -1,15 +1,12 @@
 import { Node, ElementNode, TextNode, AttributeNode } from './nodes';
 import { inlineElements, TagName } from '../lib/elements';
 
-const supportedLanguages = [
-    'ts',
-    'typescript',
-    'js',
-    'javascript',
-    'css',
-    'scss',
-    'less',
-    'postcss',
+const unsupportedLanguages = [
+    'coffee',
+    'coffeescript',
+    'pug',
+    'styl',
+    'stylus'
 ];
 
 export function isInlineElement(node: Node) {
@@ -102,7 +99,7 @@ export function getAttributeTextValue(attributeName: string, node: Node): string
     return null;
 }
 
-export function getLangAttribute(node: Node): string | null {
+function getLangAttribute(node: Node): string | null {
     const value = getAttributeTextValue('lang', node);
 
     if (value != null) {
@@ -120,5 +117,5 @@ export function getLangAttribute(node: Node): string | null {
 export function isNodeSupportedLanguage(node: Node) {
     const lang = getLangAttribute(node);
 
-    return !lang || supportedLanguages.includes(lang);
+    return !(lang && unsupportedLanguages.includes(lang));
 }
