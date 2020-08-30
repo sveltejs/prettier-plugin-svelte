@@ -697,6 +697,8 @@ function expandNode(node): string {
         case 'Property':
             if (node.value.type === 'ObjectPattern') {
                 return ' ' + node.key.name + ':' + expandNode(node.value);
+            } else if (node.value.type === 'Identifier' && node.key.name !== node.value.name) {
+                return expandNode(node.key) + ':' + expandNode(node.value);
             } else {
                 return expandNode(node.value);
             }
