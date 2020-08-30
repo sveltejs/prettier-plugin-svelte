@@ -18,8 +18,6 @@ export function embed(
 ): Doc | null {
     const node: Node = path.getNode();
 
-    console.log(`embed node.type=${node.type} node.isJS=${node.isJS}`);
-
     if (node.isJS) {
         return removeLines(
             textToDoc(getText(node, options), {
