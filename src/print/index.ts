@@ -227,19 +227,22 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 									expression.type === 'Identifier' && expression.name === node.name;
             }
 
-            if (isAttributeShorthand && options.svelteAllowShorthand) {
-                return concat([line, '{', node.name, '}']);
+            if (isAttributeShorthand) {
+                if (options.svelteStrictMode) {
+                    return concat([line, node.name, '="{', node.name, '}"']);
+                } else if (options.svelteAllowShorthand) {
+                    return concat([line, '{', node.name, '}']);
+                } else {
+                    return concat([line, node.name, '={', node.name, '}']);
+                }
             } else {
                 const def: Doc[] = [line, node.name];
                 if (node.value !== true) {
                     def.push('=');
                     const quotes = !hasLoneMustacheTag || options.svelteStrictMode;
-                    const curlies = quotes && isAttributeShorthand && !options.svelteAllowShorthand;
 
                     quotes && def.push('"');
-                    curlies && def.push('{');
                     def.push(...path.map(childPath => childPath.call(print), 'value'));
-                    curlies && def.push('}');
                     quotes && def.push('"');
                 }
                 return concat(def);
