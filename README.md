@@ -36,6 +36,10 @@ and add your preferred configuration options:
   - Default: `false`
   - Put the `>` of a multiline element on a new line (svelte equivalent of [jsxBracketSameLine](https://prettier.io/docs/en/options.html#jsx-brackets) rule)
 
+- **`svelteIndentScriptAndStyle`**
+  - Default: `true`
+  - Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte files. This saves an indentation level, but might break code folding in your editor.
+
   For example:
 
   ```html
@@ -58,7 +62,8 @@ and add your preferred configuration options:
   "svelteSortOrder" : "styles-scripts-markup",
   "svelteStrictMode": true,
   "svelteBracketNewLine": true,
-  "svelteAllowShorthand": false
+  "svelteAllowShorthand": false,
+  "svelteIndentScriptAndStyle": false
 }
 ```
 
