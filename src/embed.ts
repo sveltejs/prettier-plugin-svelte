@@ -136,9 +136,7 @@ function getEmbedBody(
             // prettier will try to print the node with the printer. That will fail with a hard-to-interpret
             // error message (e.g. "Unsupported node type", referring to `<script>`).
             // Therefore, fall back on just returning the unformatted text.
-            if (options.svelteReportSyntaxErrors) {
-                console.error(error);
-            }
+            console.error(error);
         }
     }
 
