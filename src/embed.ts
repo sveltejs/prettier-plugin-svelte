@@ -1,6 +1,6 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
 import { PrintFn } from './print';
-import { Node, AttributeNode } from './print/nodes';
+import { Node, AttributeNode, ScriptNode } from './print/nodes';
 import { getText } from './lib/getText';
 import { isNodeSupportedLanguage, getAttributeTextValue } from './print/node-helpers';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
@@ -27,15 +27,22 @@ export function embed(
         );
     }
 
-    const indentContent = options.svelteIndentScriptAndStyle;
+    const embedScript = () =>
+        embedTag('script', getEmbedBody(node, 'typescript', textToDoc, options), path, print);
+
+    const embedStyle = () =>
+        embedTag('style', getEmbedBody(node, 'css', textToDoc, options), path, print);
+
     switch (node.type) {
         case 'Script':
-            return embedTag('script', path, print, textToDoc, node, false, indentContent);
+            return concat([embedScript(), hardline]);
         case 'Style':
-            return embedTag('style', path, print, textToDoc, node, false, indentContent);
+            return concat([embedStyle(), hardline]);
         case 'Element': {
-            if (node.name === 'script' || node.name === 'style') {
-                return embedTag(node.name, path, print, textToDoc, node, true, indentContent);
+            if (node.name === 'script') {
+                return embedScript();
+            } else if (node.name === 'style') {
+                return embedStyle();
             }
         }
     }
@@ -89,17 +96,20 @@ function nukeLastLine(doc: Doc): Doc {
     return doc;
 }
 
-function embedTag(
-    tag: string,
-    path: FastPath,
-    print: PrintFn,
-    textToDoc: (text: string, options: object) => Doc,
-    node: Node & { attributes: Node[] },
-    inline: boolean,
-    indentContent: boolean,
-) {
-    const parser = tag === 'script' ? 'typescript' : 'css';
+function newlinesToHardlines(str: string): Doc {
+    return concat(
+        str.split('\n').reduce((docs, str, i) => {
+            return docs.concat(i > 0 ? doc.builders.hardline : []).concat(str !== '' ? str : []);
+        }, [] as Doc[]),
+    );
+}
 
+function getEmbedBody(
+    node: Node,
+    parser: 'typescript' | 'css',
+    textToDoc: (text: string, options: object) => Doc,
+    options: ParserOptions,
+) {
     const encodedContent = getAttributeTextValue(snippedTagContentAttribute, node);
     let content = '';
 
@@ -107,49 +117,44 @@ function embedTag(
         content = Buffer.from(encodedContent, 'base64').toString('utf-8');
     }
 
-    const originalAttributes = node.attributes;
-
-    node.attributes = (node.attributes as AttributeNode[]).filter(
-        (n) => n.name !== snippedTagContentAttribute,
-    );
-
-    let body: Doc = content;
-
     if (isNodeSupportedLanguage(node)) {
+        const indentContent = options.svelteIndentScriptAndStyle;
+
         try {
             const indentIfDesired = (doc: Doc) => (indentContent ? indent(doc) : doc);
 
-            body = concat([
+            return concat([
                 indentIfDesired(concat([hardline, nukeLastLine(textToDoc(content, { parser }))])),
                 hardline,
             ]);
         } catch (error) {
+            if (process.env.PRETTIER_DEBUG) {
+                throw error;
+            }
+
             // We will wind up here if there is a syntax error in the embedded code. If we throw an error,
             // prettier will try to print the node with the printer. That will fail with a hard-to-interpret
             // error message (e.g. "Unsupported node type", referring to `<script>`).
             // Therefore, fall back on just returning the unformatted text.
-
-            if (process.env.PRETTIER_DEBUG) {
-                node.attributes = originalAttributes;
-
-                throw error;
+            if (options.svelteReportSyntaxErrors) {
+                console.error(error);
             }
-
-            console.error(error);
         }
     }
 
-    return group(
-        concat([
-            '<',
-            tag,
-            indent(group(concat(path.map((childPath) => childPath.call(print), 'attributes')))),
-            '>',
-            body,
-            '</',
-            tag,
-            '>',
-            inline ? '' : hardline,
-        ]),
+    return newlinesToHardlines(content);
+}
+
+function embedTag(tag: string, body: Doc, path: FastPath, print: PrintFn) {
+    const attributes = concat(
+        path.map(
+            (childPath) =>
+                childPath.getNode().name !== snippedTagContentAttribute
+                    ? childPath.call(print)
+                    : '',
+            'attributes',
+        ),
     );
+
+    return group(concat(['<', tag, indent(group(attributes)), '>', body, '</', tag, '>']));
 }

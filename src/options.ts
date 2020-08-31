@@ -10,6 +10,7 @@ export interface PluginOptions {
     svelteBracketNewLine: boolean;
     svelteAllowShorthand: boolean;
     svelteIndentScriptAndStyle: boolean;
+    svelteReportSyntaxErrors: boolean;
 }
 
 export const options: Record<keyof PluginOptions, SupportOption> = {
@@ -46,6 +47,11 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
         default: true,
         description: 'Whether or not to indent the code inside <script> and <style> tags in Svelte files',
     },
+    svelteReportSyntaxErrors: {
+        type: 'boolean',
+        default: true,
+        description: 'Whether to report any syntax errors in script tags in the console output',
+    }
 };
 
 export type SortOrder =
