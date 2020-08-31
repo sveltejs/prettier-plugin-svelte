@@ -26,7 +26,7 @@ and add your preferred configuration options:
 
 - **`svelteStrictMode`**
   - Default: `false`
-  - More strict HTML syntax: self-closed tags, quotes in attributes.
+  - More strict HTML syntax: self-closed tags, quotes in attributes, no attribute shorthand (overrules `svelteAllowShorthand`).
 
 - **`svelteAllowShorthand`**
   - Default: `true`
