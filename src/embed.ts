@@ -1,6 +1,6 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
 import { PrintFn } from './print';
-import { Node, AttributeNode, ScriptNode } from './print/nodes';
+import { Node } from './print/nodes';
 import { getText } from './lib/getText';
 import { isNodeSupportedLanguage, getAttributeTextValue } from './print/node-helpers';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
