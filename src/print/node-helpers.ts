@@ -7,6 +7,8 @@ import {
     AttributeShorthandNode,
 } from './nodes';
 import { inlineElements, TagName } from '../lib/elements';
+import { FastPath } from 'prettier';
+import { isASTNode } from './helpers';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus'];
 
@@ -58,8 +60,48 @@ export function isInlineNode(node: Node): boolean {
     }
 }
 
+export function isNodeWithChildren(node: Node): node is (Node & {children: Node[]}) {
+    return (node as any)['children']
+}
+
+export function getChildren(node: Node): Node[] {
+    return isNodeWithChildren(node) ? node.children : []
+}
+
+/**
+ * Returns the previous sibling node.
+ */
+export function getPreviousNode(path: FastPath): Node | undefined {
+    const node: Node = path.getNode();
+    let parent: Node = path.getParentNode();
+
+    if (isASTNode(parent)) {
+        parent = parent.html;
+    }
+
+    return getChildren(parent).find((child) => child.end == node.start);
+}
+
+/**
+ * Returns the next sibling node.
+ */
+export function getNextNode(path: FastPath): Node | undefined {
+    const node: Node = path.getNode();
+    let parent: Node = path.getParentNode();
+
+    if (isASTNode(parent)) {
+        parent = parent.html;
+    }
+
+    return getChildren(parent).find((child) => child.start == node.end);
+}
+
 export function isEmptyNode(node: Node): boolean {
     return node.type === 'Text' && (node.raw || node.data).trim() === '';
+}
+
+export function isIgnoreDirective(node: Node | undefined): boolean {
+    return !!node && node.type === 'Comment' && node.data.trim() === 'prettier-ignore';
 }
 
 export function printRaw(node: Node): string {

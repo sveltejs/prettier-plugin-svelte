@@ -1,9 +1,16 @@
-import { FastPath, Doc, doc, ParserOptions } from 'prettier';
-import { PrintFn } from './print';
-import { Node } from './print/nodes';
+import { Doc, doc, FastPath, ParserOptions } from 'prettier';
 import { getText } from './lib/getText';
-import { isNodeSupportedLanguage, getAttributeTextValue } from './print/node-helpers';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
+import { PrintFn } from './print';
+import { isASTNode } from './print/helpers';
+import {
+    getAttributeTextValue,
+    getChildren,
+    isNodeSupportedLanguage,
+    isIgnoreDirective,
+    getPreviousNode,
+} from './print/node-helpers';
+import { Node } from './print/nodes';
 
 const {
     builders: { concat, hardline, group, indent },
@@ -27,22 +34,28 @@ export function embed(
         );
     }
 
-    const embedScript = () =>
-        embedTag('script', getEmbedBody(node, 'typescript', textToDoc, options), path, print);
+    const embedType = (tag: string, parser: 'typescript' | 'css', addNewline: boolean) =>
+        embedTag(
+            tag,
+            path,
+            (content) => formatBodyContent(content, parser, textToDoc, options),
+            print,
+            addNewline,
+        );
 
-    const embedStyle = () =>
-        embedTag('style', getEmbedBody(node, 'css', textToDoc, options), path, print);
+    const embedScript = (addNewline: boolean) => embedType('script', 'typescript', addNewline);
+    const embedStyle = (addNewline: boolean) => embedType('style', 'css', addNewline);
 
     switch (node.type) {
         case 'Script':
-            return concat([embedScript(), hardline]);
+            return embedScript(true);
         case 'Style':
-            return concat([embedStyle(), hardline]);
+            return embedStyle(true);
         case 'Element': {
             if (node.name === 'script') {
-                return embedScript();
+                return embedScript(false);
             } else if (node.name === 'style') {
-                return embedStyle();
+                return embedStyle(false);
             }
         }
     }
@@ -104,46 +117,62 @@ function newlinesToHardlines(str: string): Doc {
     );
 }
 
-function getEmbedBody(
-    node: Node,
+function getSnippedContent(node: Node) {
+    const encodedContent = getAttributeTextValue(snippedTagContentAttribute, node);
+
+    if (encodedContent) {
+        return Buffer.from(encodedContent, 'base64').toString('utf-8');
+    } else {
+        return '';
+    }
+}
+
+function formatBodyContent(
+    content: string,
     parser: 'typescript' | 'css',
     textToDoc: (text: string, options: object) => Doc,
     options: ParserOptions,
 ) {
-    const encodedContent = getAttributeTextValue(snippedTagContentAttribute, node);
-    let content = '';
+    const indentContent = options.svelteIndentScriptAndStyle;
 
-    if (encodedContent) {
-        content = Buffer.from(encodedContent, 'base64').toString('utf-8');
-    }
+    try {
+        const indentIfDesired = (doc: Doc) => (indentContent ? indent(doc) : doc);
 
-    if (isNodeSupportedLanguage(node)) {
-        const indentContent = options.svelteIndentScriptAndStyle;
-
-        try {
-            const indentIfDesired = (doc: Doc) => (indentContent ? indent(doc) : doc);
-
-            return concat([
-                indentIfDesired(concat([hardline, nukeLastLine(textToDoc(content, { parser }))])),
-                hardline,
-            ]);
-        } catch (error) {
-            if (process.env.PRETTIER_DEBUG) {
-                throw error;
-            }
-
-            // We will wind up here if there is a syntax error in the embedded code. If we throw an error,
-            // prettier will try to print the node with the printer. That will fail with a hard-to-interpret
-            // error message (e.g. "Unsupported node type", referring to `<script>`).
-            // Therefore, fall back on just returning the unformatted text.
-            console.error(error);
+        return concat([
+            indentIfDesired(concat([hardline, nukeLastLine(textToDoc(content, { parser }))])),
+            hardline,
+        ]);
+    } catch (error) {
+        if (process.env.PRETTIER_DEBUG) {
+            throw error;
         }
-    }
 
-    return newlinesToHardlines(content);
+        // We will wind up here if there is a syntax error in the embedded code. If we throw an error,
+        // prettier will try to print the node with the printer. That will fail with a hard-to-interpret
+        // error message (e.g. "Unsupported node type", referring to `<script>`).
+        // Therefore, fall back on just returning the unformatted text.
+        console.error(error);
+
+        return newlinesToHardlines(content);
+    }
 }
 
-function embedTag(tag: string, body: Doc, path: FastPath, print: PrintFn) {
+function embedTag(
+    tag: string,
+    path: FastPath,
+    formatBodyContent: (content: string) => Doc,
+    print: PrintFn,
+    addNewline: boolean,
+) {
+    const node: Node = path.getNode();
+    const content = getSnippedContent(node);
+    const isIgnored = isIgnoreDirective(getPreviousNode(path));
+
+    const body: Doc =
+        isNodeSupportedLanguage(node) && !isIgnored && content.trim() !== ''
+            ? formatBodyContent(content)
+            : newlinesToHardlines(content);
+
     const attributes = concat(
         path.map(
             (childPath) =>
@@ -154,5 +183,15 @@ function embedTag(tag: string, body: Doc, path: FastPath, print: PrintFn) {
         ),
     );
 
-    return group(concat(['<', tag, indent(group(attributes)), '>', body, '</', tag, '>']));
+    let result: Doc = group(
+        concat(['<', tag, indent(group(attributes)), '>', body, '</', tag, '>']),
+    );
+
+    if (isIgnored) {
+        result = concat(['<!-- prettier-ignore -->', hardline, result]);
+    } else if (addNewline) {
+        result = concat([result, hardline]);
+    }
+
+    return result;
 }
