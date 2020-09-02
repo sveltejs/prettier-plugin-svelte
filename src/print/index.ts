@@ -17,7 +17,6 @@ import {
     isLoneMustacheTag,
     isOrCanBeConvertedToShorthand,
     isIgnoreDirective,
-    getPreviousNode,
     getNextNode,
 } from './node-helpers';
 import {
@@ -27,7 +26,6 @@ import {
     trim,
     trimLeft,
     trimRight,
-    isEmptyDoc,
 } from './doc-helpers';
 
 const {
@@ -96,6 +94,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             },
         };
         parseSortOrder(options.svelteSortOrder).forEach((p) => addParts[p]());
+        ignoreNext = false;
         return group(join(hardline, parts));
     }
 

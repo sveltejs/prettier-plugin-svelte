@@ -108,11 +108,11 @@ function nukeLastLine(doc: Doc): Doc {
 }
 
 function preformattedBody(str: string): Doc {
-    // If we do not start with a new line prettier might try to break the opening tag
-    // to keep it together with the string. Use a literal line to skip indentation.
     const firstNewline = /^[\t\f\r ]*\n/;
     const lastNewline = /\n[\t\f\r ]*$/;
-
+    
+    // If we do not start with a new line prettier might try to break the opening tag
+    // to keep it together with the string. Use a literal line to skip indentation.
     return concat([
         literalline,
         str.replace(firstNewline, '').replace(lastNewline, ''),
