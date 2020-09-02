@@ -61,11 +61,11 @@ export function isInlineNode(node: Node): boolean {
 }
 
 export function isNodeWithChildren(node: Node): node is (Node & {children: Node[]}) {
-    return (node as any)['children']
+    return (node as any).children;
 }
 
 export function getChildren(node: Node): Node[] {
-    return isNodeWithChildren(node) ? node.children : []
+    return isNodeWithChildren(node) ? node.children : [];
 }
 
 /**
@@ -79,7 +79,7 @@ export function getPreviousNode(path: FastPath): Node | undefined {
         parent = parent.html;
     }
 
-    return getChildren(parent).find((child) => child.end == node.start);
+    return getChildren(parent).find((child) => child.end === node.start);
 }
 
 /**
@@ -93,7 +93,7 @@ export function getNextNode(path: FastPath): Node | undefined {
         parent = parent.html;
     }
 
-    return getChildren(parent).find((child) => child.start == node.end);
+    return getChildren(parent).find((child) => child.start === node.end);
 }
 
 export function isEmptyNode(node: Node): boolean {
