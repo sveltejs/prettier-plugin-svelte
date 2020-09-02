@@ -2,10 +2,8 @@ import { Doc, doc, FastPath, ParserOptions } from 'prettier';
 import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { PrintFn } from './print';
-import { isASTNode } from './print/helpers';
 import {
     getAttributeTextValue,
-    getChildren,
     isNodeSupportedLanguage,
     isIgnoreDirective,
     getPreviousNode,
@@ -13,7 +11,7 @@ import {
 import { Node } from './print/nodes';
 
 const {
-    builders: { concat, hardline, group, indent },
+    builders: { concat, hardline, group, indent, align, literalline },
     utils: { removeLines },
 } = doc;
 
@@ -34,17 +32,17 @@ export function embed(
         );
     }
 
-    const embedType = (tag: string, parser: 'typescript' | 'css', addNewline: boolean) =>
+    const embedType = (tag: string, parser: 'typescript' | 'css', isTopLevel: boolean) =>
         embedTag(
             tag,
             path,
             (content) => formatBodyContent(content, parser, textToDoc, options),
             print,
-            addNewline,
+            isTopLevel,
         );
 
-    const embedScript = (addNewline: boolean) => embedType('script', 'typescript', addNewline);
-    const embedStyle = (addNewline: boolean) => embedType('style', 'css', addNewline);
+    const embedScript = (isTopLevel: boolean) => embedType('script', 'typescript', isTopLevel);
+    const embedStyle = (isTopLevel: boolean) => embedType('style', 'css', isTopLevel);
 
     switch (node.type) {
         case 'Script':
@@ -109,12 +107,17 @@ function nukeLastLine(doc: Doc): Doc {
     return doc;
 }
 
-function newlinesToHardlines(str: string): Doc {
-    return concat(
-        str.split('\n').reduce((docs, str, i) => {
-            return docs.concat(i > 0 ? doc.builders.hardline : []).concat(str !== '' ? str : []);
-        }, [] as Doc[]),
-    );
+function preformattedBody(str: string): Doc {
+    // If we do not start with a new line prettier might try to break the opening tag
+    // to keep it together with the string. Use a literal line to skip indentation.
+    const firstNewline = /^[\t\f\r ]*\n/;
+    const lastNewline = /\n[\t\f\r ]*$/;
+
+    return concat([
+        literalline,
+        str.replace(firstNewline, '').replace(lastNewline, ''),
+        hardline,
+    ]);
 }
 
 function getSnippedContent(node: Node) {
@@ -153,7 +156,7 @@ function formatBodyContent(
         // Therefore, fall back on just returning the unformatted text.
         console.error(error);
 
-        return newlinesToHardlines(content);
+        return preformattedBody(content);
     }
 }
 
@@ -162,16 +165,18 @@ function embedTag(
     path: FastPath,
     formatBodyContent: (content: string) => Doc,
     print: PrintFn,
-    addNewline: boolean,
+    isTopLevel: boolean,
 ) {
     const node: Node = path.getNode();
     const content = getSnippedContent(node);
     const isIgnored = isIgnoreDirective(getPreviousNode(path));
 
     const body: Doc =
-        isNodeSupportedLanguage(node) && !isIgnored && content.trim() !== ''
-            ? formatBodyContent(content)
-            : newlinesToHardlines(content);
+        isNodeSupportedLanguage(node) && !isIgnored
+            ? content.trim() !== ''
+                ? formatBodyContent(content)
+                : hardline
+            : preformattedBody(content);
 
     const attributes = concat(
         path.map(
@@ -187,10 +192,15 @@ function embedTag(
         concat(['<', tag, indent(group(attributes)), '>', body, '</', tag, '>']),
     );
 
-    if (isIgnored) {
-        result = concat(['<!-- prettier-ignore -->', hardline, result]);
-    } else if (addNewline) {
-        result = concat([result, hardline]);
+    if (isTopLevel) {
+        // top level embedded nodes have been moved from their normal position in the
+        // node tree. if there is an ignore directive referring to it, it must be
+        // recreated at the new position.
+        if (isIgnored) {
+            result = concat(['<!-- prettier-ignore -->', hardline, result]);
+        } else {
+            result = concat([result, hardline]);
+        }
     }
 
     return result;
