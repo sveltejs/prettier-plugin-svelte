@@ -10,7 +10,7 @@ import { inlineElements, TagName } from '../lib/elements';
 import { FastPath } from 'prettier';
 import { isASTNode } from './helpers';
 
-const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus'];
+const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus', 'sass'];
 
 export function isInlineElement(node: Node) {
     return node.type === 'Element' && inlineElements.includes(node.name as TagName);
