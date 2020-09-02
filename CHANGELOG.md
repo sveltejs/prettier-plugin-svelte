@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## Unreleased
+
+* (fix) make error location properties compatible with both svelte and prettier ([#71](https://github.com/sveltejs/prettier-plugin-svelte/issues/71))
+
 ## 1.2.0
 
 * Don't format contents of `<pre>` or its attributes, apart from `class` ([#28](https://github.com/sveltejs/prettier-plugin-svelte/issues/28))
