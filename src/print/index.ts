@@ -12,8 +12,12 @@ import {
     isInlineElement,
     isInlineNode,
     isEmptyNode,
+    printRaw,
+    isNodeSupportedLanguage,
     isLoneMustacheTag,
     isOrCanBeConvertedToShorthand,
+    isIgnoreDirective,
+    getNextNode,
 } from './node-helpers';
 import {
     isLine,
@@ -90,6 +94,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             },
         };
         parseSortOrder(options.svelteSortOrder).forEach((p) => addParts[p]());
+        ignoreNext = false;
         return group(join(hardline, parts));
     }
 
@@ -159,6 +164,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Window':
         case 'Head':
         case 'Title': {
+            const isSupportedLanguage = !(
+                node.name === 'template' && !isNodeSupportedLanguage(node)
+            );
             const isEmpty = node.children.every((child) => isEmptyNode(child));
 
             const isSelfClosingTag =
@@ -166,6 +174,18 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 (!options.svelteStrictMode ||
                     node.type !== 'Element' ||
                     selfClosingTags.indexOf(node.name) !== -1);
+
+            let body: Doc;
+
+            if (isEmpty) {
+                body = '';
+            } else if (!isSupportedLanguage) {
+                body = printRaw(node);
+            } else if (isInlineElement(node) || isPreTagContent(path)) {
+                body = printIndentedPreservingWhitespace(path, print);
+            } else {
+                body = printIndentedWithNewlines(path, print);
+            }
 
             return group(
                 concat([
@@ -194,15 +214,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
                     ...(isSelfClosingTag
                         ? [options.svelteBracketNewLine ? '' : ' ', `/>`]
-                        : [
-                              '>',
-                              isEmpty
-                                  ? ''
-                                  : isInlineElement(node) || isPreTagContent(path)
-                                  ? printIndentedPreservingWhitespace(path, print)
-                                  : printIndentedWithNewlines(path, print),
-                              `</${node.name}>`,
-                          ]),
+                        : ['>', body, `</${node.name}>`]),
                 ]),
             );
         }
@@ -423,8 +435,22 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Ref':
             return concat([line, 'ref:', node.name]);
         case 'Comment': {
+            if (isIgnoreDirective(node)) {
+                /**
+                 * If there no sibling node that starts right after us, that means that node
+                 * was actually an embedded `<style>` or `<script>` node that was cut out.
+                 * If so, the ignore directive does not refer to the next line we will see.
+                 * The `embed` function handles printing the ignore directive in the right place.
+                 */
+                if (!getNextNode(path)) {
+                    return '';
+                } else {
+                    ignoreNext = true;
+                }
+            }
+
             let text = node.data;
-            ignoreNext = text.trim() === 'prettier-ignore';
+
             if (hasSnippedContent(text)) {
                 text = unsnipContent(text);
             }

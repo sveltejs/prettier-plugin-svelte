@@ -1,5 +1,16 @@
-import { Node, MustacheTagNode, AttributeShorthandNode, AttributeNode } from './nodes';
+import {
+    Node,
+    ElementNode,
+    TextNode,
+    AttributeNode,
+    MustacheTagNode,
+    AttributeShorthandNode,
+} from './nodes';
 import { inlineElements, TagName } from '../lib/elements';
+import { FastPath } from 'prettier';
+import { isASTNode } from './helpers';
+
+const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus', 'sass'];
 
 export function isInlineElement(node: Node) {
     return node.type === 'Element' && inlineElements.includes(node.name as TagName);
@@ -49,8 +60,107 @@ export function isInlineNode(node: Node): boolean {
     }
 }
 
+export function isNodeWithChildren(node: Node): node is (Node & {children: Node[]}) {
+    return (node as any).children;
+}
+
+export function getChildren(node: Node): Node[] {
+    return isNodeWithChildren(node) ? node.children : [];
+}
+
+/**
+ * Returns the previous sibling node.
+ */
+export function getPreviousNode(path: FastPath): Node | undefined {
+    const node: Node = path.getNode();
+    let parent: Node = path.getParentNode();
+
+    if (isASTNode(parent)) {
+        parent = parent.html;
+    }
+
+    return getChildren(parent).find((child) => child.end === node.start);
+}
+
+/**
+ * Returns the next sibling node.
+ */
+export function getNextNode(path: FastPath): Node | undefined {
+    const node: Node = path.getNode();
+    let parent: Node = path.getParentNode();
+
+    if (isASTNode(parent)) {
+        parent = parent.html;
+    }
+
+    return getChildren(parent).find((child) => child.start === node.end);
+}
+
 export function isEmptyNode(node: Node): boolean {
     return node.type === 'Text' && (node.raw || node.data).trim() === '';
+}
+
+export function isIgnoreDirective(node: Node | undefined): boolean {
+    return !!node && node.type === 'Comment' && node.data.trim() === 'prettier-ignore';
+}
+
+export function printRaw(node: Node): string {
+    const children: Node[] | undefined = (node as ElementNode).children;
+
+    if (children) {
+        return children.map(printRaw).join('');
+    } else {
+        return (node as TextNode).raw || '';
+    }
+}
+
+function isTextNode(node: Node): node is TextNode {
+    return node.type === 'Text';
+}
+
+function getAttributeValue(attributeName: string, node: Node) {
+    const attributes = (node as ElementNode)['attributes'] as AttributeNode[];
+
+    const langAttribute = attributes.find(
+        (attribute) => attribute.name === attributeName,
+    ) as AttributeNode | null;
+
+    return langAttribute && langAttribute.value;
+}
+
+export function getAttributeTextValue(attributeName: string, node: Node): string | null {
+    const value = getAttributeValue(attributeName, node);
+
+    if (value != null && typeof value === 'object') {
+        const textValue = value.find(isTextNode);
+
+        if (textValue) {
+            return textValue.data;
+        }
+    }
+
+    return null;
+}
+
+function getLangAttribute(node: Node): string | null {
+    const value = getAttributeTextValue('lang', node);
+
+    if (value != null) {
+        return value.replace(/^text\//, '');
+    } else {
+        return null;
+    }
+}
+
+/**
+ * Checks whether the node contains a `lang` attribute with a value corresponding to
+ * a language we cannot format. This might for example be `<template lang="pug">`.
+ * If the node does not contain a `lang` attribute, the result is true.
+ */
+export function isNodeSupportedLanguage(node: Node) {
+    const lang = getLangAttribute(node);
+
+    return !(lang && unsupportedLanguages.includes(lang));
 }
 
 export function isLoneMustacheTag(node: true | Node[]): node is [MustacheTagNode] {
