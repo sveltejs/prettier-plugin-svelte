@@ -11,7 +11,7 @@ import {
 import { Node } from './print/nodes';
 
 const {
-    builders: { concat, hardline, group, indent, align, literalline },
+    builders: { concat, hardline, group, indent, literalline },
     utils: { removeLines },
 } = doc;
 
@@ -25,7 +25,7 @@ export function embed(
 
     if (node.isJS) {
         return removeLines(
-            textToDoc(getText(node, options), {
+            textToDoc(forceIntoExpression(getText(node, options)), {
                 parser: expressionParser,
                 singleQuote: true,
             }),
@@ -61,12 +61,16 @@ export function embed(
     return null;
 }
 
+function forceIntoExpression(statement: string) {
+    // note the trailing newline: if the statement ends in a // comment, 
+    // we can't add the closing bracket right afterwards
+    return `(${statement}\n)`;
+}
+
 function expressionParser(text: string, parsers: any) {
-    const ast = parsers.babel(`(${text})`);
-    return {
-        type: 'File',
-        program: ast.program.body[0].expression,
-    };
+    const ast = parsers.babel(text);
+
+    return { ...ast, program: ast.program.body[0].expression };
 }
 
 function skipBlank(docs: Doc[]): number {
@@ -110,14 +114,10 @@ function nukeLastLine(doc: Doc): Doc {
 function preformattedBody(str: string): Doc {
     const firstNewline = /^[\t\f\r ]*\n/;
     const lastNewline = /\n[\t\f\r ]*$/;
-    
+
     // If we do not start with a new line prettier might try to break the opening tag
     // to keep it together with the string. Use a literal line to skip indentation.
-    return concat([
-        literalline,
-        str.replace(firstNewline, '').replace(lastNewline, ''),
-        hardline,
-    ]);
+    return concat([literalline, str.replace(firstNewline, '').replace(lastNewline, ''), hardline]);
 }
 
 function getSnippedContent(node: Node) {
