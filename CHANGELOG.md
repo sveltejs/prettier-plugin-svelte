@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## Unreleased
+## 1.2.1
 
 * Skip formatting `<style>` or `<script>` tags if in an unsupported language or if `prettier-ignore`d ([#55](https://github.com/sveltejs/prettier-plugin-svelte/issues/55), [#59](https://github.com/sveltejs/prettier-plugin-svelte/issues/59), [#95](https://github.com/sveltejs/prettier-plugin-svelte/issues/95))
 * Make error location properties compatible with both Svelte and Prettier ([#71](https://github.com/sveltejs/prettier-plugin-svelte/issues/71))
