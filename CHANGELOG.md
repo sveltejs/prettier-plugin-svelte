@@ -4,6 +4,7 @@
 
 * (fix) make error location properties compatible with both svelte and prettier ([#71](https://github.com/sveltejs/prettier-plugin-svelte/issues/71))
 * Skip formatting <style> or <script> if unsupported language or prettier-ignored ([#55](https://github.com/sveltejs/prettier-plugin-svelte/issues/55), [#59](https://github.com/sveltejs/prettier-plugin-svelte/issues/59), [#95](https://github.com/sveltejs/prettier-plugin-svelte/issues/95))
+* (fix) handle/preserve comments in event handlers ([#96](https://github.com/sveltejs/prettier-plugin-svelte/issues/96))
 
 ## 1.2.0
 
