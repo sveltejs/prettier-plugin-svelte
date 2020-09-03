@@ -1,6 +1,6 @@
 import { FastPath, Doc, doc, ParserOptions } from 'prettier';
 import { Node, IfBlockNode, AttributeNode } from './nodes';
-import { isASTNode, isPreTagContent } from './helpers';
+import { isASTNode, isPreTagContent, flatten } from './helpers';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { parseSortOrder, SortOrderPart } from '../options';
@@ -104,10 +104,12 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     if (ignoreNext && (node.type !== 'Text' || !isEmptyNode(node))) {
         ignoreNext = false;
         return concat(
-            options.originalText
-                .slice(options.locStart(node), options.locEnd(node))
-                .split('\n')
-                .flatMap((o, i) => (i == 0 ? o : [literalline, o])),
+            flatten(
+                options.originalText
+                    .slice(options.locStart(node), options.locEnd(node))
+                    .split('\n')
+                    .map((o, i) => (i == 0 ? [o] : [literalline, o])),
+            ),
         );
     }
 

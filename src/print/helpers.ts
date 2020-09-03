@@ -19,3 +19,7 @@ export function isPreTagContent(path: FastPath): boolean {
             (node.type === 'Attribute' && !formattableAttributes.includes(node.name)),
     );
 }
+
+export function flatten<T>(arrays: T[][]): T[] {
+    return ([] as T[]).concat.apply([], arrays);
+}
