@@ -16,8 +16,8 @@ import {
     isNodeSupportedLanguage,
     isLoneMustacheTag,
     isOrCanBeConvertedToShorthand,
-    isIgnoreDirective,
     getNextNode,
+    getNodeEnd,
 } from './node-helpers';
 import {
     isLine,
@@ -437,18 +437,17 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Ref':
             return concat([line, 'ref:', node.name]);
         case 'Comment': {
-            if (isIgnoreDirective(node)) {
-                /**
-                 * If there no sibling node that starts right after us, that means that node
-                 * was actually an embedded `<style>` or `<script>` node that was cut out.
-                 * If so, the ignore directive does not refer to the next line we will see.
-                 * The `embed` function handles printing the ignore directive in the right place.
-                 */
-                if (!getNextNode(path)) {
-                    return '';
-                } else {
-                    ignoreNext = true;
-                }
+            /**
+             * If there is no sibling node that starts right after us but the parent indicates
+             * that there used to be, that means that node was actually an embedded `<style>` 
+             * or `<script>` node that was cut out.
+             * If so, the comment does not refer to the next line we will see.
+             * The `embed` function handles printing the comment in the right place.
+             */
+            if (node.end < getNodeEnd(path.getParentNode(), path) && !getNextNode(path)) {
+                return '';
+            } else {
+                ignoreNext = true;
             }
 
             let text = node.data;
@@ -607,9 +606,11 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
         } else {
             flush();
 
-            outputChildDoc(isLine(childDoc) ? childDoc : concat([breakParent, childDoc]), [
-                childNode,
-            ]);
+            if (childDoc !== '') {
+                outputChildDoc(isLine(childDoc) ? childDoc : concat([breakParent, childDoc]), [
+                    childNode,
+                ]);
+            }
         }
     }, 'children');
 

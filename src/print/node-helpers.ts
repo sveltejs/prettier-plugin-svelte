@@ -60,7 +60,7 @@ export function isInlineNode(node: Node): boolean {
     }
 }
 
-export function isNodeWithChildren(node: Node): node is (Node & {children: Node[]}) {
+export function isNodeWithChildren(node: Node): node is Node & { children: Node[] } {
     return (node as any).children;
 }
 
@@ -96,11 +96,28 @@ export function getNextNode(path: FastPath): Node | undefined {
     return getChildren(parent).find((child) => child.start === node.end);
 }
 
+/**
+ * Returns the position that used to be the end of the node before the embed elements were cut out. 
+ */
+export function getNodeEnd(node: Node, path: FastPath) {
+    const root = path.stack[0];
+
+    if (root.html === node) {
+        return Math.max(
+            ...([root.css, root.html, root.instance, root.js, root.module] as Node[])
+                .filter((n) => !!n)
+                .map((n) => n.end),
+        );
+    } else {
+        return node.end;
+    }
+}
+
 export function isEmptyNode(node: Node): boolean {
     return node.type === 'Text' && (node.raw || node.data).trim() === '';
 }
 
-export function isIgnoreDirective(node: Node | undefined): boolean {
+export function isIgnoreDirective(node: Node | undefined | null): boolean {
     return !!node && node.type === 'Comment' && node.data.trim() === 'prettier-ignore';
 }
 
