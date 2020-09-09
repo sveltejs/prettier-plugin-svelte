@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## Unreleased 
+
+* Add vscodeLanguageIds for VS Code consumers (this includes coc-prettier) ([#138](https://github.com/sveltejs/prettier-plugin-svelte/issues/138))
+
 ## 1.2.1
 
 * Skip formatting `<style>` or `<script>` tags if in an unsupported language or if `prettier-ignore`d ([#55](https://github.com/sveltejs/prettier-plugin-svelte/issues/55), [#59](https://github.com/sveltejs/prettier-plugin-svelte/issues/59), [#95](https://github.com/sveltejs/prettier-plugin-svelte/issues/95))
