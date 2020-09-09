@@ -3,6 +3,7 @@
 ## Unreleased 
 
 * Add vscodeLanguageIds for VS Code consumers (this includes coc-prettier) ([#138](https://github.com/sveltejs/prettier-plugin-svelte/issues/138))
+* If there are comments on a `<style>`, `<script>` or `<template>` tag, keep them together with the following tag when reformatting. ([#137](https://github.com/sveltejs/prettier-plugin-svelte/issues/137))
 
 ## 1.2.1
 
