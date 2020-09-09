@@ -62,7 +62,7 @@ export function embed(
 }
 
 function forceIntoExpression(statement: string) {
-    // note the trailing newline: if the statement ends in a // comment, 
+    // note the trailing newline: if the statement ends in a // comment,
     // we can't add the closing bracket right afterwards
     return `(${statement}\n)`;
 }
@@ -169,10 +169,12 @@ function embedTag(
 ) {
     const node: Node = path.getNode();
     const content = getSnippedContent(node);
-    const isIgnored = isIgnoreDirective(getPreviousNode(path));
+
+    const previousNode = getPreviousNode(path);
+    const previousComment = previousNode && previousNode.type === 'Comment' ? previousNode : null;
 
     const body: Doc =
-        isNodeSupportedLanguage(node) && !isIgnored
+        isNodeSupportedLanguage(node) && !isIgnoreDirective(previousComment)
             ? content.trim() !== ''
                 ? formatBodyContent(content)
                 : hardline
@@ -194,10 +196,10 @@ function embedTag(
 
     if (isTopLevel) {
         // top level embedded nodes have been moved from their normal position in the
-        // node tree. if there is an ignore directive referring to it, it must be
-        // recreated at the new position.
-        if (isIgnored) {
-            result = concat(['<!-- prettier-ignore -->', hardline, result]);
+        // node tree. if there is a comment referring to it, it must be recreated at
+        // the new position.
+        if (previousComment) {
+            result = concat(['<!--', previousComment.data, '-->', hardline, result, hardline]);
         } else {
             result = concat([result, hardline]);
         }
