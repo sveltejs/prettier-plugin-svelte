@@ -26,6 +26,10 @@ export function canBreakAfter(node: Node) {
             return isWhitespaceChar(node.raw[node.raw.length - 1]);
         case 'Element':
             return !isInlineElement(node);
+        case 'IfBlock':
+        case 'EachBlock':
+        case 'MustacheTag':
+            return false;
         default:
             return true;
     }
@@ -37,6 +41,10 @@ export function canBreakBefore(node: Node) {
             return isWhitespaceChar(node.raw[0]);
         case 'Element':
             return !isInlineElement(node);
+        case 'IfBlock':
+        case 'EachBlock':
+        case 'MustacheTag':
+            return false;
         default:
             return true;
     }
