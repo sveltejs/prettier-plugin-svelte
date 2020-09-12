@@ -22,10 +22,10 @@ import {
 import {
     isLine,
     isLineDiscardedIfLonely,
-    isEmptyGroup,
     trim,
     trimLeft,
     trimRight,
+    isEmptyDoc,
 } from './doc-helpers';
 
 const {
@@ -540,14 +540,12 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
 
     /**
      * Add a document to the output.
-     * @param childDoc null means do not add anything but allow for the possibility of a linebreak here.
+     * @param childDoc undefined means do not add anything but allow for the possibility of a linebreak here.
+     * @param fromNode the Node the doc was generated from. undefined if childDoc is undefined.
      */
-    function outputChildDoc(childDoc: Doc | null, fromNodes: Node[]) {
+    function outputChildDoc(childDoc?: Doc, fromNode?: Node) {
         if (!isPreformat) {
-            const firstNode = fromNodes[0];
-            const lastNode = fromNodes[fromNodes.length - 1];
-
-            if (!childDoc || canBreakBefore(firstNode)) {
+            if ((!childDoc || !fromNode || canBreakBefore(fromNode))) {
                 linebreakPossible();
 
                 const lastChild = childDocs[childDocs.length - 1];
@@ -564,7 +562,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
                 }
             }
 
-            if (lastBreakIndex < 0 && childDoc && !canBreakAfter(lastNode)) {
+            if (lastBreakIndex < 0 && childDoc && fromNode && !canBreakAfter(fromNode)) {
                 lastBreakIndex = childDocs.length;
             }
         }
@@ -576,7 +574,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
 
     function lastChildDocProduced() {
         // line breaks are ok after last child
-        outputChildDoc(null, []);
+        outputChildDoc();
     }
 
     /**
@@ -587,11 +585,10 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
      * desired to have text directly wrapping a mustache tag without additional whitespace.
      */
     function flush() {
-        let groupDocs = currentGroup.map((item) => item.doc);
-        const groupNodes = currentGroup.map((item) => item.node);
-
-        for (let doc of extractOutermostNewlines(groupDocs)) {
-            outputChildDoc(doc, groupNodes);
+        for (let { doc, node } of currentGroup) {
+            for (const childDoc of extractOutermostNewlines(doc)) {
+                outputChildDoc(childDoc, node);
+            }
         }
 
         currentGroup = [];
@@ -607,9 +604,10 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
             flush();
 
             if (childDoc !== '') {
-                outputChildDoc(isLine(childDoc) ? childDoc : concat([breakParent, childDoc]), [
+                outputChildDoc(
+                    isLine(childDoc) ? childDoc : concat([breakParent, childDoc]),
                     childNode,
-                ]);
+                );
             }
         }
     }, 'children');
@@ -680,16 +678,11 @@ function dedentFinalNewline(docs: Doc[]): Doc[] {
 /**
  * Pull out any nested leading or trailing lines and put them at the top level.
  */
+function extractOutermostNewlines(doc: Doc): Doc[] {
+    const leadingLines: Doc[] = trimLeft([doc], isLine) || [];
+    const trailingLines: Doc[] = trimRight([doc], isLine) || [];
 
-function extractOutermostNewlines(docs: Doc[]): Doc[] {
-    const leadingLines: Doc[] = trimLeft(docs, isLine) || [];
-    const trailingLines: Doc[] = trimRight(docs, isLine) || [];
-
-    return [
-        ...leadingLines,
-        ...(!isEmptyGroup(docs) ? [fill(docs)] : ([] as Doc[])),
-        ...trailingLines,
-    ];
+    return [...leadingLines, ...(!isEmptyDoc(doc) ? [doc] : ([] as Doc[])), ...trailingLines];
 }
 
 function printJS(path: FastPath, print: PrintFn, name?: string) {
