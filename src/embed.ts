@@ -9,6 +9,7 @@ import {
     getPreviousNode,
 } from './print/node-helpers';
 import { Node } from './print/nodes';
+import { isBrowser, browserBuffer } from './lib/browser';
 
 const {
     builders: { concat, hardline, group, indent, literalline },
@@ -124,6 +125,9 @@ function getSnippedContent(node: Node) {
     const encodedContent = getAttributeTextValue(snippedTagContentAttribute, node);
 
     if (encodedContent) {
+        if (isBrowser) {
+            return browserBuffer.from(encodedContent, 'base64').toString('utf-8');
+        }
         return Buffer.from(encodedContent, 'base64').toString('utf-8');
     } else {
         return '';
