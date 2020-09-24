@@ -1,11 +1,11 @@
 # prettier-plugin-svelte changelog
 
-## Unreleased 
+## 1.3.0
 
-* Add vscodeLanguageIds for VS Code consumers (this includes coc-prettier) ([#138](https://github.com/sveltejs/prettier-plugin-svelte/issues/138))
-* If there are comments on a `<style>`, `<script>` or `<template>` tag, keep them together with the following tag when reformatting. ([#137](https://github.com/sveltejs/prettier-plugin-svelte/issues/137))
-* Keep inline elements together even when inside a text ([#139](https://github.com/sveltejs/prettier-plugin-svelte/issues/139))
-* Don't format class attribute ([#145](https://github.com/sveltejs/prettier-plugin-svelte/issues/145))
+* Add `vscodeLanguageIds` for VS Code consumers, including coc-prettier ([#138](https://github.com/sveltejs/prettier-plugin-svelte/issues/138))
+* Keep comments directly before `<style>`, `<script>` or `<template>` tags together with the tag when reformatting ([#137](https://github.com/sveltejs/prettier-plugin-svelte/issues/137))
+* Keep inline elements together even when inside text ([#139](https://github.com/sveltejs/prettier-plugin-svelte/issues/139))
+* Don't format `class` attributes ([#145](https://github.com/sveltejs/prettier-plugin-svelte/pull/145))
 
 ## 1.2.1
 
