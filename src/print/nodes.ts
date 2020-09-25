@@ -76,6 +76,12 @@ export interface AwaitBlockNode extends BaseNode {
     catch: CatchBlockNode;
 }
 
+export interface KeyBlockNode extends BaseNode {
+    type: 'KeyBlock';
+    expression: Node;
+    children: Node[];
+}
+
 export interface ThenBlockNode extends BaseNode {
     type: 'ThenBlock';
     children: Node[];
@@ -257,6 +263,7 @@ export type Node =
     | ElseBlockNode
     | EachBlockNode
     | AwaitBlockNode
+    | KeyBlockNode
     | ThenBlockNode
     | PendingBlockNode
     | CatchBlockNode

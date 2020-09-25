@@ -377,6 +377,18 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             return group(concat(block));
         }
+        case 'KeyBlock': {
+            const def: Doc[] = [
+                '{#key ',
+                printJS(path, print, 'expression'),
+                '}',
+                printIndentedWithNewlines(path, print),
+            ];
+
+            def.push('{/key}');
+
+            return concat([group(concat(def)), breakParent]);
+        }
         case 'ThenBlock':
         case 'PendingBlock':
         case 'CatchBlock':
@@ -439,7 +451,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Comment': {
             /**
              * If there is no sibling node that starts right after us but the parent indicates
-             * that there used to be, that means that node was actually an embedded `<style>` 
+             * that there used to be, that means that node was actually an embedded `<style>`
              * or `<script>` node that was cut out.
              * If so, the comment does not refer to the next line we will see.
              * The `embed` function handles printing the comment in the right place.
@@ -545,7 +557,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
      */
     function outputChildDoc(childDoc?: Doc, fromNode?: Node) {
         if (!isPreformat) {
-            if ((!childDoc || !fromNode || canBreakBefore(fromNode))) {
+            if (!childDoc || !fromNode || canBreakBefore(fromNode)) {
                 linebreakPossible();
 
                 const lastChild = childDocs[childDocs.length - 1];
