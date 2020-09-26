@@ -379,6 +379,18 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             return group(concat(block));
         }
+        case 'KeyBlock': {
+            const def: Doc[] = [
+                '{#key ',
+                printJS(path, print, 'expression'),
+                '}',
+                printIndentedWithNewlines(path, print),
+            ];
+
+            def.push('{/key}');
+
+            return concat([group(concat(def)), breakParent]);
+        }
         case 'ThenBlock':
         case 'PendingBlock':
         case 'CatchBlock':
