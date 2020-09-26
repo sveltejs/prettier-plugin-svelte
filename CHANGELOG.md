@@ -1,9 +1,9 @@
 # prettier-plugin-svelte changelog
 
-## Unreleased
+## 1.4.0
 
 * Fix print order of attributes and body ([#146](https://github.com/sveltejs/prettier-plugin-svelte/issues/146))
-* Support the new `{#key}` block introduced in Svelte 2.28.0 ([#147](https://github.com/sveltejs/prettier-plugin-svelte/pull/147))
+* Support the new `{#key}` block introduced in Svelte 3.28.0 ([#147](https://github.com/sveltejs/prettier-plugin-svelte/pull/147))
 
 ## 1.3.0
 
