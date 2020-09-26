@@ -177,6 +177,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     node.type !== 'Element' ||
                     selfClosingTags.indexOf(node.name) !== -1);
 
+            // Order important: print attributes first
+            const attributes = path.map((childPath) => childPath.call(print), 'attributes');
             let body: Doc;
 
             if (isEmpty) {
@@ -206,7 +208,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                                           close,
                                       ])
                                     : '',
-                                ...path.map((childPath) => childPath.call(print), 'attributes'),
+                                ...attributes,
                                 options.svelteBracketNewLine
                                     ? dedent(isSelfClosingTag ? line : softline)
                                     : '',
@@ -439,7 +441,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Comment': {
             /**
              * If there is no sibling node that starts right after us but the parent indicates
-             * that there used to be, that means that node was actually an embedded `<style>` 
+             * that there used to be, that means that node was actually an embedded `<style>`
              * or `<script>` node that was cut out.
              * If so, the comment does not refer to the next line we will see.
              * The `embed` function handles printing the comment in the right place.
@@ -545,7 +547,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc[] {
      */
     function outputChildDoc(childDoc?: Doc, fromNode?: Node) {
         if (!isPreformat) {
-            if ((!childDoc || !fromNode || canBreakBefore(fromNode))) {
+            if (!childDoc || !fromNode || canBreakBefore(fromNode)) {
                 linebreakPossible();
 
                 const lastChild = childDocs[childDocs.length - 1];

@@ -2,7 +2,14 @@ import test from 'ava';
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { format } from 'prettier';
 
-const dirs = readdirSync('test/formatting/samples');
+let dirs = readdirSync('test/formatting/samples');
+const endsWithOnly = (f: string): boolean => f.endsWith('.only');
+const hasOnly = dirs.some(endsWithOnly);
+dirs = !hasOnly ? dirs : dirs.filter(endsWithOnly);
+
+if (process.env.CI && hasOnly) {
+    throw new Error('.only tests present');
+}
 
 for (const dir of dirs) {
     const input = readFileSync(`test/formatting/samples/${dir}/input.html`, 'utf-8').replace(
