@@ -18,6 +18,7 @@ import {
     isOrCanBeConvertedToShorthand,
     getNextNode,
     getNodeEnd,
+    getUnencodedText
 } from './node-helpers';
 import {
     isLine,
@@ -146,7 +147,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                          * allow for flexible grouping of HTML tags in a particular indentation level,
                          * and is similar to how vanilla HTML is handled in Prettier core.
                          */
-                        keepIfLonely: /\n\r?\s*\n\r?/.test(node.raw || node.data),
+                        keepIfLonely: /\n\r?\s*\n\r?/.test(getUnencodedText(node)),
                     };
                 }
 
@@ -156,9 +157,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                  * until this node's current line is out of room, at which `fill` will break at the
                  * most convenient instance of `line`.
                  */
-                return fill(splitTextToDocs(node.raw || node.data));
+                return fill(splitTextToDocs(getUnencodedText(node)));
             } else {
-                return node.data;
+                return getUnencodedText(node);
             }
         case 'Element':
         case 'InlineComponent':

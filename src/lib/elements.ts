@@ -76,7 +76,7 @@ export const inlineElements: TagName[] = [
 /**
  * HTML attributes that we may safely reformat (trim whitespace, add or remove newlines)
  */
-export const formattableAttributes = [
+export const formattableAttributes: string[] = [
   // None at the moment
   // Prettier HTML does not format attributes at all
   // and to be consistent we leave this array empty for now
