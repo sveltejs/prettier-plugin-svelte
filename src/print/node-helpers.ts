@@ -53,7 +53,7 @@ export function canBreakBefore(node: Node) {
 export function isInlineNode(node: Node): boolean {
     switch (node.type) {
         case 'Text':
-            const text = getUnencodedText(node);
+            const text = node.raw || node.data;
             const isAllWhitespace = text.trim() === '';
 
             return !isAllWhitespace || text === '';
@@ -116,7 +116,7 @@ export function doesEmbedStartAt(position: number, path: FastPath) {
 }
 
 export function isEmptyNode(node: Node): boolean {
-    return node.type === 'Text' && getUnencodedText(node).trim() === '';
+    return node.type === 'Text' && (node.raw || node.data).trim() === '';
 }
 
 export function isIgnoreDirective(node: Node | undefined | null): boolean {
@@ -204,9 +204,4 @@ export function isOrCanBeConvertedToShorthand(node: AttributeNode): boolean {
     }
 
     return false;
-}
-
-export function getUnencodedText(node: TextNode) {
-    // `raw` will contain HTML entities in unencoded form
-    return node.raw || node.data;
 }
