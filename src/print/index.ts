@@ -16,9 +16,9 @@ import {
     isNodeSupportedLanguage,
     isLoneMustacheTag,
     isOrCanBeConvertedToShorthand,
-    getNextNode,
-    getNodeEnd,
-    getUnencodedText
+    getUnencodedText,
+    isIgnoreDirective,
+    doesEmbedStartAt
 } from './node-helpers';
 import {
     isLine,
@@ -459,9 +459,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
              * If so, the comment does not refer to the next line we will see.
              * The `embed` function handles printing the comment in the right place.
              */
-            if (node.end < getNodeEnd(path.getParentNode(), path) && !getNextNode(path)) {
+            if (doesEmbedStartAt(node.end, path)) {
                 return '';
-            } else {
+            } else if (isIgnoreDirective(node)) {
                 ignoreNext = true;
             }
 
