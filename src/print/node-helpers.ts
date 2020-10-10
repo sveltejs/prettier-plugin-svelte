@@ -91,20 +91,6 @@ export function getPreviousNode(path: FastPath): Node | undefined {
 }
 
 /**
- * Returns the next sibling node.
- */
-export function getNextNode(path: FastPath): Node | undefined {
-    const node: Node = path.getNode();
-    let parent: Node = path.getParentNode();
-
-    if (isASTNode(parent)) {
-        parent = parent.html;
-    }
-
-    return getChildren(parent).find((child) => child.start === node.end);
-}
-
-/**
  * Did there use to be any embedded object (that has been snipped out of the AST to be moved)
  * at the specified position?
  */
