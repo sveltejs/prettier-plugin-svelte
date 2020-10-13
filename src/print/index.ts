@@ -18,7 +18,7 @@ import {
     isOrCanBeConvertedToShorthand,
     isIgnoreDirective,
     doesEmbedStartAt,
-    getUnencodedText
+    getUnencodedText,
 } from './node-helpers';
 import {
     isLine,
@@ -185,7 +185,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             if (isEmpty) {
                 body = '';
             } else if (!isSupportedLanguage) {
-                body = printRaw(node);
+                body = printRaw(node, options.originalText);
             } else if (isInlineElement(node) || isPreTagContent(path)) {
                 body = printIndentedPreservingWhitespace(path, print);
             } else {

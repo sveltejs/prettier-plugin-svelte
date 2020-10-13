@@ -5,6 +5,11 @@ import {
     AttributeNode,
     MustacheTagNode,
     AttributeShorthandNode,
+    HeadNode,
+    InlineComponentNode,
+    SlotNode,
+    TitleNode,
+    WindowNode,
 } from './nodes';
 import { inlineElements, TagName } from '../lib/elements';
 import { FastPath } from 'prettier';
@@ -109,14 +114,13 @@ export function isIgnoreDirective(node: Node | undefined | null): boolean {
     return !!node && node.type === 'Comment' && node.data.trim() === 'prettier-ignore';
 }
 
-export function printRaw(node: Node): string {
-    const children: Node[] | undefined = (node as ElementNode).children;
-
-    if (children) {
-        return children.map(printRaw).join('');
-    } else {
-        return (node as TextNode).raw || '';
-    }
+export function printRaw(
+    node: ElementNode | InlineComponentNode | SlotNode | WindowNode | HeadNode | TitleNode,
+    originalText: string,
+): string {
+    const firstChild = node.children[0];
+    const lastChild = node.children[node.children.length - 1];
+    return originalText.substring(firstChild.start, lastChild.end);
 }
 
 function isTextNode(node: Node): node is TextNode {
@@ -148,7 +152,7 @@ export function getAttributeTextValue(attributeName: string, node: Node): string
 }
 
 function getLangAttribute(node: Node): string | null {
-    const value = getAttributeTextValue('lang', node);
+    const value = getAttributeTextValue('lang', node) || getAttributeTextValue('type', node);
 
     if (value != null) {
         return value.replace(/^text\//, '');
