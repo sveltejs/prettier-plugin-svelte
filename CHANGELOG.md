@@ -1,5 +1,12 @@
 # prettier-plugin-svelte changelog
 
+## Unreleased
+
+* Format next node correctly when previous node has a comment as last child ([#152](https://github.com/sveltejs/prettier-plugin-svelte/issues/152))
+* Only `prettier-ignore` comments should ignore formatting of next line ([#151](https://github.com/sveltejs/prettier-plugin-svelte/issues/151))
+* Do not encode entities in attribute values ([#29](https://github.com/sveltejs/prettier-plugin-svelte/issues/29))
+* Fix raw printing of unsupported languages ([#156](https://github.com/sveltejs/prettier-plugin-svelte/issues/156))
+
 ## 1.4.0
 
 * Fix print order of attributes and body ([#146](https://github.com/sveltejs/prettier-plugin-svelte/issues/146))
