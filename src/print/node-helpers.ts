@@ -118,6 +118,10 @@ export function printRaw(
     node: ElementNode | InlineComponentNode | SlotNode | WindowNode | HeadNode | TitleNode,
     originalText: string,
 ): string {
+    if (node.children.length === 0) {
+        return '';
+    }
+
     const firstChild = node.children[0];
     const lastChild = node.children[node.children.length - 1];
     return originalText.substring(firstChild.start, lastChild.end);
