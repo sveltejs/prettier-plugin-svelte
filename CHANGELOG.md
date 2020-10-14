@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## Unreleased
+## 1.4.1
 
 * Format next node correctly when previous node has a comment as last child ([#152](https://github.com/sveltejs/prettier-plugin-svelte/issues/152))
 * Only `prettier-ignore` comments should ignore formatting of next line ([#151](https://github.com/sveltejs/prettier-plugin-svelte/issues/151))
