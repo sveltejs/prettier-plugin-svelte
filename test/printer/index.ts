@@ -23,7 +23,7 @@ for (const file of files) {
             ...options,
         } as any);
 
-        t.is(input, actualOutput);
+        t.is(input, actualOutput, `Expected:\n${input}\n\nActual:\n${actualOutput}`);
     });
 }
 

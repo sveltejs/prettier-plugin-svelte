@@ -37,7 +37,11 @@ for (const dir of dirs) {
                 ...options,
             });
 
-            t.is(expectedOutput, actualOutput);
+            t.is(
+                expectedOutput,
+                actualOutput,
+                `Expected:\n${expectedOutput}\n\nActual:\n${actualOutput}`,
+            );
         } finally {
             if (onTestCompleted) {
                 onTestCompleted();
