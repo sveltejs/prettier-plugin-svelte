@@ -23,3 +23,13 @@ export function isPreTagContent(path: FastPath): boolean {
 export function flatten<T>(arrays: T[][]): T[] {
     return ([] as T[]).concat.apply([], arrays);
 }
+
+export function findLastIndex<T>(isMatch: (item: T) => boolean, items: T[]) {
+    for (let i = items.length - 1; i >= 0; i--) {
+        if (isMatch(items[i])) {
+            return i;
+        }
+    }
+
+    return -1;
+}

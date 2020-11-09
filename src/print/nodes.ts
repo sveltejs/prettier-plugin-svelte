@@ -1,6 +1,9 @@
+export type ElementType = 'blockEl' | 'inlineEl' | 'svelteExpr';
+
 export interface BaseNode {
     start: number;
     end: number;
+    parentType?: ElementType;
     isJS?: boolean;
 }
 
@@ -20,6 +23,9 @@ export interface TextNode extends BaseNode {
     type: 'Text';
     data: string;
     raw: string;
+    isBetweenTags?: boolean;
+    isFirstInsideParent?: boolean;
+    isLastInsideParent?: boolean;
 }
 
 export interface MustacheTagNode extends BaseNode {

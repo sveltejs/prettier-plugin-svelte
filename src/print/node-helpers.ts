@@ -13,7 +13,7 @@ import {
 } from './nodes';
 import { inlineElements, TagName } from '../lib/elements';
 import { FastPath } from 'prettier';
-import { isASTNode } from './helpers';
+import { findLastIndex, isASTNode } from './helpers';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus', 'sass'];
 
@@ -106,7 +106,7 @@ export function doesEmbedStartAt(position: number, path: FastPath) {
     return embeds.find((n) => n && n.start === position) != null;
 }
 
-export function isEmptyNode(node: Node): boolean {
+export function isEmptyNode(node: Node): node is TextNode {
     return node.type === 'Text' && getUnencodedText(node).trim() === '';
 }
 
@@ -203,4 +203,53 @@ export function isOrCanBeConvertedToShorthand(node: AttributeNode): boolean {
 export function getUnencodedText(node: TextNode) {
     // `raw` will contain HTML entities in unencoded form
     return node.raw || node.data;
+}
+
+export function isTextNodeStartingWithLinebreak(node: Node): node is TextNode {
+    return node.type === 'Text' && /^\s*\n/.test(getUnencodedText(node));
+}
+
+export function isTextNodeEndingWithLinebreak(node: Node): node is TextNode {
+    return node.type === 'Text' && /\s*\n\s*$/.test(getUnencodedText(node));
+}
+
+export function trimTextNodeRight(node: TextNode): void {
+    node.raw = node.raw && node.raw.trimRight();
+    node.data = node.data && node.data.trimRight();
+}
+
+export function trimTextNodeLeft(node: TextNode): void {
+    node.raw = node.raw && node.raw.trimLeft();
+    node.data = node.data && node.data.trimLeft();
+}
+
+/**
+ * Remove all leading whitespace up until the first non-empty text node,
+ * and all trailing whitepsace from the last non-empty text node onwards.
+ */
+export function trimChildren(children: Node[], path: FastPath): void {
+    let firstNonEmptyNode = children.findIndex(
+        (n) => !isEmptyNode(n) && !doesEmbedStartAt(n.end, path),
+    );
+    firstNonEmptyNode = firstNonEmptyNode === -1 ? children.length - 1 : firstNonEmptyNode;
+
+    let lastNonEmptyNode = findLastIndex(
+        (n) => !isEmptyNode(n) && !doesEmbedStartAt(n.end, path),
+        children,
+    );
+    lastNonEmptyNode = lastNonEmptyNode === -1 ? 0 : lastNonEmptyNode;
+
+    for (let i = 0; i <= firstNonEmptyNode; i++) {
+        const n = children[i];
+        if (n.type === 'Text') {
+            trimTextNodeLeft(n);
+        }
+    }
+
+    for (let i = children.length - 1; i >= lastNonEmptyNode; i--) {
+        const n = children[i];
+        if (n.type === 'Text') {
+            trimTextNodeRight(n);
+        }
+    }
 }
