@@ -67,8 +67,8 @@ function forceIntoExpression(statement: string) {
     return `(${statement}\n)`;
 }
 
-function expressionParser(text: string, parsers: any) {
-    const ast = parsers.babel(text);
+function expressionParser(text: string, parsers: any, options: any) {
+    const ast = parsers.babel(text, parsers, options);
 
     return { ...ast, program: ast.program.body[0].expression };
 }
