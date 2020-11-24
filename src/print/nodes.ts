@@ -3,6 +3,7 @@ export type ElementType = 'blockEl' | 'inlineEl' | 'svelteExpr';
 export interface BaseNode {
     start: number;
     end: number;
+    elementType?: ElementType;
     parentType?: ElementType;
     isJS?: boolean;
 }

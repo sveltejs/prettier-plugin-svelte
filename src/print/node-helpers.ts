@@ -213,6 +213,14 @@ export function isTextNodeEndingWithLinebreak(node: Node): node is TextNode {
     return node.type === 'Text' && /\s*\n\s*$/.test(getUnencodedText(node));
 }
 
+export function isTextNodeStartingWithWhitespace(node: Node): node is TextNode {
+    return node.type === 'Text' && /^\s/.test(getUnencodedText(node));
+}
+
+export function isTextNodeEndingWithWhitespace(node: Node): node is TextNode {
+    return node.type === 'Text' && /\s$/.test(getUnencodedText(node));
+}
+
 export function trimTextNodeRight(node: TextNode): void {
     node.raw = node.raw && node.raw.trimRight();
     node.data = node.data && node.data.trimRight();
