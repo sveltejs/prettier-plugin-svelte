@@ -24,12 +24,16 @@ export function embed(
     const node: Node = path.getNode();
 
     if (node.isJS) {
-        return removeLines(
-            textToDoc(forceIntoExpression(getText(node, options)), {
-                parser: expressionParser,
-                singleQuote: true,
-            }),
-        );
+        try {
+            return removeLines(
+                textToDoc(forceIntoExpression(getText(node, options)), {
+                    parser: expressionParser,
+                    singleQuote: true,
+                }),
+            );
+        } catch (e) {
+            return getText(node, options);
+        }
     }
 
     const embedType = (tag: string, parser: 'typescript' | 'css', isTopLevel: boolean) =>
