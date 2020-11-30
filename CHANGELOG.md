@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## Unreleased
+
+* Pass options to embedded parser ([#162](https://github.com/sveltejs/prettier-plugin-svelte/issues/162))
+
 ## 1.4.1
 
 * Format next node correctly when previous node has a comment as last child ([#152](https://github.com/sveltejs/prettier-plugin-svelte/issues/152))
