@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Pass options to embedded parser ([#162](https://github.com/sveltejs/prettier-plugin-svelte/issues/162))
+* Fall back to raw text if there is a parser error in a JS expression inside a moustache tag ([#163](https://github.com/sveltejs/prettier-plugin-svelte/issues/163))
 
 ## 1.4.1
 
