@@ -24,9 +24,6 @@ export interface TextNode extends BaseNode {
     type: 'Text';
     data: string;
     raw: string;
-    isBetweenTags?: boolean;
-    isFirstInsideParent?: boolean;
-    isLastInsideParent?: boolean;
 }
 
 export interface MustacheTagNode extends BaseNode {

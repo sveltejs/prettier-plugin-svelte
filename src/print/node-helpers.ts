@@ -21,12 +21,17 @@ import {
 } from './nodes';
 import { inlineElements, TagName } from '../lib/elements';
 import { FastPath } from 'prettier';
-import { findLastIndex, isASTNode } from './helpers';
+import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus', 'sass'];
 
 export function isInlineElement(node: Node) {
     return node.type === 'Element' && inlineElements.includes(node.name as TagName);
+}
+
+export function isBlockElement(path: FastPath, node: Node): node is ElementNode {
+    // TODO switch to a list of tags instead
+    return node && node.type === 'Element' && !isInlineElement(node) && !isPreTagContent(path);
 }
 
 export function isSvelteBlock(
@@ -268,11 +273,6 @@ export function trimTextNodeRight(node: TextNode): void {
 export function trimTextNodeLeft(node: TextNode): void {
     node.raw = node.raw && node.raw.trimLeft();
     node.data = node.data && node.data.trimLeft();
-}
-
-export function trimTextNode(node: TextNode): void {
-    trimTextNodeLeft(node);
-    trimTextNodeRight(node);
 }
 
 /**
