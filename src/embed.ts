@@ -1,13 +1,12 @@
 import { Doc, doc, FastPath, ParserOptions } from 'prettier';
-import { parsers } from '.';
 import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { PrintFn } from './print';
 import {
     getAttributeTextValue,
-    isNodeSupportedLanguage,
-    isIgnoreDirective,
     getPreviousNode,
+    isIgnoreDirective,
+    isNodeSupportedLanguage,
 } from './print/node-helpers';
 import { Node } from './print/nodes';
 
@@ -22,47 +21,6 @@ export function embed(
     textToDoc: (text: string, options: object) => Doc,
     options: ParserOptions,
 ): Doc | null {
-    // console.log('TRY');
-    // try {
-    //     console.log(
-    //         'ASD',
-    //         JSON.stringify(
-    //             textToDoc(
-    //                 `
-    //                 <span
-    //                 ><span>looooooooooong</span
-    //                 >looooooooooonglooooooooooonglooooooooooonglooooooooooonglooooooooooong<span
-    //                 ></span>
-    //             </span>
-    //             `,
-    //                 {
-    //                     ...options,
-    //                     parser: 'html',
-    //                 },
-    //             ),
-    //             null,
-    //             3,
-    //         ),
-    //     );
-    //     // console.log(
-    //     //     'ASD',
-    //     //     JSON.stringify(
-    //     //         textToDoc(
-    //     //             `
-    //     //         <div><div>Apples</div>, <div>Orange</div></div>`,
-    //     //             {
-    //     //                 ...options,
-    //     //                 parser: 'html',
-    //     //             },
-    //     //         ),
-    //     //         null,
-    //     //         3,
-    //     //     ),
-    //     // );
-    // } catch (e) {
-    //     console.log(e);
-    // }
-    // return 'asd';
     const node: Node = path.getNode();
 
     if (node.isJS) {
