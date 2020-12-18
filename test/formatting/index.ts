@@ -6,7 +6,6 @@ let dirs = readdirSync('test/formatting/samples');
 const endsWithOnly = (f: string): boolean => f.endsWith('.only');
 const hasOnly = dirs.some(endsWithOnly);
 dirs = !hasOnly ? dirs : dirs.filter(endsWithOnly);
-dirs = [];
 
 if (process.env.CI && hasOnly) {
     throw new Error('.only tests present');

@@ -6,7 +6,6 @@ let files = readdirSync('test/printer/samples').filter((name) => name.endsWith('
 const endsWithOnly = (f: string): boolean => f.endsWith('.only.html');
 const hasOnly = files.some(endsWithOnly);
 files = !hasOnly ? files : files.filter(endsWithOnly);
-// files = [];
 
 if (process.env.CI && hasOnly) {
     throw new Error('.only tests present');

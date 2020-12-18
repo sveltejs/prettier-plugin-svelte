@@ -494,14 +494,18 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             }
 
             let separator: Doc = softline;
-            if (firstChild && firstChild.type === 'Text') {
-                if (isTextNodeStartingWithLinebreak(firstChild) && firstChild !== lastChild) {
-                    separator = hardline;
+            if (isPreTagContent(path)) {
+                separator = '';
+            } else {
+                if (firstChild && firstChild.type === 'Text') {
+                    if (isTextNodeStartingWithLinebreak(firstChild) && firstChild !== lastChild) {
+                        separator = hardline;
+                    }
+                    trimTextNodeLeft(firstChild);
                 }
-                trimTextNodeLeft(firstChild);
-            }
-            if (lastChild && lastChild.type === 'Text') {
-                trimTextNodeRight(lastChild);
+                if (lastChild && lastChild.type === 'Text') {
+                    trimTextNodeRight(lastChild);
+                }
             }
 
             // return groupConcat([
@@ -1086,20 +1090,25 @@ function printChildren(
             } else {
                 if (
                     isTextNodeStartingWithWhitespace(childNode) &&
-                    !isTextNodeStartingWithLinebreak(childNode, 2) &&
-                    isInlineElement(childNodes[i - 1])
+                    !isTextNodeStartingWithLinebreak(childNode, 2)
                 ) {
-                    const lastChildDoc = childDocs.pop()!;
-                    childDocs.push(groupConcat([lastChildDoc, line]));
-                    trimTextNodeLeft(childNode);
-                    // if (getUnencodedText(childNode) === '') {
-                    //     trimmedRightTextIdxs.push(i);
-                    // }
+                    if (isInlineElement(childNodes[i - 1])) {
+                        trimTextNodeLeft(childNode);
+                        const lastChildDoc = childDocs.pop()!;
+                        childDocs.push(groupConcat([lastChildDoc, line]));
+                    }
+                    if (isBlockElement(path, childNodes[i - 1])) {
+                        trimTextNodeLeft(childNode);
+                        if (getUnencodedText(childNode) === '') {
+                            trimmedRightTextIdxs.push(i);
+                        }
+                    }
                 }
                 if (
                     isTextNodeEndingWithWhitespace(childNode) &&
                     !isTextNodeEndingWithLinebreak(childNode, 2) &&
-                    isInlineElement(childNodes[i + 1])
+                    (isInlineElement(childNodes[i + 1]) || isBlockElement(path, childNodes[i + 1]))
+                    // isInlineElement(childNodes[i + 1])
                 ) {
                     trimmedRightTextIdxs.push(i);
                     trimTextNodeRight(childNode);
@@ -1111,8 +1120,8 @@ function printChildren(
             if (
                 prevChild &&
                 !isBlockElement(path, prevChild) &&
-                // (prevChild.type !== 'Text' || !trimmedRightTextIdxs.includes(i - 1))
-                prevChild.type !== 'Text'
+                (prevChild.type !== 'Text' || !trimmedRightTextIdxs.includes(i - 1))
+                // prevChild.type !== 'Text'
                 // (i - 1 > 0 || prevChild.type !== 'Text') &&
                 // !isTextNodeEndingWithLinebreak(prevChild, 2)
             ) {
@@ -1123,7 +1132,8 @@ function printChildren(
 
             if (
                 i < childNodes.length - 1 &&
-                childNodes[i + 1].type !== 'Text'
+                (childNodes[i + 1].type !== 'Text' ||
+                    !isTextNodeStartingWithLinebreak(childNodes[i + 1]))
                 // (i < childNodes.length - 2 || childNodes[i + 1].type !== 'Text')
             ) {
                 childDocs.push(softline);
