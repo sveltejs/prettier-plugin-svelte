@@ -10,6 +10,14 @@ import {
     SlotNode,
     TitleNode,
     WindowNode,
+    IfBlockNode,
+    AwaitBlockNode,
+    CatchBlockNode,
+    EachBlockNode,
+    ElseBlockNode,
+    KeyBlockNode,
+    PendingBlockNode,
+    ThenBlockNode,
 } from './nodes';
 import { inlineElements, TagName } from '../lib/elements';
 import { FastPath } from 'prettier';
@@ -19,6 +27,29 @@ const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus',
 
 export function isInlineElement(node: Node) {
     return node.type === 'Element' && inlineElements.includes(node.name as TagName);
+}
+
+export function isSvelteBlock(
+    node: Node,
+): node is
+    | IfBlockNode
+    | AwaitBlockNode
+    | CatchBlockNode
+    | EachBlockNode
+    | ElseBlockNode
+    | KeyBlockNode
+    | PendingBlockNode
+    | ThenBlockNode {
+    return [
+        'IfBlock',
+        'AwaitBlock',
+        'CatchBlock',
+        'EachBlock',
+        'ElseBlock',
+        'KeyBlock',
+        'PendingBlock',
+        'ThenBlock',
+    ].includes(node.type);
 }
 
 export function isWhitespaceChar(ch: string) {
@@ -205,12 +236,20 @@ export function getUnencodedText(node: TextNode) {
     return node.raw || node.data;
 }
 
-export function isTextNodeStartingWithLinebreak(node: Node): node is TextNode {
-    return node.type === 'Text' && /^\s*\n/.test(getUnencodedText(node));
+export function isTextNodeStartingWithLinebreak(node: Node, nrLines = 1): node is TextNode {
+    return node.type === 'Text' && startsWithLinebreak(getUnencodedText(node), nrLines);
 }
 
-export function isTextNodeEndingWithLinebreak(node: Node): node is TextNode {
-    return node.type === 'Text' && /\s*\n\s*$/.test(getUnencodedText(node));
+export function startsWithLinebreak(text: string, nrLines = 1): boolean {
+    return new RegExp(`^([\\t\\f\\r ]*\\n){${nrLines}}`).test(text);
+}
+
+export function isTextNodeEndingWithLinebreak(node: Node, nrLines = 1): node is TextNode {
+    return node.type === 'Text' && endsWithLinebreak(getUnencodedText(node), nrLines);
+}
+
+export function endsWithLinebreak(text: string, nrLines = 1): boolean {
+    return new RegExp(`(\\n[\\t\\f\\r ]*){${nrLines}}$`).test(text);
 }
 
 export function isTextNodeStartingWithWhitespace(node: Node): node is TextNode {
@@ -229,6 +268,11 @@ export function trimTextNodeRight(node: TextNode): void {
 export function trimTextNodeLeft(node: TextNode): void {
     node.raw = node.raw && node.raw.trimLeft();
     node.data = node.data && node.data.trimLeft();
+}
+
+export function trimTextNode(node: TextNode): void {
+    trimTextNodeLeft(node);
+    trimTextNodeRight(node);
 }
 
 /**
