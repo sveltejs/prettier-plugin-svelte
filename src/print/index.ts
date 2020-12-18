@@ -29,7 +29,7 @@ import {
     trimTextNodeLeft,
     trimTextNodeRight,
 } from './node-helpers';
-import { AttributeNode, ElementNode, ElementType, IfBlockNode, Node, TextNode } from './nodes';
+import { AttributeNode, IfBlockNode, Node, TextNode } from './nodes';
 
 const {
     concat,
@@ -155,7 +155,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     if (hasWhiteSpace) {
                         return line;
                     }
-                    return node.parentType === 'inlineEl' ? '' : softline;
+                    return softline;
                 }
 
                 /**
@@ -230,11 +230,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 body = () => printRaw(node, options.originalText);
                 hugContent = true;
             } else if (isInlineElement(node) && !isPreTagContent(path)) {
-                node.elementType = 'inlineEl';
                 body = () => printChildren(path, print);
                 hugContent = true;
             } else {
-                node.elementType = 'blockEl';
                 body = () => printChildren(path, print);
             }
 
@@ -379,7 +377,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 const ifNode = node.children[0] as IfBlockNode;
                 const def: Doc[] = [
                     '{:else if ',
-                    path.map((ifPath) => printJS(path, print, 'expression'), 'children')[0],
+                    path.map((ifPath) => printJS(ifPath, print, 'expression'), 'children')[0],
                     '}',
                     path.map(
                         (ifPath) => printSvelteBlockChildren(ifPath, print, options),
