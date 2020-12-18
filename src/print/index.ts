@@ -772,7 +772,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
     }
 
     const childDocs: Doc[] = [];
-    const trimmedRightTextIdxs: number[] = [];
+    let prevNodeIsTrimmedRightTextNode = false;
 
     for (let i = 0; i < childNodes.length; i++) {
         const childNode = childNodes[i];
@@ -784,6 +784,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
             handleInlineChild(i);
         } else {
             childDocs.push(printChild(i));
+            prevNodeIsTrimmedRightTextNode = false;
         }
     }
 
@@ -804,11 +805,12 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
      * Print inline child. Hug whitespace of previous text child if there was one.
      */
     function handleInlineChild(idx: number) {
-        if (trimmedRightTextIdxs.includes(idx - 1)) {
+        if (prevNodeIsTrimmedRightTextNode) {
             childDocs.push(groupConcat([line, printChild(idx)]));
         } else {
             childDocs.push(printChild(idx));
         }
+        prevNodeIsTrimmedRightTextNode = false;
     }
 
     /**
@@ -817,11 +819,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
      */
     function handleBlockChild(idx: number) {
         const prevChild = childNodes[idx - 1];
-        if (
-            prevChild &&
-            !isBlockElement(path, prevChild) &&
-            (prevChild.type !== 'Text' || !trimmedRightTextIdxs.includes(idx - 1))
-        ) {
+        if (prevChild && !isBlockElement(path, prevChild) && !prevNodeIsTrimmedRightTextNode) {
             childDocs.push(softline);
         }
 
@@ -834,6 +832,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
         ) {
             childDocs.push(softline);
         }
+        prevNodeIsTrimmedRightTextNode = false;
     }
 
     /**
@@ -846,6 +845,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
      * to check if they need to hug or print lines themselves.
      */
     function handleTextChild(idx: number, childNode: TextNode) {
+        prevNodeIsTrimmedRightTextNode = false;
         if (idx === 0 || idx === childNodes.length - 1) {
             childDocs.push(printChild(idx));
         } else {
@@ -861,7 +861,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
                 if (isBlockElement(path, childNodes[idx - 1])) {
                     trimTextNodeLeft(childNode);
                     if (getUnencodedText(childNode) === '') {
-                        trimmedRightTextIdxs.push(idx);
+                        prevNodeIsTrimmedRightTextNode = true;
                     }
                 }
             }
@@ -870,7 +870,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
                 !isTextNodeEndingWithLinebreak(childNode, 2) &&
                 (isInlineElement(childNodes[idx + 1]) || isBlockElement(path, childNodes[idx + 1]))
             ) {
-                trimmedRightTextIdxs.push(idx);
+                prevNodeIsTrimmedRightTextNode = true;
                 trimTextNodeRight(childNode);
             }
             childDocs.push(printChild(idx));
@@ -893,14 +893,14 @@ function splitTextToDocs(node: TextNode): Doc[] {
     if (startsWithLinebreak(text)) {
         docs[0] = hardline;
     }
-    if (startsWithLinebreak(text, 2) /*&& (node.isBetweenTags ||  node.isLastInsideParent)*/) {
+    if (startsWithLinebreak(text, 2)) {
         docs = [hardline, ...docs];
     }
 
     if (endsWithLinebreak(text)) {
         docs[docs.length - 1] = hardline;
     }
-    if (endsWithLinebreak(text, 2) /*&& node.isBetweenTags*/) {
+    if (endsWithLinebreak(text, 2)) {
         docs = [...docs, hardline];
     }
 
