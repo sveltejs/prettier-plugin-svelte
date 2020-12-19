@@ -155,7 +155,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     if (hasWhiteSpace) {
                         return line;
                     }
-                    return softline;
+                    return '';
                 }
 
                 /**
@@ -817,16 +817,23 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
      */
     function handleBlockChild(idx: number) {
         const prevChild = childNodes[idx - 1];
-        if (prevChild && !isBlockElement(path, prevChild) && !prevNodeIsTrimmedRightTextNode) {
+        if (
+            prevChild &&
+            !isBlockElement(path, prevChild) &&
+            (prevChild.type !== 'Text' ||
+                prevNodeIsTrimmedRightTextNode ||
+                !isTextNodeEndingWithWhitespace(prevChild))
+        ) {
             childDocs.push(softline);
         }
 
         childDocs.push(printChild(idx));
 
+        const nextChild = childNodes[idx + 1];
         if (
             idx < childNodes.length - 1 &&
-            (childNodes[idx + 1].type !== 'Text' ||
-                !isTextNodeStartingWithLinebreak(childNodes[idx + 1]))
+            (nextChild.type !== 'Text' ||
+                (!isEmptyNode(nextChild) && !isTextNodeStartingWithLinebreak(nextChild)))
         ) {
             childDocs.push(softline);
         }
@@ -844,35 +851,39 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
      */
     function handleTextChild(idx: number, childNode: TextNode) {
         prevNodeIsTrimmedRightTextNode = false;
+
         if (idx === 0 || idx === childNodes.length - 1) {
             childDocs.push(printChild(idx));
-        } else {
-            if (
-                isTextNodeStartingWithWhitespace(childNode) &&
-                !isTextNodeStartingWithLinebreak(childNode, 2)
-            ) {
-                if (isInlineElement(childNodes[idx - 1])) {
-                    trimTextNodeLeft(childNode);
-                    const lastChildDoc = childDocs.pop()!;
-                    childDocs.push(groupConcat([lastChildDoc, line]));
-                }
-                if (isBlockElement(path, childNodes[idx - 1])) {
-                    trimTextNodeLeft(childNode);
-                    if (getUnencodedText(childNode) === '') {
-                        prevNodeIsTrimmedRightTextNode = true;
-                    }
-                }
-            }
-            if (
-                isTextNodeEndingWithWhitespace(childNode) &&
-                !isTextNodeEndingWithLinebreak(childNode, 2) &&
-                (isInlineElement(childNodes[idx + 1]) || isBlockElement(path, childNodes[idx + 1]))
-            ) {
-                prevNodeIsTrimmedRightTextNode = true;
-                trimTextNodeRight(childNode);
-            }
-            childDocs.push(printChild(idx));
+            return;
         }
+
+        if (
+            isTextNodeStartingWithWhitespace(childNode) &&
+            !isTextNodeStartingWithLinebreak(childNode, 2) &&
+            // If node is empty, go straight through to checking the right end
+            !isEmptyNode(childNode)
+        ) {
+            if (isInlineElement(childNodes[idx - 1])) {
+                trimTextNodeLeft(childNode);
+                const lastChildDoc = childDocs.pop()!;
+                childDocs.push(groupConcat([lastChildDoc, line]));
+            }
+
+            if (isBlockElement(path, childNodes[idx - 1])) {
+                trimTextNodeLeft(childNode);
+            }
+        }
+
+        if (
+            isTextNodeEndingWithWhitespace(childNode) &&
+            !isTextNodeEndingWithLinebreak(childNode, 2) &&
+            (isInlineElement(childNodes[idx + 1]) || isBlockElement(path, childNodes[idx + 1]))
+        ) {
+            prevNodeIsTrimmedRightTextNode = true;
+            trimTextNodeRight(childNode);
+        }
+
+        childDocs.push(printChild(idx));
     }
 }
 
