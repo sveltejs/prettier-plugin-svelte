@@ -388,10 +388,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 if (ifNode.else) {
                     def.push(path.map((ifPath) => ifPath.call(print, 'else'), 'children')[0]);
                 }
-                return group(concat(def));
+                return concat(def);
             }
 
-            return group(concat(['{:else}', printSvelteBlockChildren(path, print, options)]));
+            return concat(['{:else}', printSvelteBlockChildren(path, print, options)]);
         }
         case 'EachBlock': {
             const def: Doc[] = [
@@ -752,7 +752,7 @@ function printSvelteBlockChildren(path: FastPath, print: PrintFn, options: Parse
         trimTextNodeRight(lastChild);
     }
 
-    return groupConcat([indent(concat([startline, printChildren(path, print)])), endline]);
+    return concat([indent(concat([startline, group(printChildren(path, print))])), endline]);
 }
 
 function printChildren(path: FastPath, print: PrintFn): Doc {
