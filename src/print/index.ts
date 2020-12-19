@@ -662,7 +662,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
     }
 
     const childDocs: Doc[] = [];
-    let prevNodeIsTrimmedRightTextNode = false;
+    let handleWhitespaceOfPrevTextNode = false;
 
     for (let i = 0; i < childNodes.length; i++) {
         const childNode = childNodes[i];
@@ -674,7 +674,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
             handleInlineChild(i);
         } else {
             childDocs.push(printChild(i));
-            prevNodeIsTrimmedRightTextNode = false;
+            handleWhitespaceOfPrevTextNode = false;
         }
     }
 
@@ -695,17 +695,19 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
      * Print inline child. Hug whitespace of previous text child if there was one.
      */
     function handleInlineChild(idx: number) {
-        if (prevNodeIsTrimmedRightTextNode) {
+        if (handleWhitespaceOfPrevTextNode) {
             childDocs.push(groupConcat([line, printChild(idx)]));
         } else {
             childDocs.push(printChild(idx));
         }
-        prevNodeIsTrimmedRightTextNode = false;
+        handleWhitespaceOfPrevTextNode = false;
     }
 
     /**
      * Print block element. Add softlines around it if needed
      * so it breaks into a separate line if children are broken up.
+     * Don't add lines at the start/end if it's the first/last child because this
+     * kind of whitespace handling is done in the parent already.
      */
     function handleBlockChild(idx: number) {
         const prevChild = childNodes[idx - 1];
@@ -713,7 +715,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
             prevChild &&
             !isBlockElement(path, prevChild) &&
             (prevChild.type !== 'Text' ||
-                prevNodeIsTrimmedRightTextNode ||
+                handleWhitespaceOfPrevTextNode ||
                 !isTextNodeEndingWithWhitespace(prevChild))
         ) {
             childDocs.push(softline);
@@ -723,13 +725,18 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
 
         const nextChild = childNodes[idx + 1];
         if (
-            idx < childNodes.length - 1 &&
+            nextChild &&
             (nextChild.type !== 'Text' ||
-                (!isEmptyNode(nextChild) && !isTextNodeStartingWithLinebreak(nextChild)))
+                // Only handle text which starts with a whitespace and has text afterwards,
+                // or is empty but followed by an inline element. The latter is done
+                // so that if the children break, the inline element afterwards is in a seperate line.
+                ((!isEmptyNode(nextChild) ||
+                    (childNodes[idx + 2] && isInlineElement(childNodes[idx + 2]))) &&
+                    !isTextNodeStartingWithLinebreak(nextChild)))
         ) {
             childDocs.push(softline);
         }
-        prevNodeIsTrimmedRightTextNode = false;
+        handleWhitespaceOfPrevTextNode = false;
     }
 
     /**
@@ -737,12 +744,12 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
      * is done in parent already. By defintion of the Svelte AST,
      * a text node always is inbetween other tags. Add hardlines
      * if the users wants to have them inbetween.
-     * If trimmed right, add info about it to an array which
-     * can be used by subsequent (inline)block element prints
+     * If the text is trimmed right, toggle flag telling
+     * subsequent (inline)block element to alter its printing logic
      * to check if they need to hug or print lines themselves.
      */
     function handleTextChild(idx: number, childNode: TextNode) {
-        prevNodeIsTrimmedRightTextNode = false;
+        handleWhitespaceOfPrevTextNode = false;
 
         if (idx === 0 || idx === childNodes.length - 1) {
             childDocs.push(printChild(idx));
@@ -771,7 +778,8 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
             !isTextNodeEndingWithLinebreak(childNode, 2) &&
             (isInlineElement(childNodes[idx + 1]) || isBlockElement(path, childNodes[idx + 1]))
         ) {
-            prevNodeIsTrimmedRightTextNode = true;
+            const prevNode = childNodes[idx - 1];
+            handleWhitespaceOfPrevTextNode = !prevNode || !isBlockElement(path, prevNode);
             trimTextNodeRight(childNode);
         }
 
