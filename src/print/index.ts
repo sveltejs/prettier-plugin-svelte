@@ -7,6 +7,8 @@ import { parseSortOrder, SortOrderPart } from '../options';
 import { isLine, trim } from './doc-helpers';
 import { flatten, isASTNode, isPreTagContent } from './helpers';
 import {
+    checkWhitespaceAtEndOfSvelteBlock,
+    checkWhitespaceAtStartOfSvelteBlock,
     doesEmbedStartAt,
     endsWithLinebreak,
     getUnencodedText,
@@ -16,14 +18,14 @@ import {
     isInlineElement,
     isLoneMustacheTag,
     isNodeSupportedLanguage,
-    isNodeWithChildren,
     isOrCanBeConvertedToShorthand,
-    isSvelteBlock,
     isTextNodeEndingWithLinebreak,
     isTextNodeEndingWithWhitespace,
     isTextNodeStartingWithLinebreak,
     isTextNodeStartingWithWhitespace,
     printRaw,
+    shouldHugEnd,
+    shouldHugStart,
     startsWithLinebreak,
     trimChildren,
     trimTextNodeLeft,
@@ -219,7 +221,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             let body: () => Doc;
             let hugContent = false;
-            const hugStart = shouldHugStart(node, options, isSupportedLanguage);
+            const hugStart = shouldHugStart(node, isSupportedLanguage);
             const hugEnd = shouldHugEnd(node, isSupportedLanguage);
 
             if (isEmpty) {
@@ -611,116 +613,6 @@ function printAttributeNodeValue(
     }
 }
 
-function shouldHugStart(node: Node, options: ParserOptions, isSupportedLanguage: boolean): boolean {
-    if (!isSupportedLanguage) {
-        return true;
-    }
-
-    if (!isInlineElement(node) && !isSvelteBlock(node)) {
-        return false;
-    }
-
-    if (!isNodeWithChildren(node)) {
-        return false;
-    }
-
-    const children: Node[] = node.children;
-    if (children.length === 0) {
-        return true;
-    }
-
-    const firstChild = children[0];
-    return (
-        !isTextNodeStartingWithWhitespace(firstChild) &&
-        checkWhitespaceAtStartOfBlock(node, options) === 'none'
-    );
-}
-
-function checkWhitespaceAtStartOfBlock(
-    node: Node,
-    options: ParserOptions,
-): 'none' | 'space' | 'line' {
-    if (!isSvelteBlock(node) || !isNodeWithChildren(node)) {
-        return 'none';
-    }
-
-    const children: Node[] = node.children;
-    if (children.length === 0) {
-        return 'none';
-    }
-
-    const firstChild = children[0];
-
-    if (isTextNodeStartingWithLinebreak(firstChild)) {
-        return 'line';
-    } else if (isTextNodeStartingWithWhitespace(firstChild)) {
-        return 'space';
-    }
-
-    const parentOpeningEnd = options.originalText.lastIndexOf('}', firstChild.start);
-    if (parentOpeningEnd > 0 && firstChild.start > parentOpeningEnd + 1) {
-        const textBetween = options.originalText.substring(parentOpeningEnd + 1, firstChild.start);
-        if (textBetween.trim() === '') {
-            return startsWithLinebreak(textBetween) ? 'line' : 'space';
-        }
-    }
-
-    return 'none';
-}
-
-function checkWhitespaceAtEndOfBlock(
-    node: Node,
-    options: ParserOptions,
-): 'none' | 'space' | 'line' {
-    if (!isSvelteBlock(node) || !isNodeWithChildren(node)) {
-        return 'none';
-    }
-
-    const children: Node[] = node.children;
-    if (children.length === 0) {
-        return 'none';
-    }
-
-    const lastChild = children[children.length - 1];
-    if (isTextNodeEndingWithLinebreak(lastChild)) {
-        return 'line';
-    } else if (isTextNodeEndingWithWhitespace(lastChild)) {
-        return 'space';
-    }
-
-    const parentClosingStart = options.originalText.indexOf('{', lastChild.end);
-    if (parentClosingStart > 0 && lastChild.end < parentClosingStart) {
-        const textBetween = options.originalText.substring(lastChild.end, parentClosingStart);
-        if (textBetween.trim() === '') {
-            return endsWithLinebreak(textBetween) ? 'line' : 'space';
-        }
-    }
-
-    return 'none';
-}
-
-function shouldHugEnd(node: Node, isSupportedLanguage: boolean): boolean {
-    if (!isSupportedLanguage) {
-        return true;
-    }
-
-    if (!isInlineElement(node) && !isSvelteBlock(node)) {
-        return false;
-    }
-
-    if (!isNodeWithChildren(node)) {
-        return false;
-    }
-
-    const children: Node[] = node.children;
-    if (children.length === 0) {
-        return true;
-    }
-
-    const lastChild = children[children.length - 1];
-    return !isTextNodeEndingWithWhitespace(lastChild);
-}
-
 function printSvelteBlockChildren(path: FastPath, print: PrintFn, options: ParserOptions): Doc {
     const node = path.getValue();
     const children = node.children;
@@ -728,8 +620,8 @@ function printSvelteBlockChildren(path: FastPath, print: PrintFn, options: Parse
         return '';
     }
 
-    const whitespaceAtStartOfBlock = checkWhitespaceAtStartOfBlock(node, options);
-    const whitespaceAtEndOfBlock = checkWhitespaceAtEndOfBlock(node, options);
+    const whitespaceAtStartOfBlock = checkWhitespaceAtStartOfSvelteBlock(node, options);
+    const whitespaceAtEndOfBlock = checkWhitespaceAtEndOfSvelteBlock(node, options);
     const startline =
         whitespaceAtStartOfBlock === 'none'
             ? ''

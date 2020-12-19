@@ -20,7 +20,7 @@ import {
     ThenBlockNode,
 } from './nodes';
 import { inlineElements, TagName } from '../lib/elements';
-import { FastPath } from 'prettier';
+import { FastPath, ParserOptions } from 'prettier';
 import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus', 'sass'];
@@ -304,4 +304,129 @@ export function trimChildren(children: Node[], path: FastPath): void {
             trimTextNodeRight(n);
         }
     }
+}
+
+/**
+ * Check if given node's starg tag should hug its first child. This is the case for inline elements when there's
+ * no whitespace between the `>` and the first child.
+ */
+export function shouldHugStart(node: Node, isSupportedLanguage: boolean): boolean {
+    if (!isSupportedLanguage) {
+        return true;
+    }
+
+    if (!isInlineElement(node) && !isSvelteBlock(node)) {
+        return false;
+    }
+
+    if (!isNodeWithChildren(node)) {
+        return false;
+    }
+
+    const children: Node[] = node.children;
+    if (children.length === 0) {
+        return true;
+    }
+
+    const firstChild = children[0];
+    return !isTextNodeStartingWithWhitespace(firstChild);
+}
+
+/**
+ * Check if given node's end tag should hug its last child. This is the case for inline elements when there's
+ * no whitespace between the last child and the `</`.
+ */
+export function shouldHugEnd(node: Node, isSupportedLanguage: boolean): boolean {
+    if (!isSupportedLanguage) {
+        return true;
+    }
+
+    if (!isInlineElement(node) && !isSvelteBlock(node)) {
+        return false;
+    }
+
+    if (!isNodeWithChildren(node)) {
+        return false;
+    }
+
+    const children: Node[] = node.children;
+    if (children.length === 0) {
+        return true;
+    }
+
+    const lastChild = children[children.length - 1];
+    return !isTextNodeEndingWithWhitespace(lastChild);
+}
+
+/**
+ * Check for a svelte block if there's whitespace at the start and if it's a space or a line.
+ */
+export function checkWhitespaceAtStartOfSvelteBlock(
+    node: Node,
+    options: ParserOptions,
+): 'none' | 'space' | 'line' {
+    if (!isSvelteBlock(node) || !isNodeWithChildren(node)) {
+        return 'none';
+    }
+
+    const children: Node[] = node.children;
+    if (children.length === 0) {
+        return 'none';
+    }
+
+    const firstChild = children[0];
+
+    if (isTextNodeStartingWithLinebreak(firstChild)) {
+        return 'line';
+    } else if (isTextNodeStartingWithWhitespace(firstChild)) {
+        return 'space';
+    }
+
+    // This extra check is necessary because the Svelte AST might swallow whitespace between
+    // the block's starting end and its first child.
+    const parentOpeningEnd = options.originalText.lastIndexOf('}', firstChild.start);
+    if (parentOpeningEnd > 0 && firstChild.start > parentOpeningEnd + 1) {
+        const textBetween = options.originalText.substring(parentOpeningEnd + 1, firstChild.start);
+        if (textBetween.trim() === '') {
+            return startsWithLinebreak(textBetween) ? 'line' : 'space';
+        }
+    }
+
+    return 'none';
+}
+
+/**
+ * Check for a svelte block if there's whitespace at the end and if it's a space or a line.
+ */
+export function checkWhitespaceAtEndOfSvelteBlock(
+    node: Node,
+    options: ParserOptions,
+): 'none' | 'space' | 'line' {
+    if (!isSvelteBlock(node) || !isNodeWithChildren(node)) {
+        return 'none';
+    }
+
+    const children: Node[] = node.children;
+    if (children.length === 0) {
+        return 'none';
+    }
+
+    const lastChild = children[children.length - 1];
+    if (isTextNodeEndingWithLinebreak(lastChild)) {
+        return 'line';
+    } else if (isTextNodeEndingWithWhitespace(lastChild)) {
+        return 'space';
+    }
+
+    // This extra check is necessary because the Svelte AST might swallow whitespace between
+    // the last child and the block's ending start.
+    const parentClosingStart = options.originalText.indexOf('{', lastChild.end);
+    if (parentClosingStart > 0 && lastChild.end < parentClosingStart) {
+        const textBetween = options.originalText.substring(lastChild.end, parentClosingStart);
+        if (textBetween.trim() === '') {
+            return endsWithLinebreak(textBetween) ? 'line' : 'space';
+        }
+    }
+
+    return 'none';
 }
