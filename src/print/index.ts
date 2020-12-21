@@ -756,31 +756,34 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
             return;
         }
 
+        const prevNode = childNodes[idx - 1];
+        const nextNode = childNodes[idx + 1];
+
         if (
             isTextNodeStartingWithWhitespace(childNode) &&
-            !isTextNodeStartingWithLinebreak(childNode, 2) &&
             // If node is empty, go straight through to checking the right end
             !isEmptyNode(childNode)
         ) {
-            if (isInlineElement(childNodes[idx - 1])) {
+            if (isInlineElement(prevNode) && !isTextNodeStartingWithLinebreak(childNode)) {
                 trimTextNodeLeft(childNode);
                 const lastChildDoc = childDocs.pop()!;
                 childDocs.push(groupConcat([lastChildDoc, line]));
             }
 
-            if (isBlockElement(path, childNodes[idx - 1])) {
+            if (isBlockElement(path, prevNode) && !isTextNodeStartingWithLinebreak(childNode, 2)) {
                 trimTextNodeLeft(childNode);
             }
         }
 
-        if (
-            isTextNodeEndingWithWhitespace(childNode) &&
-            !isTextNodeEndingWithLinebreak(childNode, 2) &&
-            (isInlineElement(childNodes[idx + 1]) || isBlockElement(path, childNodes[idx + 1]))
-        ) {
-            const prevNode = childNodes[idx - 1];
-            handleWhitespaceOfPrevTextNode = !prevNode || !isBlockElement(path, prevNode);
-            trimTextNodeRight(childNode);
+        if (isTextNodeEndingWithWhitespace(childNode)) {
+            if (isInlineElement(nextNode) && !isTextNodeEndingWithLinebreak(childNode)) {
+                handleWhitespaceOfPrevTextNode = !prevNode || !isBlockElement(path, prevNode);
+                trimTextNodeRight(childNode);
+            }
+            if (isBlockElement(path, nextNode) && !isTextNodeEndingWithLinebreak(childNode, 2)) {
+                handleWhitespaceOfPrevTextNode = !prevNode || !isBlockElement(path, prevNode);
+                trimTextNodeRight(childNode);
+            }
         }
 
         childDocs.push(printChild(idx));
