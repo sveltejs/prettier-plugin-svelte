@@ -132,8 +132,13 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return group(
                     concat([
                         ...trim(
-                            path.map(print, 'children'),
-                            (n) => isLine(n) || (typeof n === 'string' && n.trim() === ''),
+                            [printChildren(path, print)],
+                            (n) =>
+                                isLine(n) ||
+                                (typeof n === 'string' && n.trim() === '') ||
+                                // Because printChildren may append this at the end and
+                                // may hide other lines before it
+                                n === breakParent,
                         ),
                         hardline,
                     ]),
