@@ -285,10 +285,15 @@ export function trimChildren(children: Node[], path: FastPath): void {
     );
     firstNonEmptyNode = firstNonEmptyNode === -1 ? children.length - 1 : firstNonEmptyNode;
 
-    let lastNonEmptyNode = findLastIndex(
-        (n) => !isEmptyNode(n) && !doesEmbedStartAt(n.end, path),
-        children,
-    );
+    let lastNonEmptyNode = findLastIndex((n, idx) => {
+        // Last node is ok to end and the start of an embeded region,
+        // if it's not a comment (which should stick to the region)
+        return (
+            !isEmptyNode(n) &&
+            ((idx === children.length - 1 && n.type !== 'Comment') ||
+                !doesEmbedStartAt(n.end, path))
+        );
+    }, children);
     lastNonEmptyNode = lastNonEmptyNode === -1 ? 0 : lastNonEmptyNode;
 
     for (let i = 0; i <= firstNonEmptyNode; i++) {

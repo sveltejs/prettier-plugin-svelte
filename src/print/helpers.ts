@@ -24,9 +24,9 @@ export function flatten<T>(arrays: T[][]): T[] {
     return ([] as T[]).concat.apply([], arrays);
 }
 
-export function findLastIndex<T>(isMatch: (item: T) => boolean, items: T[]) {
+export function findLastIndex<T>(isMatch: (item: T, idx: number) => boolean, items: T[]) {
     for (let i = items.length - 1; i >= 0; i--) {
-        if (isMatch(items[i])) {
+        if (isMatch(items[i], i)) {
             return i;
         }
     }
