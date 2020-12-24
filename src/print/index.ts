@@ -235,8 +235,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     node.children.length &&
                     isTextNodeStartingWithWhitespace(node.children[0]) &&
                     !isPreTagContent(path)
-                        ? () => ' '
-                        : () => '';
+                        ? () => line
+                        : () => softline;
             } else if (isPreTagContent(path)) {
                 body = () => printRaw(node, options.originalText);
             } else if (!isSupportedLanguage) {
@@ -294,6 +294,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     softline,
                     '>',
                 ]);
+            }
+
+            if (isEmpty) {
+                return groupConcat([...openingTag, '>', body(), `</${node.name}>`]);
             }
 
             let separator: Doc = softline;
