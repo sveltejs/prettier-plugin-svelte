@@ -300,17 +300,26 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return groupConcat([...openingTag, '>', body(), `</${node.name}>`]);
             }
 
-            let separator: Doc = softline;
+            // No hugging of content means it's either a block element and/or there's whitespace at the start/end
+            let separatorStart: Doc = softline;
+            let separatorEnd: Doc = softline;
             if (isPreTagContent(path)) {
-                separator = '';
+                separatorStart = '';
+                separatorEnd = '';
             } else {
                 if (firstChild && firstChild.type === 'Text') {
                     if (isTextNodeStartingWithLinebreak(firstChild) && firstChild !== lastChild) {
-                        separator = hardline;
+                        separatorStart = hardline;
+                        separatorEnd = hardline;
+                    } else if (isInlineElement(node)) {
+                        separatorStart = line;
                     }
                     trimTextNodeLeft(firstChild);
                 }
                 if (lastChild && lastChild.type === 'Text') {
+                    if (isInlineElement(node)) {
+                        separatorEnd = line;
+                    }
                     trimTextNodeRight(lastChild);
                 }
             }
@@ -318,7 +327,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return groupConcat([
                 ...openingTag,
                 '>',
-                groupConcat([indent(concat([separator, body()])), separator]),
+                groupConcat([indent(concat([separatorStart, body()])), separatorEnd]),
                 `</${node.name}>`,
             ]);
         }
