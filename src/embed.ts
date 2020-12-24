@@ -24,12 +24,16 @@ export function embed(
     const node: Node = path.getNode();
 
     if (node.isJS) {
-        return removeLines(
-            textToDoc(forceIntoExpression(getText(node, options)), {
-                parser: expressionParser,
-                singleQuote: true,
-            }),
-        );
+        try {
+            return removeLines(
+                textToDoc(forceIntoExpression(getText(node, options)), {
+                    parser: expressionParser,
+                    singleQuote: true,
+                }),
+            );
+        } catch (e) {
+            return getText(node, options);
+        }
     }
 
     const embedType = (tag: string, parser: 'typescript' | 'css', isTopLevel: boolean) =>
@@ -67,8 +71,8 @@ function forceIntoExpression(statement: string) {
     return `(${statement}\n)`;
 }
 
-function expressionParser(text: string, parsers: any) {
-    const ast = parsers.babel(text);
+function expressionParser(text: string, parsers: any, options: any) {
+    const ast = parsers.babel(text, parsers, options);
 
     return { ...ast, program: ast.program.body[0].expression };
 }

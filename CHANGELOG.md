@@ -1,6 +1,11 @@
 # prettier-plugin-svelte changelog
 
-## Unreleased
+## 1.4.2
+
+* Pass options to embedded parser ([#162](https://github.com/sveltejs/prettier-plugin-svelte/issues/162))
+* Fall back to raw text if there is a parser error in a JS expression inside a moustache tag ([#163](https://github.com/sveltejs/prettier-plugin-svelte/issues/163))
+
+## 1.4.1
 
 * Format next node correctly when previous node has a comment as last child ([#152](https://github.com/sveltejs/prettier-plugin-svelte/issues/152))
 * Only `prettier-ignore` comments should ignore formatting of next line ([#151](https://github.com/sveltejs/prettier-plugin-svelte/issues/151))
