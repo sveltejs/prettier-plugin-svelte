@@ -1,5 +1,3 @@
-export type ElementType = 'blockEl' | 'inlineEl' | 'svelteExpr';
-
 export interface BaseNode {
     start: number;
     end: number;
