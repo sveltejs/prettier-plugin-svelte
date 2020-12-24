@@ -224,7 +224,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             const firstChild = children[0];
             const lastChild = children[children.length - 1];
 
+            // Is a function which is invoked later because printChildren will manipulate child nodes
+            // which would wrongfully change the other checks about hugging etc done beforehand
             let body: () => Doc;
+
             let hugContent = false;
             const hugStart = shouldHugStart(node, isSupportedLanguage);
             const hugEnd = shouldHugEnd(node, isSupportedLanguage);
