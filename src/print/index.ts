@@ -797,7 +797,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
                 childDocs.push(groupConcat([lastChildDoc, line]));
             }
 
-            if (isBlockElement(path, prevNode) && !isTextNodeStartingWithLinebreak(childNode, 2)) {
+            if (isBlockElement(path, prevNode) && !isTextNodeStartingWithLinebreak(childNode)) {
                 trimTextNodeLeft(childNode);
             }
         }

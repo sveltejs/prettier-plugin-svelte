@@ -42,6 +42,20 @@ for (const dir of dirs) {
                 actualOutput,
                 `Expected:\n${expectedOutput}\n\nActual:\n${actualOutput}`,
             );
+
+            // Reprint to check that another format outputs the same code
+            const actualOutput2 = format(actualOutput, {
+                parser: 'svelte' as any,
+                plugins: [require.resolve('../../src')],
+                tabWidth: 4,
+                ...options,
+            });
+
+            t.is(
+                expectedOutput,
+                actualOutput2,
+                `Reprint failed. Expected:\n${expectedOutput}\n\nActual:\n${actualOutput2}`,
+            );
         } finally {
             if (onTestCompleted) {
                 onTestCompleted();
