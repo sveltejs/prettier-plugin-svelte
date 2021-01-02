@@ -28,7 +28,7 @@ export const parsers: Record<string, Parser> = {
                 return <ASTNode>{ ...require(`svelte/compiler`).parse(text), __isRoot: true };
             } catch (err) {
                 if (err.start != null && err.end != null) {
-                    // Prettier expects error objects to have loc.start and loc.end fields. 
+                    // Prettier expects error objects to have loc.start and loc.end fields.
                     // Svelte uses start and end directly on the error.
                     err.loc = {
                         start: err.start,
@@ -39,10 +39,17 @@ export const parsers: Record<string, Parser> = {
                 throw err;
             }
         },
-        preprocess: (text) => {
+        preprocess: (text, options) => {
             text = snipTagContent('style', text);
             text = snipTagContent('script', text, '{}');
-            return text.trim();
+            text = text.trim();
+            // Prettier sets the preprocessed text as the originalText in case
+            // the Svelte formatter is called directly. In case it's called
+            // as an embedded parser (for example when there's a Svelte code block
+            // inside markdown), the originalText is not updated after preprocessing.
+            // Therefore we do it ourselves here.
+            options.originalText = text;
+            return text;
         },
         locStart,
         locEnd,
