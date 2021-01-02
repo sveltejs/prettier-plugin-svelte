@@ -1,42 +1,42 @@
 import { Doc, doc } from 'prettier';
+import { findLastIndex } from './helpers';
 
-export function isLine(doc: Doc) {    
-  return typeof doc === 'object' && doc.type === 'line' 
-} 
-
-export function isLineDiscardedIfLonely(doc: Doc) {
-  return isLine(doc) && !(doc as doc.builders.Line).keepIfLonely
+export function isLine(docToCheck: Doc) {
+    return (
+        docToCheck === doc.builders.hardline ||
+        (typeof docToCheck === 'object' && docToCheck.type === 'line')
+    );
 }
 
 /**
  * Check if the doc is empty, i.e. consists of nothing more than empty strings (possibly nested).
  */
 export function isEmptyDoc(doc: Doc): boolean {
-  if (typeof doc === 'string') {
-      return doc.length === 0;
-  }
+    if (typeof doc === 'string') {
+        return doc.length === 0;
+    }
 
-  if (doc.type === 'line') {
-      return !doc.keepIfLonely;
-  }
+    if (doc.type === 'line') {
+        return !doc.keepIfLonely;
+    }
 
-  const { contents } = doc as { contents?: Doc };
+    const { contents } = doc as { contents?: Doc };
 
-  if (contents) {
-      return isEmptyDoc(contents);
-  }
+    if (contents) {
+        return isEmptyDoc(contents);
+    }
 
-  const { parts } = doc as { parts?: Doc[] };
+    const { parts } = doc as { parts?: Doc[] };
 
-  if (parts) {
-      return isEmptyGroup(parts);
-  }
+    if (parts) {
+        return isEmptyGroup(parts);
+    }
 
-  return false;
+    return false;
 }
 
 export function isEmptyGroup(group: Doc[]): boolean {
-  return !group.find(doc => !isEmptyDoc(doc))
+    return !group.find((doc) => !isEmptyDoc(doc));
 }
 
 /**
@@ -94,14 +94,4 @@ function getParts(doc: Doc): Doc[] | undefined {
     if (typeof doc === 'object' && (doc.type === 'fill' || doc.type === 'concat')) {
         return doc.parts;
     }
-}
-
-function findLastIndex<T>(isMatch: (item: T) => boolean, items: T[]) {
-    for (let i = items.length - 1; i >= 0; i--) {
-        if (isMatch(items[i])) {
-            return i;
-        }
-    }
-
-    return -1;
 }

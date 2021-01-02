@@ -4,9 +4,9 @@ import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { PrintFn } from './print';
 import {
     getAttributeTextValue,
-    isNodeSupportedLanguage,
-    isIgnoreDirective,
     getPreviousNode,
+    isIgnoreDirective,
+    isNodeSupportedLanguage,
 } from './print/node-helpers';
 import { Node } from './print/nodes';
 

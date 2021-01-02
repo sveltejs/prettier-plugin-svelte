@@ -10,15 +10,51 @@ import {
     SlotNode,
     TitleNode,
     WindowNode,
+    IfBlockNode,
+    AwaitBlockNode,
+    CatchBlockNode,
+    EachBlockNode,
+    ElseBlockNode,
+    KeyBlockNode,
+    PendingBlockNode,
+    ThenBlockNode,
 } from './nodes';
 import { inlineElements, TagName } from '../lib/elements';
-import { FastPath } from 'prettier';
-import { isASTNode } from './helpers';
+import { FastPath, ParserOptions } from 'prettier';
+import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus', 'sass'];
 
 export function isInlineElement(node: Node) {
     return node.type === 'Element' && inlineElements.includes(node.name as TagName);
+}
+
+export function isBlockElement(path: FastPath, node: Node): node is ElementNode {
+    // TODO switch to a list of tags instead
+    return node && node.type === 'Element' && !isInlineElement(node) && !isPreTagContent(path);
+}
+
+export function isSvelteBlock(
+    node: Node,
+): node is
+    | IfBlockNode
+    | AwaitBlockNode
+    | CatchBlockNode
+    | EachBlockNode
+    | ElseBlockNode
+    | KeyBlockNode
+    | PendingBlockNode
+    | ThenBlockNode {
+    return [
+        'IfBlock',
+        'AwaitBlock',
+        'CatchBlock',
+        'EachBlock',
+        'ElseBlock',
+        'KeyBlock',
+        'PendingBlock',
+        'ThenBlock',
+    ].includes(node.type);
 }
 
 export function isWhitespaceChar(ch: string) {
@@ -106,7 +142,7 @@ export function doesEmbedStartAt(position: number, path: FastPath) {
     return embeds.find((n) => n && n.start === position) != null;
 }
 
-export function isEmptyNode(node: Node): boolean {
+export function isEmptyNode(node: Node): node is TextNode {
     return node.type === 'Text' && getUnencodedText(node).trim() === '';
 }
 
@@ -203,4 +239,199 @@ export function isOrCanBeConvertedToShorthand(node: AttributeNode): boolean {
 export function getUnencodedText(node: TextNode) {
     // `raw` will contain HTML entities in unencoded form
     return node.raw || node.data;
+}
+
+export function isTextNodeStartingWithLinebreak(node: Node, nrLines = 1): node is TextNode {
+    return node.type === 'Text' && startsWithLinebreak(getUnencodedText(node), nrLines);
+}
+
+export function startsWithLinebreak(text: string, nrLines = 1): boolean {
+    return new RegExp(`^([\\t\\f\\r ]*\\n){${nrLines}}`).test(text);
+}
+
+export function isTextNodeEndingWithLinebreak(node: Node, nrLines = 1): node is TextNode {
+    return node.type === 'Text' && endsWithLinebreak(getUnencodedText(node), nrLines);
+}
+
+export function endsWithLinebreak(text: string, nrLines = 1): boolean {
+    return new RegExp(`(\\n[\\t\\f\\r ]*){${nrLines}}$`).test(text);
+}
+
+export function isTextNodeStartingWithWhitespace(node: Node): node is TextNode {
+    return node.type === 'Text' && /^\s/.test(getUnencodedText(node));
+}
+
+export function isTextNodeEndingWithWhitespace(node: Node): node is TextNode {
+    return node.type === 'Text' && /\s$/.test(getUnencodedText(node));
+}
+
+export function trimTextNodeRight(node: TextNode): void {
+    node.raw = node.raw && node.raw.trimRight();
+    node.data = node.data && node.data.trimRight();
+}
+
+export function trimTextNodeLeft(node: TextNode): void {
+    node.raw = node.raw && node.raw.trimLeft();
+    node.data = node.data && node.data.trimLeft();
+}
+
+/**
+ * Remove all leading whitespace up until the first non-empty text node,
+ * and all trailing whitepsace from the last non-empty text node onwards.
+ */
+export function trimChildren(children: Node[], path: FastPath): void {
+    let firstNonEmptyNode = children.findIndex(
+        (n) => !isEmptyNode(n) && !doesEmbedStartAt(n.end, path),
+    );
+    firstNonEmptyNode = firstNonEmptyNode === -1 ? children.length - 1 : firstNonEmptyNode;
+
+    let lastNonEmptyNode = findLastIndex((n, idx) => {
+        // Last node is ok to end and the start of an embeded region,
+        // if it's not a comment (which should stick to the region)
+        return (
+            !isEmptyNode(n) &&
+            ((idx === children.length - 1 && n.type !== 'Comment') ||
+                !doesEmbedStartAt(n.end, path))
+        );
+    }, children);
+    lastNonEmptyNode = lastNonEmptyNode === -1 ? 0 : lastNonEmptyNode;
+
+    for (let i = 0; i <= firstNonEmptyNode; i++) {
+        const n = children[i];
+        if (n.type === 'Text') {
+            trimTextNodeLeft(n);
+        }
+    }
+
+    for (let i = children.length - 1; i >= lastNonEmptyNode; i--) {
+        const n = children[i];
+        if (n.type === 'Text') {
+            trimTextNodeRight(n);
+        }
+    }
+}
+
+/**
+ * Check if given node's starg tag should hug its first child. This is the case for inline elements when there's
+ * no whitespace between the `>` and the first child.
+ */
+export function shouldHugStart(node: Node, isSupportedLanguage: boolean): boolean {
+    if (!isSupportedLanguage) {
+        return true;
+    }
+
+    if (!isInlineElement(node) && !isSvelteBlock(node)) {
+        return false;
+    }
+
+    if (!isNodeWithChildren(node)) {
+        return false;
+    }
+
+    const children: Node[] = node.children;
+    if (children.length === 0) {
+        return true;
+    }
+
+    const firstChild = children[0];
+    return !isTextNodeStartingWithWhitespace(firstChild);
+}
+
+/**
+ * Check if given node's end tag should hug its last child. This is the case for inline elements when there's
+ * no whitespace between the last child and the `</`.
+ */
+export function shouldHugEnd(node: Node, isSupportedLanguage: boolean): boolean {
+    if (!isSupportedLanguage) {
+        return true;
+    }
+
+    if (!isInlineElement(node) && !isSvelteBlock(node)) {
+        return false;
+    }
+
+    if (!isNodeWithChildren(node)) {
+        return false;
+    }
+
+    const children: Node[] = node.children;
+    if (children.length === 0) {
+        return true;
+    }
+
+    const lastChild = children[children.length - 1];
+    return !isTextNodeEndingWithWhitespace(lastChild);
+}
+
+/**
+ * Check for a svelte block if there's whitespace at the start and if it's a space or a line.
+ */
+export function checkWhitespaceAtStartOfSvelteBlock(
+    node: Node,
+    options: ParserOptions,
+): 'none' | 'space' | 'line' {
+    if (!isSvelteBlock(node) || !isNodeWithChildren(node)) {
+        return 'none';
+    }
+
+    const children: Node[] = node.children;
+    if (children.length === 0) {
+        return 'none';
+    }
+
+    const firstChild = children[0];
+
+    if (isTextNodeStartingWithLinebreak(firstChild)) {
+        return 'line';
+    } else if (isTextNodeStartingWithWhitespace(firstChild)) {
+        return 'space';
+    }
+
+    // This extra check is necessary because the Svelte AST might swallow whitespace between
+    // the block's starting end and its first child.
+    const parentOpeningEnd = options.originalText.lastIndexOf('}', firstChild.start);
+    if (parentOpeningEnd > 0 && firstChild.start > parentOpeningEnd + 1) {
+        const textBetween = options.originalText.substring(parentOpeningEnd + 1, firstChild.start);
+        if (textBetween.trim() === '') {
+            return startsWithLinebreak(textBetween) ? 'line' : 'space';
+        }
+    }
+
+    return 'none';
+}
+
+/**
+ * Check for a svelte block if there's whitespace at the end and if it's a space or a line.
+ */
+export function checkWhitespaceAtEndOfSvelteBlock(
+    node: Node,
+    options: ParserOptions,
+): 'none' | 'space' | 'line' {
+    if (!isSvelteBlock(node) || !isNodeWithChildren(node)) {
+        return 'none';
+    }
+
+    const children: Node[] = node.children;
+    if (children.length === 0) {
+        return 'none';
+    }
+
+    const lastChild = children[children.length - 1];
+    if (isTextNodeEndingWithLinebreak(lastChild)) {
+        return 'line';
+    } else if (isTextNodeEndingWithWhitespace(lastChild)) {
+        return 'space';
+    }
+
+    // This extra check is necessary because the Svelte AST might swallow whitespace between
+    // the last child and the block's ending start.
+    const parentClosingStart = options.originalText.indexOf('{', lastChild.end);
+    if (parentClosingStart > 0 && lastChild.end < parentClosingStart) {
+        const textBetween = options.originalText.substring(lastChild.end, parentClosingStart);
+        if (textBetween.trim() === '') {
+            return endsWithLinebreak(textBetween) ? 'line' : 'space';
+        }
+    }
+
+    return 'none';
 }
