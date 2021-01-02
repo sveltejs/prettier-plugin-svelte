@@ -2,8 +2,10 @@ import test from 'ava';
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { format } from 'prettier';
 
-let files = readdirSync('test/printer/samples').filter((name) => name.endsWith('.html'));
-const endsWithOnly = (f: string): boolean => f.endsWith('.only.html');
+let files = readdirSync('test/printer/samples').filter(
+    (name) => name.endsWith('.html') || name.endsWith('.md'),
+);
+const endsWithOnly = (f: string): boolean => f.endsWith('.only.html') || f.endsWith('.only.md');
 const hasOnly = files.some(endsWithOnly);
 files = !hasOnly ? files : files.filter(endsWithOnly);
 
@@ -12,12 +14,15 @@ if (process.env.CI && hasOnly) {
 }
 
 for (const file of files) {
+    const ending = file.split('.').pop();
     const input = readFileSync(`test/printer/samples/${file}`, 'utf-8').replace(/\r?\n/g, '\n');
-    const options = readOptions(`test/printer/samples/${file.replace('.html', '.options.json')}`);
+    const options = readOptions(
+        `test/printer/samples/${file.replace(`.${ending}`, '.options.json')}`,
+    );
 
-    test(`printer: ${file.slice(0, file.length - '.html'.length)}`, (t) => {
+    test(`printer: ${file.slice(0, file.length - `.${ending}`.length)}`, (t) => {
         const actualOutput = format(input, {
-            parser: 'svelte' as any,
+            parser: (ending === 'html' ? 'svelte' : 'markdown') as any,
             plugins: [require.resolve('../../src')],
             tabWidth: 4,
             ...options,
