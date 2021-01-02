@@ -19,19 +19,18 @@ import {
     PendingBlockNode,
     ThenBlockNode,
 } from './nodes';
-import { inlineElements, TagName } from '../lib/elements';
+import { blockElements, TagName } from '../lib/elements';
 import { FastPath, ParserOptions } from 'prettier';
 import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus', 'sass'];
 
-export function isInlineElement(node: Node) {
-    return node.type === 'Element' && inlineElements.includes(node.name as TagName);
+export function isInlineElement(path: FastPath, node: Node) {
+    return node && node.type === 'Element' && !isBlockElement(node) && !isPreTagContent(path);
 }
 
-export function isBlockElement(path: FastPath, node: Node): node is ElementNode {
-    // TODO switch to a list of tags instead
-    return node && node.type === 'Element' && !isInlineElement(node) && !isPreTagContent(path);
+export function isBlockElement(node: Node): node is ElementNode {
+    return node && node.type === 'Element' && blockElements.includes(node.name as TagName);
 }
 
 export function isSvelteBlock(
@@ -55,58 +54,6 @@ export function isSvelteBlock(
         'PendingBlock',
         'ThenBlock',
     ].includes(node.type);
-}
-
-export function isWhitespaceChar(ch: string) {
-    return ' \t\n\r'.indexOf(ch) >= 0;
-}
-
-export function canBreakAfter(node: Node) {
-    switch (node.type) {
-        case 'Text':
-            return isWhitespaceChar(node.raw[node.raw.length - 1]);
-        case 'Element':
-            return !isInlineElement(node);
-        case 'IfBlock':
-        case 'EachBlock':
-        case 'MustacheTag':
-            return false;
-        default:
-            return true;
-    }
-}
-
-export function canBreakBefore(node: Node) {
-    switch (node.type) {
-        case 'Text':
-            return isWhitespaceChar(node.raw[0]);
-        case 'Element':
-            return !isInlineElement(node);
-        case 'IfBlock':
-        case 'EachBlock':
-        case 'MustacheTag':
-            return false;
-        default:
-            return true;
-    }
-}
-
-export function isInlineNode(node: Node): boolean {
-    switch (node.type) {
-        case 'Text':
-            const text = getUnencodedText(node);
-            const isAllWhitespace = text.trim() === '';
-
-            return !isAllWhitespace || text === '';
-        case 'MustacheTag':
-        case 'EachBlock':
-        case 'IfBlock':
-            return true;
-        case 'Element':
-            return isInlineElement(node);
-        default:
-            return false;
-    }
 }
 
 export function isNodeWithChildren(node: Node): node is Node & { children: Node[] } {
@@ -320,7 +267,7 @@ export function shouldHugStart(node: Node, isSupportedLanguage: boolean): boolea
         return true;
     }
 
-    if (!isInlineElement(node) && !isSvelteBlock(node)) {
+    if (isBlockElement(node)) {
         return false;
     }
 
@@ -346,7 +293,7 @@ export function shouldHugEnd(node: Node, isSupportedLanguage: boolean): boolean 
         return true;
     }
 
-    if (!isInlineElement(node) && !isSvelteBlock(node)) {
+    if (isBlockElement(node)) {
         return false;
     }
 
