@@ -25,11 +25,15 @@ export function embed(
 
     if (node.isJS) {
         try {
+            const embeddedOptions: any = {
+                parser: expressionParser,
+            };
+            if (node.forceSingleQuote) {
+                embeddedOptions.singleQuote = true;
+            }
+
             return removeLines(
-                textToDoc(forceIntoExpression(getText(node, options)), {
-                    parser: expressionParser,
-                    singleQuote: true,
-                }),
+                textToDoc(forceIntoExpression(getText(node, options)), embeddedOptions),
             );
         } catch (e) {
             return getText(node, options);
