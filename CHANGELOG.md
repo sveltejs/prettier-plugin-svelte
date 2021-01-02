@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Rework of the tag breaking logic with the goal to be more in line with how Prettier formats HTML. This includes respecting the user's decision to have child tags in seperate lines even if they don't exceed the maximum line width ([#143](https://github.com/sveltejs/prettier-plugin-svelte/issues/143), [#117](https://github.com/sveltejs/prettier-plugin-svelte/issues/117)). This is a breaking change because tags are broken up differently now than before.
+* Default sort order is now `scripts-markup-styles`. This is a breaking change.
 
 ## 1.4.2
 
