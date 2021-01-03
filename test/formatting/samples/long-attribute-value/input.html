@@ -1,0 +1,3 @@
+<input
+  type="password"
+  use:trackChanges={{ store: passwordStore, clean: [ensureString], validate: [minLength(6), maxLength(25)] }} />
