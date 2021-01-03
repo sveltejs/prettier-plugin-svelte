@@ -107,6 +107,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     }
 
     const [open, close] = options.svelteStrictMode ? ['"{', '}"'] : ['{', '}'];
+    const printJsExpression = () => [
+        open,
+        printJS(path, print, options.svelteStrictMode, 'expression'),
+        close,
+    ];
     const node = n as Node;
 
     if (ignoreNext && (node.type !== 'Text' || !isEmptyNode(node))) {
@@ -197,13 +202,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             const attributes = path.map((childPath) => childPath.call(print), 'attributes');
             const possibleThisBinding =
                 node.type === 'InlineComponent' && node.expression
-                    ? concat([
-                          line,
-                          'this=',
-                          open,
-                          printJS(path, print, options.svelteStrictMode, 'expression'),
-                          close,
-                      ])
+                    ? concat([line, 'this=', ...printJsExpression()])
                     : '';
 
             if (isSelfClosingTag) {
@@ -534,14 +533,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.modifiers && node.modifiers.length
                     ? concat(['|', join('|', node.modifiers)])
                     : '',
-                node.expression
-                    ? concat([
-                          '=',
-                          open,
-                          printJS(path, print, options.svelteStrictMode, 'expression'),
-                          close,
-                      ])
-                    : '',
+                node.expression ? concat(['=', ...printJsExpression()]) : '',
             ]);
         case 'Binding':
             return concat([
@@ -550,12 +542,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 node.expression.type === 'Identifier' && node.expression.name === node.name
                     ? ''
-                    : concat([
-                          '=',
-                          open,
-                          printJS(path, print, options.svelteStrictMode, 'expression'),
-                          close,
-                      ]),
+                    : concat(['=', ...printJsExpression()]),
             ]);
         case 'Class':
             return concat([
@@ -564,12 +551,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 node.expression.type === 'Identifier' && node.expression.name === node.name
                     ? ''
-                    : concat([
-                          '=',
-                          open,
-                          printJS(path, print, options.svelteStrictMode, 'expression'),
-                          close,
-                      ]),
+                    : concat(['=', ...printJsExpression()]),
             ]);
         case 'Let':
             return concat([
@@ -580,12 +562,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 !node.expression ||
                 (node.expression.type === 'Identifier' && node.expression.name === node.name)
                     ? ''
-                    : concat([
-                          '=',
-                          open,
-                          printJS(path, print, options.svelteStrictMode, 'expression'),
-                          close,
-                      ]),
+                    : concat(['=', ...printJsExpression()]),
             ]);
         case 'DebugTag':
             return concat([
@@ -629,42 +606,21 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.modifiers && node.modifiers.length
                     ? concat(['|', join('|', node.modifiers)])
                     : '',
-                node.expression
-                    ? concat([
-                          '=',
-                          open,
-                          printJS(path, print, options.svelteStrictMode, 'expression'),
-                          close,
-                      ])
-                    : '',
+                node.expression ? concat(['=', ...printJsExpression()]) : '',
             ]);
         case 'Action':
             return concat([
                 line,
                 'use:',
                 node.name,
-                node.expression
-                    ? concat([
-                          '=',
-                          open,
-                          printJS(path, print, options.svelteStrictMode, 'expression'),
-                          close,
-                      ])
-                    : '',
+                node.expression ? concat(['=', ...printJsExpression()]) : '',
             ]);
         case 'Animation':
             return concat([
                 line,
                 'animate:',
                 node.name,
-                node.expression
-                    ? concat([
-                          '=',
-                          open,
-                          printJS(path, print, options.svelteStrictMode, 'expression'),
-                          close,
-                      ])
-                    : '',
+                node.expression ? concat(['=', ...printJsExpression()]) : '',
             ]);
         case 'RawMustacheTag':
             return concat(['{@html ', printJS(path, print, false, 'expression'), '}']);
