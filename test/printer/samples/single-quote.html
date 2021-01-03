@@ -7,3 +7,11 @@
 {#each ['a'] as b}a{/each}
 
 <p>"{'hello'}" world</p>
+
+<button on:click={() => console.log('hi')}>hi</button>
+
+<div in:asd={foo + 'bar'} out:asd={foo + 'bar'} />
+
+<div transistion:asd={foo + 'bar'} />
+
+<div animate:asd={foo + 'bar'} />
