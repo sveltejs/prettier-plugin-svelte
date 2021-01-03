@@ -2,6 +2,7 @@ export interface BaseNode {
     start: number;
     end: number;
     isJS?: boolean;
+    forceSingleQuote?: boolean;
 }
 
 export interface FragmentNode extends BaseNode {

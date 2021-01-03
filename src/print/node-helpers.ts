@@ -382,3 +382,13 @@ export function checkWhitespaceAtEndOfSvelteBlock(
 
     return 'none';
 }
+
+export function isInsideQuotedAttribute(path: FastPath, options: ParserOptions): boolean {
+    const stack = path.stack as Node[];
+
+    return stack.some(
+        (node) =>
+            node.type === 'Attribute' &&
+            (!isLoneMustacheTag(node.value) || options.svelteStrictMode),
+    );
+}

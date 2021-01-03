@@ -16,6 +16,7 @@ import {
     isEmptyNode,
     isIgnoreDirective,
     isInlineElement,
+    isInsideQuotedAttribute,
     isLoneMustacheTag,
     isNodeSupportedLanguage,
     isOrCanBeConvertedToShorthand,
@@ -106,6 +107,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     }
 
     const [open, close] = options.svelteStrictMode ? ['"{', '}"'] : ['{', '}'];
+    const printJsExpression = () => [
+        open,
+        printJS(path, print, options.svelteStrictMode, 'expression'),
+        close,
+    ];
     const node = n as Node;
 
     if (ignoreNext && (node.type !== 'Text' || !isEmptyNode(node))) {
@@ -196,7 +202,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             const attributes = path.map((childPath) => childPath.call(print), 'attributes');
             const possibleThisBinding =
                 node.type === 'InlineComponent' && node.expression
-                    ? concat([line, 'this=', open, printJS(path, print, 'expression'), close])
+                    ? concat([line, 'this=', ...printJsExpression()])
                     : '';
 
             if (isSelfClosingTag) {
@@ -377,11 +383,15 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             }
         }
         case 'MustacheTag':
-            return concat(['{', printJS(path, print, 'expression'), '}']);
+            return concat([
+                '{',
+                printJS(path, print, isInsideQuotedAttribute(path, options), 'expression'),
+                '}',
+            ]);
         case 'IfBlock': {
             const def: Doc[] = [
                 '{#if ',
-                printJS(path, print, 'expression'),
+                printJS(path, print, false, 'expression'),
                 '}',
                 printSvelteBlockChildren(path, print, options),
             ];
@@ -406,7 +416,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 const ifNode = node.children[0] as IfBlockNode;
                 const def: Doc[] = [
                     '{:else if ',
-                    path.map((ifPath) => printJS(ifPath, print, 'expression'), 'children')[0],
+                    path.map(
+                        (ifPath) => printJS(ifPath, print, false, 'expression'),
+                        'children',
+                    )[0],
                     '}',
                     path.map(
                         (ifPath) => printSvelteBlockChildren(ifPath, print, options),
@@ -425,9 +438,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'EachBlock': {
             const def: Doc[] = [
                 '{#each ',
-                printJS(path, print, 'expression'),
+                printJS(path, print, false, 'expression'),
                 ' as ',
-                printJS(path, print, 'context'),
+                printJS(path, print, false, 'context'),
             ];
 
             if (node.index) {
@@ -435,7 +448,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             }
 
             if (node.key) {
-                def.push(' (', printJS(path, print, 'key'), ')');
+                def.push(' (', printJS(path, print, false, 'key'), ')');
             }
 
             def.push('}', printSvelteBlockChildren(path, print, options));
@@ -460,7 +473,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     group(
                         concat([
                             '{#await ',
-                            printJS(path, print, 'expression'),
+                            printJS(path, print, false, 'expression'),
                             ' then',
                             expandNode(node.value),
                             '}',
@@ -469,7 +482,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     path.call(print, 'then'),
                 );
             } else {
-                block.push(group(concat(['{#await ', printJS(path, print, 'expression'), '}'])));
+                block.push(
+                    group(concat(['{#await ', printJS(path, print, false, 'expression'), '}'])),
+                );
 
                 if (hasPendingBlock) {
                     block.push(path.call(print, 'pending'));
@@ -497,7 +512,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'KeyBlock': {
             const def: Doc[] = [
                 '{#key ',
-                printJS(path, print, 'expression'),
+                printJS(path, print, false, 'expression'),
                 '}',
                 printSvelteBlockChildren(path, print, options),
             ];
@@ -518,9 +533,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.modifiers && node.modifiers.length
                     ? concat(['|', join('|', node.modifiers)])
                     : '',
-                node.expression
-                    ? concat(['=', open, printJS(path, print, 'expression'), close])
-                    : '',
+                node.expression ? concat(['=', ...printJsExpression()]) : '',
             ]);
         case 'Binding':
             return concat([
@@ -529,7 +542,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 node.expression.type === 'Identifier' && node.expression.name === node.name
                     ? ''
-                    : concat(['=', open, printJS(path, print, 'expression'), close]),
+                    : concat(['=', ...printJsExpression()]),
             ]);
         case 'Class':
             return concat([
@@ -538,7 +551,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 node.expression.type === 'Identifier' && node.expression.name === node.name
                     ? ''
-                    : concat(['=', open, printJS(path, print, 'expression'), close]),
+                    : concat(['=', ...printJsExpression()]),
             ]);
         case 'Let':
             return concat([
@@ -549,7 +562,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 !node.expression ||
                 (node.expression.type === 'Identifier' && node.expression.name === node.name)
                     ? ''
-                    : concat(['=', open, printJS(path, print, 'expression'), close]),
+                    : concat(['=', ...printJsExpression()]),
             ]);
         case 'DebugTag':
             return concat([
@@ -593,32 +606,26 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.modifiers && node.modifiers.length
                     ? concat(['|', join('|', node.modifiers)])
                     : '',
-                node.expression
-                    ? concat(['=', open, printJS(path, print, 'expression'), close])
-                    : '',
+                node.expression ? concat(['=', ...printJsExpression()]) : '',
             ]);
         case 'Action':
             return concat([
                 line,
                 'use:',
                 node.name,
-                node.expression
-                    ? concat(['=', open, printJS(path, print, 'expression'), close])
-                    : '',
+                node.expression ? concat(['=', ...printJsExpression()]) : '',
             ]);
         case 'Animation':
             return concat([
                 line,
                 'animate:',
                 node.name,
-                node.expression
-                    ? concat(['=', open, printJS(path, print, 'expression'), close])
-                    : '',
+                node.expression ? concat(['=', ...printJsExpression()]) : '',
             ]);
         case 'RawMustacheTag':
-            return concat(['{@html ', printJS(path, print, 'expression'), '}']);
+            return concat(['{@html ', printJS(path, print, false, 'expression'), '}']);
         case 'Spread':
-            return concat([line, '{...', printJS(path, print, 'expression'), '}']);
+            return concat([line, '{...', printJS(path, print, false, 'expression'), '}']);
     }
 
     console.error(JSON.stringify(node, null, 4));
@@ -846,13 +853,15 @@ function splitTextToDocs(node: TextNode): Doc[] {
     return docs;
 }
 
-function printJS(path: FastPath, print: PrintFn, name?: string) {
+function printJS(path: FastPath, print: PrintFn, forceSingleQuote: boolean, name?: string) {
     if (!name) {
         path.getValue().isJS = true;
+        path.getValue().forceSingleQuote = forceSingleQuote;
         return path.call(print);
     }
 
     path.getValue()[name].isJS = true;
+    path.getValue()[name].forceSingleQuote = forceSingleQuote;
     return path.call(print, name);
 }
 
