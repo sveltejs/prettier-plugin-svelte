@@ -7,6 +7,7 @@
 * Fix formatting of fenced Svelte code blocks inside markdown ([#129](https://github.com/sveltejs/prettier-plugin-svelte/issues/129))
 * Everything that is not explicitely a block element is now treated as an inline element, including components. This is a breaking change ([#159](https://github.com/sveltejs/prettier-plugin-svelte/issues/159))
 * Single quotes are no longer forced except inside quoted attributes/events/etc. This is a breaking change ([#94](https://github.com/sveltejs/prettier-plugin-svelte/issues/94))
+* If the content inside a mustache tag is too long, break it up if possible. Only exception are Svelte Blocks (#if/#await/etc). This is a breaking change ([#170](https://github.com/sveltejs/prettier-plugin-svelte/issues/170))
 
 ## 1.4.2
 
