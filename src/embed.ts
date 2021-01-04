@@ -12,6 +12,7 @@ import { Node } from './print/nodes';
 
 const {
     builders: { concat, hardline, group, indent, literalline },
+    utils: { removeLines },
 } = doc;
 
 export function embed(
@@ -31,7 +32,8 @@ export function embed(
                 embeddedOptions.singleQuote = true;
             }
 
-            return textToDoc(forceIntoExpression(getText(node, options)), embeddedOptions);
+            const docs = textToDoc(forceIntoExpression(getText(node, options)), embeddedOptions);
+            return node.forceSingleLine ? removeLines(docs) : docs;
         } catch (e) {
             return getText(node, options);
         }
