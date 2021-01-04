@@ -3,6 +3,7 @@ export interface BaseNode {
     end: number;
     isJS?: boolean;
     forceSingleQuote?: boolean;
+    forceSingleLine?: boolean;
 }
 
 export interface FragmentNode extends BaseNode {

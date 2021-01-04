@@ -32,9 +32,8 @@ export function embed(
                 embeddedOptions.singleQuote = true;
             }
 
-            return removeLines(
-                textToDoc(forceIntoExpression(getText(node, options)), embeddedOptions),
-            );
+            const docs = textToDoc(forceIntoExpression(getText(node, options)), embeddedOptions);
+            return node.forceSingleLine ? removeLines(docs) : docs;
         } catch (e) {
             return getText(node, options);
         }
