@@ -8,6 +8,7 @@
 * Everything that is not explicitely a block element is now treated as an inline element, including components. This is a breaking change ([#159](https://github.com/sveltejs/prettier-plugin-svelte/issues/159))
 * Single quotes are no longer forced except inside quoted attributes/events/etc. This is a breaking change ([#94](https://github.com/sveltejs/prettier-plugin-svelte/issues/94))
 * If the content inside a mustache tag is too long, break it up if possible. Only exception are Svelte Blocks (#if/#await/etc). This is a breaking change ([#170](https://github.com/sveltejs/prettier-plugin-svelte/issues/170))
+* If the content of a script/style tag is completely empty (no whitespace), don't add a hardline anymore. ([#87](https://github.com/sveltejs/prettier-plugin-svelte/issues/87))
 
 ## 1.4.2
 
