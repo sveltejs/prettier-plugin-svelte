@@ -184,6 +184,8 @@ function embedTag(
         isNodeSupportedLanguage(node) && !isIgnoreDirective(previousComment)
             ? content.trim() !== ''
                 ? formatBodyContent(content)
+                : content === ''
+                ? ''
                 : hardline
             : preformattedBody(content);
 
