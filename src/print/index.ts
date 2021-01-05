@@ -4,7 +4,7 @@ import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
 import { parseSortOrder, SortOrderPart } from '../options';
-import { isLine, trim } from './doc-helpers';
+import { isEmptyDoc, isLine, trim } from './doc-helpers';
 import { flatten, isASTNode, isPreTagContent } from './helpers';
 import {
     checkWhitespaceAtEndOfSvelteBlock,
@@ -32,7 +32,7 @@ import {
     trimTextNodeLeft,
     trimTextNodeRight,
 } from './node-helpers';
-import { AttributeNode, IfBlockNode, Node, TextNode } from './nodes';
+import { ASTNode, AttributeNode, IfBlockNode, Node, OptionsNode, TextNode } from './nodes';
 
 const {
     concat,
@@ -61,6 +61,7 @@ declare module 'prettier' {
 }
 
 let ignoreNext = false;
+let svelteOptionsDoc: Doc | undefined;
 
 function groupConcat(contents: doc.builders.Doc[]): doc.builders.Doc {
     return group(concat(contents));
@@ -73,37 +74,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     }
 
     if (isASTNode(n)) {
-        const parts: doc.builders.Doc[] = [];
-        const addParts: Record<SortOrderPart, () => void> = {
-            scripts() {
-                if (n.module) {
-                    n.module.type = 'Script';
-                    n.module.attributes = extractAttributes(getText(n.module, options));
-                    parts.push(path.call(print, 'module'));
-                }
-                if (n.instance) {
-                    n.instance.type = 'Script';
-                    n.instance.attributes = extractAttributes(getText(n.instance, options));
-                    parts.push(path.call(print, 'instance'));
-                }
-            },
-            styles() {
-                if (n.css) {
-                    n.css.type = 'Style';
-                    n.css.content.type = 'StyleProgram';
-                    parts.push(path.call(print, 'css'));
-                }
-            },
-            markup() {
-                const htmlDoc = path.call(print, 'html');
-                if (htmlDoc) {
-                    parts.push(htmlDoc);
-                }
-            },
-        };
-        parseSortOrder(options.svelteSortOrder).forEach((p) => addParts[p]());
-        ignoreNext = false;
-        return group(concat([join(hardline, parts)]));
+        return printTopLevelParts(n, options, path, print);
     }
 
     const [open, close] = options.svelteStrictMode ? ['"{', '}"'] : ['{', '}'];
@@ -135,20 +106,19 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             }
             if (!isPreTagContent(path)) {
                 trimChildren(node.children, path);
-                return group(
-                    concat([
-                        ...trim(
-                            [printChildren(path, print)],
-                            (n) =>
-                                isLine(n) ||
-                                (typeof n === 'string' && n.trim() === '') ||
-                                // Because printChildren may append this at the end and
-                                // may hide other lines before it
-                                n === breakParent,
-                        ),
-                        hardline,
-                    ]),
+                const output = trim(
+                    [printChildren(path, print)],
+                    (n) =>
+                        isLine(n) ||
+                        (typeof n === 'string' && n.trim() === '') ||
+                        // Because printChildren may append this at the end and
+                        // may hide other lines before it
+                        n === breakParent,
                 );
+                if (output.every((doc) => isEmptyDoc(doc))) {
+                    return '';
+                }
+                return group(concat([...output, hardline]));
             } else {
                 return group(concat(path.map(print, 'children')));
             }
@@ -341,19 +311,16 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             ]);
         }
         case 'Options':
+            throw new Error('Options tags should have been handled by prepareChildren');
         case 'Body':
-            return group(
-                concat([
-                    '<',
-                    node.name,
+            return groupConcat([
+                '<',
+                node.name,
 
-                    indent(
-                        group(concat(path.map((childPath) => childPath.call(print), 'attributes'))),
-                    ),
+                indent(group(concat(path.map((childPath) => childPath.call(print), 'attributes')))),
 
-                    ' />',
-                ]),
-            );
+                ' />',
+            ]);
         case 'Identifier':
             return node.name;
         case 'AttributeShorthand': {
@@ -632,6 +599,53 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     throw new Error('unknown node type: ' + node.type);
 }
 
+function printTopLevelParts(
+    n: ASTNode,
+    options: ParserOptions,
+    path: FastPath<any>,
+    print: PrintFn,
+): Doc {
+    const parts: doc.builders.Doc[] = [];
+    const addParts: Record<SortOrderPart, () => void> = {
+        scripts() {
+            if (n.module) {
+                n.module.type = 'Script';
+                n.module.attributes = extractAttributes(getText(n.module, options));
+                parts.push(path.call(print, 'module'));
+            }
+            if (n.instance) {
+                n.instance.type = 'Script';
+                n.instance.attributes = extractAttributes(getText(n.instance, options));
+                parts.push(path.call(print, 'instance'));
+            }
+        },
+        styles() {
+            if (n.css) {
+                n.css.type = 'Style';
+                n.css.content.type = 'StyleProgram';
+                parts.push(path.call(print, 'css'));
+            }
+        },
+        markup() {
+            const htmlDoc = path.call(print, 'html');
+            if (htmlDoc) {
+                parts.push(htmlDoc);
+            }
+            if (svelteOptionsDoc) {
+                // Always put svelte:options at the top of the file
+                parts.unshift(svelteOptionsDoc);
+            }
+        },
+    };
+    parseSortOrder(options.svelteSortOrder).forEach((p) => addParts[p]());
+
+    // Need to reset these because they are global and could affect the next formatting run
+    ignoreNext = false;
+    svelteOptionsDoc = undefined;
+
+    return group(concat([join(hardline, parts)]));
+}
+
 function printAttributeNodeValue(
     path: FastPath<any>,
     print: PrintFn,
@@ -686,9 +700,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
         return concat(path.map(print, 'children'));
     }
 
-    const childNodes: Node[] = path
-        .getValue()
-        .children.filter((child: Node) => child.type !== 'Text' || getUnencodedText(child) !== '');
+    const childNodes: Node[] = prepareChildren(path.getValue().children, path, print);
     // modifiy original array because it's accessed later through map(print, 'children', idx)
     path.getValue().children = childNodes;
     if (childNodes.length === 0) {
@@ -821,6 +833,55 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
         }
 
         childDocs.push(printChild(idx));
+    }
+}
+
+/**
+ * `svelte:options` is part of the html part but needs to be snipped out and handled
+ * seperately to reorder it as configured. Do that here.
+ */
+function prepareChildren(children: Node[], path: FastPath, print: PrintFn): Node[] {
+    children = children.filter((child: Node, idx: number) => {
+        if (child.type === 'Options') {
+            printSvelteOptions(child, idx, path, print);
+            return false;
+        }
+        return child.type !== 'Text' || getUnencodedText(child) !== '';
+    });
+
+    const mergedChildrenWithoutOptions = [];
+
+    for (let i = 0; i < children.length; i++) {
+        const currentChild = children[i];
+        const nextChild = children[i + 1];
+        if (currentChild.type === 'Text' && nextChild && nextChild.type === 'Text') {
+            // A tag was snipped out (f.e. svelte:options). Join text
+            currentChild.raw += nextChild.raw;
+            currentChild.data += nextChild.data;
+            i++; // skip next text child
+        }
+        mergedChildrenWithoutOptions.push(currentChild);
+    }
+
+    return mergedChildrenWithoutOptions;
+
+    function printSvelteOptions(
+        node: OptionsNode,
+        idx: number,
+        path: FastPath,
+        print: PrintFn,
+    ): void {
+        svelteOptionsDoc = groupConcat([
+            groupConcat([
+                '<',
+                node.name,
+
+                indent(group(concat(path.map(print, 'children', idx, 'attributes')))),
+
+                ' />',
+            ]),
+            hardline,
+        ]);
     }
 }
 
