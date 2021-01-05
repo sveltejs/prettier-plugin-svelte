@@ -21,8 +21,8 @@ and add your preferred configuration options:
 
 
 - **`svelteSortOrder`**
-  - Default: `scripts-markup-styles`
-  - Sort order for scripts, markup, and styles.
+  - Default: `options-scripts-markup-styles`
+  - Sort order for svelte:options, scripts, markup, and styles.
 
 - **`svelteStrictMode`**
   - Default: `false`
@@ -59,7 +59,7 @@ and add your preferred configuration options:
 
 ```json
 {
-  "svelteSortOrder" : "styles-scripts-markup",
+  "svelteSortOrder" : "options-styles-scripts-markup",
   "svelteStrictMode": true,
   "svelteBracketNewLine": true,
   "svelteAllowShorthand": false,
@@ -86,7 +86,7 @@ prettier --write --plugin-search-dir=. ./**/*.html
 
 ## Options (CLI)
 
-**`svelte-sort-order`** Sort order for scripts, styles, and markup. Defaults to `scripts-markup-styles`.
+**`svelte-sort-order`** Sort order for svelte:options, scripts, styles, and markup. Defaults to `options-scripts-styles-markup`.
 
 ```
 prettier --write --svelte-sort-order scripts-markup-styles ./**/*.svelte
