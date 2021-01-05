@@ -127,9 +127,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 if (output.every((doc) => isEmptyDoc(doc))) {
                     return '';
                 }
-                return group(concat([...output, hardline]));
+                return groupConcat([...output, hardline]);
             } else {
-                return group(concat(path.map(print, 'children')));
+                return groupConcat(path.map(print, 'children'));
             }
         case 'Text':
             if (!isPreTagContent(path)) {
@@ -185,24 +185,20 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     : '';
 
             if (isSelfClosingTag) {
-                return group(
-                    concat([
-                        '<',
-                        node.name,
+                return groupConcat([
+                    '<',
+                    node.name,
 
-                        indent(
-                            group(
-                                concat([
-                                    possibleThisBinding,
-                                    ...attributes,
-                                    options.svelteBracketNewLine ? dedent(line) : '',
-                                ]),
-                            ),
-                        ),
+                    indent(
+                        groupConcat([
+                            possibleThisBinding,
+                            ...attributes,
+                            options.svelteBracketNewLine ? dedent(line) : '',
+                        ]),
+                    ),
 
-                        ...[options.svelteBracketNewLine ? '' : ' ', `/>`],
-                    ]),
-                );
+                    ...[options.svelteBracketNewLine ? '' : ' ', `/>`],
+                ]);
             }
 
             const children = node.children;
@@ -242,17 +238,15 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
 
                 indent(
-                    group(
-                        concat([
-                            possibleThisBinding,
-                            ...attributes,
-                            hugContent
-                                ? ''
-                                : options.svelteBracketNewLine && !isPreTagContent(path)
-                                ? dedent(softline)
-                                : '',
-                        ]),
-                    ),
+                    groupConcat([
+                        possibleThisBinding,
+                        ...attributes,
+                        hugContent
+                            ? ''
+                            : options.svelteBracketNewLine && !isPreTagContent(path)
+                            ? dedent(softline)
+                            : '',
+                    ]),
                 ),
             ];
 
@@ -326,7 +320,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 '<',
                 node.name,
 
-                indent(group(concat(path.map((childPath) => childPath.call(print), 'attributes')))),
+                indent(groupConcat(path.map((childPath) => childPath.call(print), 'attributes'))),
 
                 ' />',
             ]);
@@ -378,7 +372,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             def.push('{/if}');
 
-            return concat([group(concat(def)), breakParent]);
+            return concat([groupConcat(def), breakParent]);
         }
         case 'ElseBlock': {
             // Else if
@@ -435,7 +429,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             def.push('{/each}');
 
-            return concat([group(concat(def)), breakParent]);
+            return concat([groupConcat(def), breakParent]);
         }
         case 'AwaitBlock': {
             const hasPendingBlock = node.pending.children.some((n) => !isEmptyTextNode(n));
@@ -446,20 +440,18 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             if (!hasPendingBlock && hasThenBlock) {
                 block.push(
-                    group(
-                        concat([
-                            '{#await ',
-                            printSvelteBlockJS(path, print, 'expression'),
-                            ' then',
-                            expandNode(node.value),
-                            '}',
-                        ]),
-                    ),
+                    groupConcat([
+                        '{#await ',
+                        printSvelteBlockJS(path, print, 'expression'),
+                        ' then',
+                        expandNode(node.value),
+                        '}',
+                    ]),
                     path.call(print, 'then'),
                 );
             } else {
                 block.push(
-                    group(concat(['{#await ', printSvelteBlockJS(path, print, 'expression'), '}'])),
+                    groupConcat(['{#await ', printSvelteBlockJS(path, print, 'expression'), '}']),
                 );
 
                 if (hasPendingBlock) {
@@ -468,7 +460,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
                 if (hasThenBlock) {
                     block.push(
-                        group(concat(['{:then', expandNode(node.value), '}'])),
+                        groupConcat(['{:then', expandNode(node.value), '}']),
                         path.call(print, 'then'),
                     );
                 }
@@ -476,14 +468,14 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             if (hasCatchBlock) {
                 block.push(
-                    group(concat(['{:catch', expandNode(node.error), '}'])),
+                    groupConcat(['{:catch', expandNode(node.error), '}']),
                     path.call(print, 'catch'),
                 );
             }
 
             block.push('{/await}');
 
-            return group(concat(block));
+            return groupConcat(block);
         }
         case 'KeyBlock': {
             const def: Doc[] = [
@@ -495,7 +487,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             def.push('{/key}');
 
-            return concat([group(concat(def)), breakParent]);
+            return concat([groupConcat(def), breakParent]);
         }
         case 'ThenBlock':
         case 'PendingBlock':
@@ -650,7 +642,7 @@ function printTopLevelParts(
     svelteOptionsDoc = undefined;
     svelteOptionsComment = undefined;
 
-    return group(concat([join(hardline, docs)]));
+    return groupConcat([join(hardline, docs)]);
 }
 
 function printAttributeNodeValue(
@@ -664,7 +656,7 @@ function printAttributeNodeValue(
     if (!quotes || !formattableAttributes.includes(node.name)) {
         return concat(valueDocs);
     } else {
-        return indent(group(concat(trim(valueDocs, isLine))));
+        return indent(groupConcat(trim(valueDocs, isLine)));
     }
 }
 
@@ -902,7 +894,7 @@ function prepareChildren(children: Node[], path: FastPath, print: PrintFn): Node
                 '<',
                 node.name,
 
-                indent(group(concat(path.map(print, 'children', idx, 'attributes')))),
+                indent(groupConcat(path.map(print, 'children', idx, 'attributes'))),
 
                 ' />',
             ]),
@@ -1021,5 +1013,5 @@ function printComment(node: CommentNode) {
         text = unsnipContent(text);
     }
 
-    return group(concat(['<!--', text, '-->']));
+    return groupConcat(['<!--', text, '-->']);
 }

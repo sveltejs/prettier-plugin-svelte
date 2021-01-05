@@ -4,5 +4,6 @@
         "module": "commonjs",
         "strict": true,
         "esModuleInterop": true
-    }
+    },
+    "include": ["src/**/*"]
 }
