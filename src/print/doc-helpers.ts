@@ -1,10 +1,13 @@
 import { Doc, doc } from 'prettier';
 import { findLastIndex } from './helpers';
 
-export function isLine(docToCheck: Doc) {
+export function isLine(docToCheck: Doc): boolean {
     return (
         docToCheck === doc.builders.hardline ||
-        (typeof docToCheck === 'object' && docToCheck.type === 'line')
+        (typeof docToCheck === 'object' && docToCheck.type === 'line') ||
+        (typeof docToCheck === 'object' &&
+            docToCheck.type === 'concat' &&
+            docToCheck.parts.every(isLine))
     );
 }
 

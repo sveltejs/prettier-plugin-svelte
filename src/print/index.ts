@@ -605,45 +605,48 @@ function printTopLevelParts(
     path: FastPath<any>,
     print: PrintFn,
 ): Doc {
-    const parts: doc.builders.Doc[] = [];
-    const addParts: Record<SortOrderPart, () => void> = {
-        scripts() {
-            if (n.module) {
-                n.module.type = 'Script';
-                n.module.attributes = extractAttributes(getText(n.module, options));
-                parts.push(path.call(print, 'module'));
-            }
-            if (n.instance) {
-                n.instance.type = 'Script';
-                n.instance.attributes = extractAttributes(getText(n.instance, options));
-                parts.push(path.call(print, 'instance'));
-            }
-        },
-        styles() {
-            if (n.css) {
-                n.css.type = 'Style';
-                n.css.content.type = 'StyleProgram';
-                parts.push(path.call(print, 'css'));
-            }
-        },
-        markup() {
-            const htmlDoc = path.call(print, 'html');
-            if (htmlDoc) {
-                parts.push(htmlDoc);
-            }
-            if (svelteOptionsDoc) {
-                // Always put svelte:options at the top of the file
-                parts.unshift(svelteOptionsDoc);
-            }
-        },
+    const parts: Record<SortOrderPart, Doc[]> = {
+        options: [],
+        scripts: [],
+        markup: [],
+        styles: [],
     };
-    parseSortOrder(options.svelteSortOrder).forEach((p) => addParts[p]());
+
+    // scripts
+    if (n.module) {
+        n.module.type = 'Script';
+        n.module.attributes = extractAttributes(getText(n.module, options));
+        parts.scripts.push(path.call(print, 'module'));
+    }
+    if (n.instance) {
+        n.instance.type = 'Script';
+        n.instance.attributes = extractAttributes(getText(n.instance, options));
+        parts.scripts.push(path.call(print, 'instance'));
+    }
+
+    // styles
+    if (n.css) {
+        n.css.type = 'Style';
+        n.css.content.type = 'StyleProgram';
+        parts.styles.push(path.call(print, 'css'));
+    }
+
+    // markup
+    const htmlDoc = path.call(print, 'html');
+    if (htmlDoc) {
+        parts.markup.push(htmlDoc);
+    }
+    if (svelteOptionsDoc) {
+        parts.options.push(svelteOptionsDoc);
+    }
+
+    const docs = flatten(parseSortOrder(options.svelteSortOrder).map((p) => parts[p]));
 
     // Need to reset these because they are global and could affect the next formatting run
     ignoreNext = false;
     svelteOptionsDoc = undefined;
 
-    return group(concat([join(hardline, parts)]));
+    return group(concat([join(hardline, docs)]));
 }
 
 function printAttributeNodeValue(

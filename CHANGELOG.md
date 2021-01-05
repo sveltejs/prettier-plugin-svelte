@@ -3,7 +3,7 @@
 ## Unreleased
 
 * Rework of the tag breaking logic with the goal to be more in line with how Prettier formats HTML. This includes respecting the user's decision to have child tags in seperate lines even if they don't exceed the maximum line width ([#143](https://github.com/sveltejs/prettier-plugin-svelte/issues/143), [#117](https://github.com/sveltejs/prettier-plugin-svelte/issues/117)). This is a breaking change because tags are broken up differently now than before.
-* Default sort order is now `scripts-markup-styles`. This is a breaking change.
+* `svelte:options` is now part of `svelteSortOrder`. Default sort order is now `options-scripts-markup-styles`. This is a breaking change. ([#73](https://github.com/sveltejs/prettier-plugin-svelte/issues/73))
 * Fix formatting of fenced Svelte code blocks inside markdown ([#129](https://github.com/sveltejs/prettier-plugin-svelte/issues/129))
 * Everything that is not explicitely a block element is now treated as an inline element, including components. This is a breaking change ([#159](https://github.com/sveltejs/prettier-plugin-svelte/issues/159))
 * Single quotes are no longer forced except inside quoted attributes/events/etc. This is a breaking change ([#94](https://github.com/sveltejs/prettier-plugin-svelte/issues/94))
