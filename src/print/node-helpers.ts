@@ -89,7 +89,7 @@ export function doesEmbedStartAt(position: number, path: FastPath) {
     return embeds.find((n) => n && n.start === position) != null;
 }
 
-export function isEmptyNode(node: Node): node is TextNode {
+export function isEmptyTextNode(node: Node): node is TextNode {
     return node.type === 'Text' && getUnencodedText(node).trim() === '';
 }
 
@@ -228,7 +228,7 @@ export function trimTextNodeLeft(node: TextNode): void {
  */
 export function trimChildren(children: Node[], path: FastPath): void {
     let firstNonEmptyNode = children.findIndex(
-        (n) => !isEmptyNode(n) && !doesEmbedStartAt(n.end, path),
+        (n) => !isEmptyTextNode(n) && !doesEmbedStartAt(n.end, path),
     );
     firstNonEmptyNode = firstNonEmptyNode === -1 ? children.length - 1 : firstNonEmptyNode;
 
@@ -236,7 +236,7 @@ export function trimChildren(children: Node[], path: FastPath): void {
         // Last node is ok to end and the start of an embeded region,
         // if it's not a comment (which should stick to the region)
         return (
-            !isEmptyNode(n) &&
+            !isEmptyTextNode(n) &&
             ((idx === children.length - 1 && n.type !== 'Comment') ||
                 !doesEmbedStartAt(n.end, path))
         );

@@ -13,7 +13,7 @@ import {
     endsWithLinebreak,
     getUnencodedText,
     isBlockElement,
-    isEmptyNode,
+    isEmptyTextNode,
     isIgnoreDirective,
     isInlineElement,
     isInsideQuotedAttribute,
@@ -32,7 +32,15 @@ import {
     trimTextNodeLeft,
     trimTextNodeRight,
 } from './node-helpers';
-import { ASTNode, AttributeNode, IfBlockNode, Node, OptionsNode, TextNode } from './nodes';
+import {
+    ASTNode,
+    AttributeNode,
+    CommentNode,
+    IfBlockNode,
+    Node,
+    OptionsNode,
+    TextNode,
+} from './nodes';
 
 const {
     concat,
@@ -62,6 +70,7 @@ declare module 'prettier' {
 
 let ignoreNext = false;
 let svelteOptionsDoc: Doc | undefined;
+let svelteOptionsComment: Doc | undefined;
 
 function groupConcat(contents: doc.builders.Doc[]): doc.builders.Doc {
     return group(concat(contents));
@@ -85,7 +94,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     ];
     const node = n as Node;
 
-    if (ignoreNext && (node.type !== 'Text' || !isEmptyNode(node))) {
+    if (ignoreNext && (node.type !== 'Text' || !isEmptyTextNode(node))) {
         ignoreNext = false;
         return concat(
             flatten(
@@ -101,7 +110,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Fragment':
             const children = node.children;
 
-            if (children.length === 0 || children.every(isEmptyNode)) {
+            if (children.length === 0 || children.every(isEmptyTextNode)) {
                 return '';
             }
             if (!isPreTagContent(path)) {
@@ -124,7 +133,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             }
         case 'Text':
             if (!isPreTagContent(path)) {
-                if (isEmptyNode(node)) {
+                if (isEmptyTextNode(node)) {
                     const hasWhiteSpace =
                         getUnencodedText(node).trim().length < getUnencodedText(node).length;
                     const hasOneOrMoreNewlines = /\n/.test(getUnencodedText(node));
@@ -160,7 +169,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             const isSupportedLanguage = !(
                 node.name === 'template' && !isNodeSupportedLanguage(node)
             );
-            const isEmpty = node.children.every((child) => isEmptyNode(child));
+            const isEmpty = node.children.every((child) => isEmptyTextNode(child));
 
             const isSelfClosingTag =
                 isEmpty &&
@@ -429,9 +438,9 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return concat([group(concat(def)), breakParent]);
         }
         case 'AwaitBlock': {
-            const hasPendingBlock = node.pending.children.some((n) => !isEmptyNode(n));
-            const hasThenBlock = node.then.children.some((n) => !isEmptyNode(n));
-            const hasCatchBlock = node.catch.children.some((n) => !isEmptyNode(n));
+            const hasPendingBlock = node.pending.children.some((n) => !isEmptyTextNode(n));
+            const hasThenBlock = node.then.children.some((n) => !isEmptyTextNode(n));
+            const hasCatchBlock = node.catch.children.some((n) => !isEmptyTextNode(n));
 
             let block = [];
 
@@ -555,13 +564,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 ignoreNext = true;
             }
 
-            let text = node.data;
-
-            if (hasSnippedContent(text)) {
-                text = unsnipContent(text);
-            }
-
-            return group(concat(['<!--', text, '-->']));
+            return printComment(node);
         }
         case 'Transition':
             const kind = node.intro && node.outro ? 'transition' : node.intro ? 'in' : 'out';
@@ -645,6 +648,7 @@ function printTopLevelParts(
     // Need to reset these because they are global and could affect the next formatting run
     ignoreNext = false;
     svelteOptionsDoc = undefined;
+    svelteOptionsComment = undefined;
 
     return group(concat([join(hardline, docs)]));
 }
@@ -779,7 +783,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
                 // Only handle text which starts with a whitespace and has text afterwards,
                 // or is empty but followed by an inline element. The latter is done
                 // so that if the children break, the inline element afterwards is in a seperate line.
-                ((!isEmptyNode(nextChild) ||
+                ((!isEmptyTextNode(nextChild) ||
                     (childNodes[idx + 2] && isInlineElement(path, childNodes[idx + 2]))) &&
                     !isTextNodeStartingWithLinebreak(nextChild)))
         ) {
@@ -811,7 +815,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
         if (
             isTextNodeStartingWithWhitespace(childNode) &&
             // If node is empty, go straight through to checking the right end
-            !isEmptyNode(childNode)
+            !isEmptyTextNode(childNode)
         ) {
             if (isInlineElement(path, prevNode) && !isTextNodeStartingWithLinebreak(childNode)) {
                 trimTextNodeLeft(childNode);
@@ -841,28 +845,47 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
 
 /**
  * `svelte:options` is part of the html part but needs to be snipped out and handled
- * seperately to reorder it as configured. Do that here.
+ * seperately to reorder it as configured. The comment above it should be moved with it.
+ * Do that here.
  */
 function prepareChildren(children: Node[], path: FastPath, print: PrintFn): Node[] {
-    children = children.filter((child: Node, idx: number) => {
-        if (child.type === 'Options') {
-            printSvelteOptions(child, idx, path, print);
-            return false;
+    const childrenWithoutOptions = [];
+
+    for (let idx = 0; idx < children.length; idx++) {
+        const currentChild = children[idx];
+
+        if (currentChild.type === 'Text' && getUnencodedText(currentChild) === '') {
+            continue;
         }
-        return child.type !== 'Text' || getUnencodedText(child) !== '';
-    });
+
+        if (isCommentFollowedByOptions(currentChild, idx)) {
+            svelteOptionsComment = printComment(currentChild);
+            const nextChild = children[idx + 1];
+            idx += nextChild && isEmptyTextNode(nextChild) ? 1 : 0;
+            continue;
+        }
+
+        if (currentChild.type === 'Options') {
+            printSvelteOptions(currentChild, idx, path, print);
+            continue;
+        }
+
+        childrenWithoutOptions.push(currentChild);
+    }
 
     const mergedChildrenWithoutOptions = [];
 
-    for (let i = 0; i < children.length; i++) {
-        const currentChild = children[i];
-        const nextChild = children[i + 1];
+    for (let idx = 0; idx < childrenWithoutOptions.length; idx++) {
+        const currentChild = childrenWithoutOptions[idx];
+        const nextChild = childrenWithoutOptions[idx + 1];
+
         if (currentChild.type === 'Text' && nextChild && nextChild.type === 'Text') {
             // A tag was snipped out (f.e. svelte:options). Join text
             currentChild.raw += nextChild.raw;
             currentChild.data += nextChild.data;
-            i++; // skip next text child
+            idx++;
         }
+
         mergedChildrenWithoutOptions.push(currentChild);
     }
 
@@ -885,6 +908,26 @@ function prepareChildren(children: Node[], path: FastPath, print: PrintFn): Node
             ]),
             hardline,
         ]);
+        if (svelteOptionsComment) {
+            svelteOptionsDoc = groupConcat([svelteOptionsComment, hardline, svelteOptionsDoc]);
+        }
+    }
+
+    function isCommentFollowedByOptions(node: Node, idx: number): node is CommentNode {
+        if (node.type !== 'Comment') {
+            return false;
+        }
+
+        const nextChild = children[idx + 1];
+        if (nextChild) {
+            if (isEmptyTextNode(nextChild)) {
+                const afterNext = children[idx + 2];
+                return afterNext && afterNext.type === 'Options';
+            }
+            return nextChild.type === 'Options';
+        }
+
+        return false;
     }
 }
 
@@ -969,4 +1012,14 @@ function expandNode(node: any): string {
 
     console.error(JSON.stringify(node, null, 4));
     throw new Error('unknown node type: ' + node.type);
+}
+
+function printComment(node: CommentNode) {
+    let text = node.data;
+
+    if (hasSnippedContent(text)) {
+        text = unsnipContent(text);
+    }
+
+    return group(concat(['<!--', text, '-->']));
 }
