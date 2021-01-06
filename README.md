@@ -33,7 +33,7 @@ and add your preferred configuration options:
   - Option to enable/disable component attribute shorthand if attribute name and expression are same.
   
 - **`svelteBracketNewLine`**
-  - Default: `false`
+  - Default: `true`
   - Put the `>` of a multiline element on a new line (svelte equivalent of [jsxBracketSameLine](https://prettier.io/docs/en/options.html#jsx-brackets) rule)
 
 - **`svelteIndentScriptAndStyle`**
@@ -61,7 +61,7 @@ and add your preferred configuration options:
 {
   "svelteSortOrder" : "options-styles-scripts-markup",
   "svelteStrictMode": true,
-  "svelteBracketNewLine": true,
+  "svelteBracketNewLine": false,
   "svelteAllowShorthand": false,
   "svelteIndentScriptAndStyle": false
 }

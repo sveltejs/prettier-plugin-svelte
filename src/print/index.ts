@@ -220,7 +220,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     isTextNodeStartingWithWhitespace(node.children[0]) &&
                     !isPreTagContent(path)
                         ? () => line
-                        : () => softline;
+                        : () => (options.svelteBracketNewLine ? '' : softline);
             } else if (isPreTagContent(path)) {
                 body = () => printRaw(node, options.originalText);
             } else if (!isSupportedLanguage) {
@@ -254,7 +254,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return groupConcat([
                     ...openingTag,
                     group(indent(concat([softline, groupConcat(['>', body(), `</${node.name}`])]))),
-                    softline,
+                    isEmpty && options.svelteBracketNewLine ? '' : softline,
                     '>',
                 ]);
             }
