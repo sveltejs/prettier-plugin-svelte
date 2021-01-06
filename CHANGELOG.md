@@ -1,6 +1,10 @@
 # prettier-plugin-svelte changelog
 
-## Unreleased
+## 2.0.0 (Unreleased)
+
+This release comes with a rewrite of the HTML formatting. The output is now much more in line with how standard Prettier formats HTML. We also changed some default behavior, most notably the default sort order. `svelte:options` is now part of the sort order and the default changed to `options-scripts-markup-styles`, which is in line with how the majority of users likes to order the code blocks.
+
+The complete list of changes:
 
 * Rework of the tag breaking logic with the goal to be more in line with how Prettier formats HTML. This includes respecting the user's decision to have child tags in seperate lines even if they don't exceed the maximum line width ([#143](https://github.com/sveltejs/prettier-plugin-svelte/issues/143), [#117](https://github.com/sveltejs/prettier-plugin-svelte/issues/117)). This is a breaking change because tags are broken up differently now than before.
 * `svelte:options` is now part of `svelteSortOrder`. Default sort order is now `options-scripts-markup-styles`. This is a breaking change. ([#73](https://github.com/sveltejs/prettier-plugin-svelte/issues/73))
