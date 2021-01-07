@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## 2.0.1 (Unreleased)
+## 2.0.1
 
 * Fix formatting of inline element when there's a line at the start/end ([#183](https://github.com/sveltejs/prettier-plugin-svelte/issues/183))
 
