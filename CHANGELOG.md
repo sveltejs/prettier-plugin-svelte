@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.0.1 (Unreleased)
+
+* Fix formatting of inline element when there's a line at the start/end ([#183](https://github.com/sveltejs/prettier-plugin-svelte/issues/183))
+
 ## 2.0.0 (Unreleased)
 
 This release comes with a rewrite of the HTML formatting. The output is now much more in line with how standard Prettier formats HTML. This is also why `svelteBracketNewLine` now defaults to `true`. Another notable default change is the sort order: `svelte:options` is now part of the sort order and the default changed to `options-scripts-markup-styles`, which is in line with how the majority of users likes to order the code blocks.
