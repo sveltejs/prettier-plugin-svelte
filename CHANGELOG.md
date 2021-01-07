@@ -1,8 +1,8 @@
 # prettier-plugin-svelte changelog
 
-## 2.0.2 (Unreleased)
+## 2.0.2
 
-* Fix formatting of template tags with an unsupported language inside.
+* Fix formatting of `<template>` tags with an unsupported language inside
 
 ## 2.0.1
 
