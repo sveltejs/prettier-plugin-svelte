@@ -259,11 +259,42 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 ]);
             }
 
+            // No hugging of content means it's either a block element and/or there's whitespace at the start/end
+            let noHugSeparatorStart: Doc = softline;
+            let noHugSeparatorEnd: Doc = softline;
+            if (isPreTagContent(path)) {
+                noHugSeparatorStart = '';
+                noHugSeparatorEnd = '';
+            } else {
+                let didSetEndSeparator = false;
+
+                if (!hugStart && firstChild && firstChild.type === 'Text') {
+                    if (
+                        isTextNodeStartingWithLinebreak(firstChild) &&
+                        firstChild !== lastChild &&
+                        (!isInlineElement(path, node) || isTextNodeEndingWithWhitespace(lastChild))
+                    ) {
+                        noHugSeparatorStart = hardline;
+                        noHugSeparatorEnd = hardline;
+                        didSetEndSeparator = true;
+                    } else if (isInlineElement(path, node)) {
+                        noHugSeparatorStart = line;
+                    }
+                    trimTextNodeLeft(firstChild);
+                }
+                if (!hugEnd && lastChild && lastChild.type === 'Text') {
+                    if (isInlineElement(path, node) && !didSetEndSeparator) {
+                        noHugSeparatorEnd = line;
+                    }
+                    trimTextNodeRight(lastChild);
+                }
+            }
+
             if (hugStart) {
                 return groupConcat([
                     ...openingTag,
                     group(indent(concat([softline, groupConcat(['>', body()])]))),
-                    softline,
+                    noHugSeparatorEnd,
                     `</${node.name}>`,
                 ]);
             }
@@ -272,7 +303,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return groupConcat([
                     ...openingTag,
                     '>',
-                    group(indent(concat([softline, groupConcat([body(), `</${node.name}`])]))),
+                    group(
+                        indent(
+                            concat([noHugSeparatorStart, groupConcat([body(), `</${node.name}`])]),
+                        ),
+                    ),
                     softline,
                     '>',
                 ]);
@@ -282,34 +317,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return groupConcat([...openingTag, '>', body(), `</${node.name}>`]);
             }
 
-            // No hugging of content means it's either a block element and/or there's whitespace at the start/end
-            let separatorStart: Doc = softline;
-            let separatorEnd: Doc = softline;
-            if (isPreTagContent(path)) {
-                separatorStart = '';
-                separatorEnd = '';
-            } else {
-                if (firstChild && firstChild.type === 'Text') {
-                    if (isTextNodeStartingWithLinebreak(firstChild) && firstChild !== lastChild) {
-                        separatorStart = hardline;
-                        separatorEnd = hardline;
-                    } else if (isInlineElement(path, node)) {
-                        separatorStart = line;
-                    }
-                    trimTextNodeLeft(firstChild);
-                }
-                if (lastChild && lastChild.type === 'Text') {
-                    if (isInlineElement(path, node)) {
-                        separatorEnd = line;
-                    }
-                    trimTextNodeRight(lastChild);
-                }
-            }
-
             return groupConcat([
                 ...openingTag,
                 '>',
-                groupConcat([indent(concat([separatorStart, body()])), separatorEnd]),
+                groupConcat([indent(concat([noHugSeparatorStart, body()])), noHugSeparatorEnd]),
                 `</${node.name}>`,
             ]);
         }
