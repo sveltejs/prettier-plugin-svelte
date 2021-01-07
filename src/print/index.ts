@@ -224,7 +224,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             } else if (isPreTagContent(path)) {
                 body = () => printRaw(node, options.originalText);
             } else if (!isSupportedLanguage) {
-                body = () => printRaw(node, options.originalText);
+                body = () => printRaw(node, options.originalText, true);
                 hugContent = true;
             } else if (isInlineElement(path, node) && !isPreTagContent(path)) {
                 body = () => printChildren(path, print);
@@ -249,6 +249,18 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     ]),
                 ),
             ];
+
+            if (!isSupportedLanguage && !isEmpty) {
+                // Format template tags so that there's a hardline but no intendation.
+                // That way the `lang="X"` and the closing `>` of the start tag stay in one line
+                // which is the 99% use case.
+                return groupConcat([
+                    ...openingTag,
+                    '>',
+                    groupConcat([hardline, body(), hardline]),
+                    `</${node.name}>`,
+                ]);
+            }
 
             if (hugStart && hugEnd) {
                 return groupConcat([

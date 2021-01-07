@@ -100,6 +100,7 @@ export function isIgnoreDirective(node: Node | undefined | null): boolean {
 export function printRaw(
     node: ElementNode | InlineComponentNode | SlotNode | WindowNode | HeadNode | TitleNode,
     originalText: string,
+    stripLeadingAndTrailingNewline: boolean = false,
 ): string {
     if (node.children.length === 0) {
         return '';
@@ -107,7 +108,24 @@ export function printRaw(
 
     const firstChild = node.children[0];
     const lastChild = node.children[node.children.length - 1];
-    return originalText.substring(firstChild.start, lastChild.end);
+
+    let raw = originalText.substring(firstChild.start, lastChild.end);
+
+    if (!stripLeadingAndTrailingNewline) {
+        return raw;
+    }
+
+    if (startsWithLinebreak(raw)) {
+        raw = raw.substring(raw.indexOf('\n') + 1);
+    }
+    if (endsWithLinebreak(raw)) {
+        raw = raw.substring(0, raw.lastIndexOf('\n'));
+        if (raw.charAt(raw.length - 1) === '\r') {
+            raw = raw.substring(0, raw.length - 1);
+        }
+    }
+
+    return raw;
 }
 
 function isTextNode(node: Node): node is TextNode {
