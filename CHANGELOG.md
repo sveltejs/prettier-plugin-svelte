@@ -4,20 +4,20 @@
 
 * Fix formatting of inline element when there's a line at the start/end ([#183](https://github.com/sveltejs/prettier-plugin-svelte/issues/183))
 
-## 2.0.0 (Unreleased)
+## 2.0.0
 
-This release comes with a rewrite of the HTML formatting. The output is now much more in line with how standard Prettier formats HTML. This is also why `svelteBracketNewLine` now defaults to `true`. Another notable default change is the sort order: `svelte:options` is now part of the sort order and the default changed to `options-scripts-markup-styles`, which is in line with how the majority of users likes to order the code blocks.
+This release comes with a rewrite of the HTML formatting. The output is now much more in line with how standard Prettier formats HTML. This is also why `svelteBracketNewLine` now defaults to `true`. Another notable default change is the sort order: `svelte:options` is now part of the sort order and the default changed to `options-scripts-markup-styles`, which is in line with how the majority of users like to order the code blocks.
 
 The complete list of changes:
 
-* Rework of the tag breaking logic with the goal to be more in line with how Prettier formats HTML. This includes respecting the user's decision to have child tags in seperate lines even if they don't exceed the maximum line width ([#143](https://github.com/sveltejs/prettier-plugin-svelte/issues/143), [#117](https://github.com/sveltejs/prettier-plugin-svelte/issues/117)). This is a breaking change because tags are broken up differently now than before.
-* `svelte:options` is now part of `svelteSortOrder`. Default sort order is now `options-scripts-markup-styles`. This is a breaking change. ([#73](https://github.com/sveltejs/prettier-plugin-svelte/issues/73))
-* `svelteBracketNewLine` defaults to `true` now to be more in line with how standard Prettier formats HTML. This is a breaking change.
-* Fix formatting of fenced Svelte code blocks inside markdown ([#129](https://github.com/sveltejs/prettier-plugin-svelte/issues/129))
-* Everything that is not explicitely a block element is now treated as an inline element, including components. This is a breaking change ([#159](https://github.com/sveltejs/prettier-plugin-svelte/issues/159))
+* Rework the tag breaking logic with the goal to be more in line with how Prettier formats standard HTML. This includes respecting the user's decision to have child tags in separate lines even if they don't exceed the maximum line width ([#143](https://github.com/sveltejs/prettier-plugin-svelte/issues/143), [#117](https://github.com/sveltejs/prettier-plugin-svelte/issues/117)). This is a breaking change because tags are broken up differently now than before.
+* `<svelte:options>` is now part of `svelteSortOrder`. Default sort order is now `options-scripts-markup-styles`. This is a breaking change. ([#73](https://github.com/sveltejs/prettier-plugin-svelte/issues/73))
+* `svelteBracketNewLine` defaults to `true` now to be more in line with how Prettier formats standard HTML. This is a breaking change
+* Fix formatting of fenced Svelte code blocks inside Markdown ([#129](https://github.com/sveltejs/prettier-plugin-svelte/issues/129))
+* Everything that is not explicitly a block element is now treated as an inline element, including components. This is a breaking change ([#159](https://github.com/sveltejs/prettier-plugin-svelte/issues/159))
 * Single quotes are no longer forced except inside quoted attributes/events/etc. This is a breaking change ([#94](https://github.com/sveltejs/prettier-plugin-svelte/issues/94))
-* If the content inside a mustache tag is too long, break it up if possible. Only exception are Svelte Blocks (#if/#await/etc). This is a breaking change ([#170](https://github.com/sveltejs/prettier-plugin-svelte/issues/170))
-* If the content of a script/style tag is completely empty (no whitespace), don't add a hardline anymore. ([#87](https://github.com/sveltejs/prettier-plugin-svelte/issues/87))
+* If the content inside a `{tag}` is too long, break it up if possible (excluding `{#if}`/`{#await}`/etc. blocks). This is a breaking change ([#170](https://github.com/sveltejs/prettier-plugin-svelte/issues/170))
+* If the content of a `<script>`/`<style>` tag is completely empty (no whitespace), don't put the closing tag on a new line ([#87](https://github.com/sveltejs/prettier-plugin-svelte/issues/87))
 
 ## 1.4.2
 
