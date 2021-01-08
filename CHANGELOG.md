@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## 2.0.3 (Unreleased)
+## 2.0.3
 
 * When `svelteBracketNewLine` is set to `false`, don't print the closing `>` in a separate line if possible ([#183](https://github.com/sveltejs/prettier-plugin-svelte/issues/183))
 
