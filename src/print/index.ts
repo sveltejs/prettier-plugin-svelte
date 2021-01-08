@@ -31,6 +31,7 @@ import {
     trimChildren,
     trimTextNodeLeft,
     trimTextNodeRight,
+    canOmitSoftlineBeforeClosingTag,
 } from './node-helpers';
 import {
     ASTNode,
@@ -266,7 +267,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return groupConcat([
                     ...openingTag,
                     group(indent(concat([softline, groupConcat(['>', body(), `</${node.name}`])]))),
-                    isEmpty && options.svelteBracketNewLine ? '' : softline,
+                    (isEmpty && options.svelteBracketNewLine) ||
+                    canOmitSoftlineBeforeClosingTag(node, path, options)
+                        ? ''
+                        : softline,
                     '>',
                 ]);
             }
@@ -320,7 +324,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                             concat([noHugSeparatorStart, groupConcat([body(), `</${node.name}`])]),
                         ),
                     ),
-                    softline,
+                    canOmitSoftlineBeforeClosingTag(node, path, options) ? '' : '',
                     '>',
                 ]);
             }

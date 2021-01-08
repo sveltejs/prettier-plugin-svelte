@@ -410,3 +410,41 @@ export function isInsideQuotedAttribute(path: FastPath, options: ParserOptions):
             (!isLoneMustacheTag(node.value) || options.svelteStrictMode),
     );
 }
+
+/**
+ * Returns true if the softline between `</tagName` and `>` can be omitted.
+ */
+export function canOmitSoftlineBeforeClosingTag(
+    node: Node,
+    path: FastPath,
+    options: ParserOptions,
+): boolean {
+    return (
+        !options.svelteBracketNewLine &&
+        (!hugsStartOfNextNode(node, options) || isLastChildWithinParentBlockElement(path))
+    );
+}
+
+/**
+ * Return true if given node does not hug the next node, meaning there's whitespace
+ * or the end of the doc afterwards.
+ */
+function hugsStartOfNextNode(node: Node, options: ParserOptions): boolean {
+    if (node.end === options.originalText.length) {
+        // end of document
+        return false;
+    }
+
+    return !options.originalText.substring(node.end).match(/^\s/);
+}
+
+function isLastChildWithinParentBlockElement(path: FastPath): boolean {
+    const parent = path.getParentNode() as Node | undefined;
+    if (!parent || !isBlockElement(parent)) {
+        return false;
+    }
+
+    const children = getChildren(parent);
+    const lastChild = children[children.length - 1];
+    return lastChild === path.getNode();
+}
