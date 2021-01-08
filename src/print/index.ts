@@ -324,7 +324,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                             concat([noHugSeparatorStart, groupConcat([body(), `</${node.name}`])]),
                         ),
                     ),
-                    canOmitSoftlineBeforeClosingTag(node, path, options) ? '' : '',
+                    canOmitSoftlineBeforeClosingTag(node, path, options) ? '' : softline,
                     '>',
                 ]);
             }
