@@ -71,7 +71,6 @@ declare module 'prettier' {
 
 let ignoreNext = false;
 let svelteOptionsDoc: Doc | undefined;
-let svelteOptionsComment: Doc | undefined;
 
 function groupConcat(contents: doc.builders.Doc[]): doc.builders.Doc {
     return group(concat(contents));
@@ -667,7 +666,6 @@ function printTopLevelParts(
     // Need to reset these because they are global and could affect the next formatting run
     ignoreNext = false;
     svelteOptionsDoc = undefined;
-    svelteOptionsComment = undefined;
 
     return groupConcat([join(hardline, docs)]);
 }
@@ -868,6 +866,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
  * Do that here.
  */
 function prepareChildren(children: Node[], path: FastPath, print: PrintFn): Node[] {
+    let svelteOptionsComment: Doc | undefined;
     const childrenWithoutOptions = [];
 
     for (let idx = 0; idx < children.length; idx++) {
