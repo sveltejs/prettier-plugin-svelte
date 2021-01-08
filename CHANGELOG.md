@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.0.3 (Unreleased)
+
+* When `svelteBracketNewLine` is set to `false`, don't print the closing `>` in a separate line if possible ([#183](https://github.com/sveltejs/prettier-plugin-svelte/issues/183))
+
 ## 2.0.2
 
 * Fix formatting of `<template>` tags with an unsupported language inside
