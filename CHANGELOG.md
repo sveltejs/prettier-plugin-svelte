@@ -2,7 +2,7 @@
 
 ## 2.0.4 (Unreleased)
 
-* When `svelteBracketNewLine` is set to `true` and only the closing tag is hugged, print the closing `>` in a separate line.
+* When `svelteBracketNewLine` is set to `true` and only the closing tag has whitespace before it, print the closing `>` in a separate line.
 
 ## 2.0.3
 
