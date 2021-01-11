@@ -25,12 +25,20 @@ import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus', 'sass'];
 
-export function isInlineElement(path: FastPath, node: Node) {
-    return node && node.type === 'Element' && !isBlockElement(node) && !isPreTagContent(path);
+export function isInlineElement(path: FastPath, options: ParserOptions, node: Node) {
+    return (
+        node && node.type === 'Element' && !isBlockElement(node, options) && !isPreTagContent(path)
+    );
 }
 
-export function isBlockElement(node: Node): node is ElementNode {
-    return node && node.type === 'Element' && blockElements.includes(node.name as TagName);
+export function isBlockElement(node: Node, options: ParserOptions): node is ElementNode {
+    return (
+        node &&
+        node.type === 'Element' &&
+        options.htmlWhitespaceSensitivity !== 'strict' &&
+        (options.htmlWhitespaceSensitivity === 'ignore' ||
+            blockElements.includes(node.name as TagName))
+    );
 }
 
 export function isSvelteBlock(
@@ -280,12 +288,16 @@ export function trimChildren(children: Node[], path: FastPath): void {
  * Check if given node's starg tag should hug its first child. This is the case for inline elements when there's
  * no whitespace between the `>` and the first child.
  */
-export function shouldHugStart(node: Node, isSupportedLanguage: boolean): boolean {
+export function shouldHugStart(
+    node: Node,
+    isSupportedLanguage: boolean,
+    options: ParserOptions,
+): boolean {
     if (!isSupportedLanguage) {
         return true;
     }
 
-    if (isBlockElement(node)) {
+    if (isBlockElement(node, options)) {
         return false;
     }
 
@@ -306,12 +318,16 @@ export function shouldHugStart(node: Node, isSupportedLanguage: boolean): boolea
  * Check if given node's end tag should hug its last child. This is the case for inline elements when there's
  * no whitespace between the last child and the `</`.
  */
-export function shouldHugEnd(node: Node, isSupportedLanguage: boolean): boolean {
+export function shouldHugEnd(
+    node: Node,
+    isSupportedLanguage: boolean,
+    options: ParserOptions,
+): boolean {
     if (!isSupportedLanguage) {
         return true;
     }
 
-    if (isBlockElement(node)) {
+    if (isBlockElement(node, options)) {
         return false;
     }
 
@@ -421,7 +437,7 @@ export function canOmitSoftlineBeforeClosingTag(
 ): boolean {
     return (
         !options.svelteBracketNewLine &&
-        (!hugsStartOfNextNode(node, options) || isLastChildWithinParentBlockElement(path))
+        (!hugsStartOfNextNode(node, options) || isLastChildWithinParentBlockElement(path, options))
     );
 }
 
@@ -438,9 +454,9 @@ function hugsStartOfNextNode(node: Node, options: ParserOptions): boolean {
     return !options.originalText.substring(node.end).match(/^\s/);
 }
 
-function isLastChildWithinParentBlockElement(path: FastPath): boolean {
+function isLastChildWithinParentBlockElement(path: FastPath, options: ParserOptions): boolean {
     const parent = path.getParentNode() as Node | undefined;
-    if (!parent || !isBlockElement(parent)) {
+    if (!parent || !isBlockElement(parent, options)) {
         return false;
     }
 
