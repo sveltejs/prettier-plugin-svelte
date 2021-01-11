@@ -11,7 +11,7 @@ Format your Svelte components using Prettier.
 
 ## How to use in VS Code and Atom
 
-This plugin comes with [Svelte for VS Code](https://github.com/UnwrittenFun/svelte-vscode) and [Svelte for Atom](https://github.com/UnwrittenFun/svelte-atom) so just install the extension for your favorite editor and enjoy.
+This plugin comes with [Svelte for VS Code](https://github.com/sveltejs/language-tools) and [Svelte for Atom](https://github.com/UnwrittenFun/svelte-atom) so just install the extension for your favorite editor and enjoy.
 
 If you want to customize some formatting behavior, see section "Options" below.
 
