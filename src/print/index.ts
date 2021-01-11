@@ -116,7 +116,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             if (!isPreTagContent(path)) {
                 trimChildren(node.children, path);
                 const output = trim(
-                    [printChildren(path, print)],
+                    [printChildren(path, print, options)],
                     (n) =>
                         isLine(n) ||
                         (typeof n === 'string' && n.trim() === '') ||
@@ -210,12 +210,12 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             let body: () => Doc;
 
             let hugContent = false;
-            const hugStart = shouldHugStart(node, isSupportedLanguage);
-            const hugEnd = shouldHugEnd(node, isSupportedLanguage);
+            const hugStart = shouldHugStart(node, isSupportedLanguage, options);
+            const hugEnd = shouldHugEnd(node, isSupportedLanguage, options);
 
             if (isEmpty) {
                 body =
-                    isInlineElement(path, node) &&
+                    isInlineElement(path, options, node) &&
                     node.children.length &&
                     isTextNodeStartingWithWhitespace(node.children[0]) &&
                     !isPreTagContent(path)
@@ -226,11 +226,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             } else if (!isSupportedLanguage) {
                 body = () => printRaw(node, options.originalText, true);
                 hugContent = true;
-            } else if (isInlineElement(path, node) && !isPreTagContent(path)) {
-                body = () => printChildren(path, print);
+            } else if (isInlineElement(path, options, node) && !isPreTagContent(path)) {
+                body = () => printChildren(path, print, options);
                 hugContent = true;
             } else {
-                body = () => printChildren(path, print);
+                body = () => printChildren(path, print, options);
             }
 
             const openingTag = [
@@ -287,18 +287,19 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     if (
                         isTextNodeStartingWithLinebreak(firstChild) &&
                         firstChild !== lastChild &&
-                        (!isInlineElement(path, node) || isTextNodeEndingWithWhitespace(lastChild))
+                        (!isInlineElement(path, options, node) ||
+                            isTextNodeEndingWithWhitespace(lastChild))
                     ) {
                         noHugSeparatorStart = hardline;
                         noHugSeparatorEnd = hardline;
                         didSetEndSeparator = true;
-                    } else if (isInlineElement(path, node)) {
+                    } else if (isInlineElement(path, options, node)) {
                         noHugSeparatorStart = line;
                     }
                     trimTextNodeLeft(firstChild);
                 }
                 if (!hugEnd && lastChild && lastChild.type === 'Text') {
-                    if (isInlineElement(path, node) && !didSetEndSeparator) {
+                    if (isInlineElement(path, options, node) && !didSetEndSeparator) {
                         noHugSeparatorEnd = line;
                     }
                     trimTextNodeRight(lastChild);
@@ -716,10 +717,13 @@ function printSvelteBlockChildren(path: FastPath, print: PrintFn, options: Parse
         trimTextNodeRight(lastChild);
     }
 
-    return concat([indent(concat([startline, group(printChildren(path, print))])), endline]);
+    return concat([
+        indent(concat([startline, group(printChildren(path, print, options))])),
+        endline,
+    ]);
 }
 
-function printChildren(path: FastPath, print: PrintFn): Doc {
+function printChildren(path: FastPath, print: PrintFn, options: ParserOptions): Doc {
     if (isPreTagContent(path)) {
         return concat(path.map(print, 'children'));
     }
@@ -738,9 +742,9 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
         const childNode = childNodes[i];
         if (childNode.type === 'Text') {
             handleTextChild(i, childNode);
-        } else if (isBlockElement(childNode)) {
+        } else if (isBlockElement(childNode, options)) {
             handleBlockChild(i);
-        } else if (isInlineElement(path, childNode)) {
+        } else if (isInlineElement(path, options, childNode)) {
             handleInlineChild(i);
         } else {
             childDocs.push(printChild(i));
@@ -750,7 +754,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
 
     // If there's at least one block element and more than one node, break content
     const forceBreakContent =
-        childNodes.length > 1 && childNodes.some((child) => isBlockElement(child));
+        childNodes.length > 1 && childNodes.some((child) => isBlockElement(child, options));
     if (forceBreakContent) {
         childDocs.push(breakParent);
     }
@@ -783,7 +787,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
         const prevChild = childNodes[idx - 1];
         if (
             prevChild &&
-            !isBlockElement(prevChild) &&
+            !isBlockElement(prevChild, options) &&
             (prevChild.type !== 'Text' ||
                 handleWhitespaceOfPrevTextNode ||
                 !isTextNodeEndingWithWhitespace(prevChild))
@@ -801,7 +805,7 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
                 // or is empty but followed by an inline element. The latter is done
                 // so that if the children break, the inline element afterwards is in a seperate line.
                 ((!isEmptyTextNode(nextChild) ||
-                    (childNodes[idx + 2] && isInlineElement(path, childNodes[idx + 2]))) &&
+                    (childNodes[idx + 2] && isInlineElement(path, options, childNodes[idx + 2]))) &&
                     !isTextNodeStartingWithLinebreak(nextChild)))
         ) {
             childDocs.push(softline);
@@ -834,24 +838,30 @@ function printChildren(path: FastPath, print: PrintFn): Doc {
             // If node is empty, go straight through to checking the right end
             !isEmptyTextNode(childNode)
         ) {
-            if (isInlineElement(path, prevNode) && !isTextNodeStartingWithLinebreak(childNode)) {
+            if (
+                isInlineElement(path, options, prevNode) &&
+                !isTextNodeStartingWithLinebreak(childNode)
+            ) {
                 trimTextNodeLeft(childNode);
                 const lastChildDoc = childDocs.pop()!;
                 childDocs.push(groupConcat([lastChildDoc, line]));
             }
 
-            if (isBlockElement(prevNode) && !isTextNodeStartingWithLinebreak(childNode)) {
+            if (isBlockElement(prevNode, options) && !isTextNodeStartingWithLinebreak(childNode)) {
                 trimTextNodeLeft(childNode);
             }
         }
 
         if (isTextNodeEndingWithWhitespace(childNode)) {
-            if (isInlineElement(path, nextNode) && !isTextNodeEndingWithLinebreak(childNode)) {
-                handleWhitespaceOfPrevTextNode = !prevNode || !isBlockElement(prevNode);
+            if (
+                isInlineElement(path, options, nextNode) &&
+                !isTextNodeEndingWithLinebreak(childNode)
+            ) {
+                handleWhitespaceOfPrevTextNode = !prevNode || !isBlockElement(prevNode, options);
                 trimTextNodeRight(childNode);
             }
-            if (isBlockElement(nextNode) && !isTextNodeEndingWithLinebreak(childNode, 2)) {
-                handleWhitespaceOfPrevTextNode = !prevNode || !isBlockElement(prevNode);
+            if (isBlockElement(nextNode, options) && !isTextNodeEndingWithLinebreak(childNode, 2)) {
+                handleWhitespaceOfPrevTextNode = !prevNode || !isBlockElement(prevNode, options);
                 trimTextNodeRight(childNode);
             }
         }
