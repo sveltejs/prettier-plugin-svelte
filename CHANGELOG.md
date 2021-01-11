@@ -1,9 +1,9 @@
 # prettier-plugin-svelte changelog
 
-## 2.1.0 (Unreleased)
+## 2.1.0
 
-* Support Prettier's `htmlWhitespaceSensitivity` setting.
-* When `svelteBracketNewLine` is set to `true` and only the closing tag has whitespace before it, print the closing `>` in a separate line.
+* Support Prettier's `htmlWhitespaceSensitivity` setting
+* When `svelteBracketNewLine` is set to `true` and only the closing tag has whitespace before it, print the closing `>` on a separate line
 
 ## 2.0.3
 
