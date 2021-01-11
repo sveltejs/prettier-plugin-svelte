@@ -1,59 +1,106 @@
 # Prettier for Svelte 3 components
 
-Format your svelte components using prettier.
+Format your Svelte components using Prettier.
 
 ## Features
 
--   Format your html, css, and javascript using prettier
+-   Format your HTML, CSS, and JavaScript using prettier
 -   Format Svelte syntax, e.g. each loops, if statements, await blocks, etc.
--   Format the javascript expressions embedded in the svelte syntax
+-   Format the JavaScript expressions embedded in the Svelte syntax
     -   e.g. expressions inside of `{}`, event bindings `on:click=""`, and more
 
 ## How to use in VS Code and Atom
-This plugin comes with [Svelte for VS Code](https://github.com/UnwrittenFun/svelte-vscode) and [Svelte for Atom](https://github.com/UnwrittenFun/svelte-atom) so just install extension for your favorite editor and enjoy.
 
+This plugin comes with [Svelte for VS Code](https://github.com/UnwrittenFun/svelte-vscode) and [Svelte for Atom](https://github.com/UnwrittenFun/svelte-atom) so just install the extension for your favorite editor and enjoy.
 
-## Configure for VS Code and Atom
+If you want to customize some formatting behavior, see section "Options" below.
+
+## How to install manually
+
+```bash
+npm i --save-dev prettier-plugin-svelte prettier
+```
+
+## How to use (CLI)
+
+Install `prettier` and `prettier-plugin-svelte` as dev dependencies in your project.
+
+Then format your code using Prettier CLI. You may need to add `--plugin-search-dir=.`
+
+```
+prettier --write --plugin-search-dir=. ./**/*.html
+```
+
+If you want to customize some formatting behavior, see section "Options" below.
+
+## Options
+
 ``Configurations are optional``
 
-Make `.prettierrc` file in your project directory (Read more about prettier config files [here](https://prettier.io/docs/en/configuration.html))
-and add your preferred configuration options:
+Make a `.prettierrc` file in your project directory (Read more about prettier config files [here](https://prettier.io/docs/en/configuration.html))
+and add your preferred configuration options. When using Prettier through the CLI, you can also pass options through CLI flags, but a `.prettierrc` file is recommended.
 
+### Svelte Sort Order
 
-- **`svelteSortOrder`**
-  - Default: `options-scripts-markup-styles`
-  - Sort order for svelte:options, scripts, markup, and styles.
+Sort order for `svelte:options`, scripts, markup, and styles.
 
-- **`svelteStrictMode`**
-  - Default: `false`
-  - More strict HTML syntax: self-closed tags, quotes in attributes, no attribute shorthand (overrules `svelteAllowShorthand`).
+Format: join the keywords `options`, `scripts`, `markup`, `styles` with a `-` in the order you want.
 
-- **`svelteAllowShorthand`**
-  - Default: `true`
-  - Option to enable/disable component attribute shorthand if attribute name and expression are same.
-  
-- **`svelteBracketNewLine`**
-  - Default: `true`
-  - Put the `>` of a multiline element on a new line (svelte equivalent of [jsxBracketSameLine](https://prettier.io/docs/en/options.html#jsx-brackets) rule)
+| Default                         | CLI Override                   | API Override                |
+| ------------------------------- | ------------------------------ | --------------------------- |
+| `options-scripts-markup-styles` | `--svelte-sort-order <string>` | `svelteSortOrder: <string>` |
 
-- **`svelteIndentScriptAndStyle`**
-  - Default: `true`
-  - Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte files. This saves an indentation level, but might break code folding in your editor.
+### Svelte Strict Mode
 
-  For example:
+More strict HTML syntax: less self-closed tags, quotes in attributes, no attribute shorthand (overrules `svelteAllowShorthand`).
 
-  ```html
-  <script>
-    export let value;
-  </script>
+Example:
 
-  <!-- allowShorthand: true -->
-  <input type="text" {value}>
+```html
+<!-- svelteStrictMode: true -->
+<div foo="{bar}"></div>
 
-  <!-- allowShorthand: false -->
-  <input type="text" value={value}>
+<!-- svelteStrictMode: false -->
+<div foo={bar} />
+```
 
-  ```
+| Default | CLI Override                  | API Override               |
+| ------- | ----------------------------- | -------------------------- |
+| `false` | `--svelte-strict-mode <bool>` | `svelteStrictMode: <bool>` |
+
+### Svelte Allow Shorthand
+
+Option to enable/disable component attribute shorthand if attribute name and expression are same.
+
+Example:
+
+```html
+<!-- allowShorthand: true -->
+<input type="text" {value} />
+
+<!-- allowShorthand: false -->
+<input type="text" value={value} />
+```
+
+| Default | CLI Override                      | API Override                   |
+| ------- | --------------------------------- | ------------------------------ |
+| `true`  | `--svelte-allow-shorthand <bool>` | `svelteAllowShorthand: <bool>` |
+
+### Svelte Bracket New Line
+
+Put the `>` of a multiline element on a new line, if possible. Roughly the Svelte equivalent of the [jsxBracketSameLine](https://prettier.io/docs/en/options.html#jsx-brackets) rule.
+
+| Default | CLI Override                       | API Override                   |
+| ------- | ---------------------------------- | ------------------------------ |
+| `true`  | `--svelte-bracket-new-line <bool>` | `svelteBracketNewLine: <bool>` |
+
+### Svelte Indent Script And Style
+
+Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte files. This saves an indentation level, but might break code folding in your editor.
+
+| Default | CLI Override                              | API Override                         |
+| ------- | ----------------------------------------- | ------------------------------------ |
+| `true`  | `--svelte-indent-script-and-style <bool>` | `svelteIndentScriptAndStyle: <bool>` |
 
 ### `.prettierrc` example
 
@@ -66,35 +113,3 @@ and add your preferred configuration options:
   "svelteIndentScriptAndStyle": false
 }
 ```
-
-
-## How to install manually
-
-```bash
-npm i --save-dev prettier-plugin-svelte prettier
-```
-
-## How to use (CLI)
-
-Install prettier-plugin-svelte as a dev dependency in your project.
-
-Then format your code using prettier cli. You may need to add `--plugin-search-dir=.`
-
-```
-prettier --write --plugin-search-dir=. ./**/*.html
-```
-
-## Options (CLI)
-
-**`svelte-sort-order`** Sort order for svelte:options, scripts, styles, and markup. Defaults to `options-scripts-markup-styles`.
-
-```
-prettier --write --svelte-sort-order scripts-markup-styles ./**/*.svelte
-```
-
-**`svelte-strict-mode`** Enable more strict syntax for HTML. Defaults to `false`.
-
-Main difference in strict mode:
-
--   [Not all tags are self closing](http://xahlee.info/js/html5_non-closing_tag.html)
--   Expressions in attributes are wrapped by double quotes
