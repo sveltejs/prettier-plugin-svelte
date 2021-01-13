@@ -88,7 +88,37 @@ Example:
 
 ### Svelte Bracket New Line
 
-Put the `>` of a multiline element on a new line, if possible. Roughly the Svelte equivalent of the [jsxBracketSameLine](https://prettier.io/docs/en/options.html#jsx-brackets) rule.
+Put the `>` of a multiline element on a new line. Roughly the Svelte equivalent of the [jsxBracketSameLine](https://prettier.io/docs/en/options.html#jsx-brackets) rule. Setting this to `false` will have no effect for whitespace-sensitive tags (inline elements) when there's no whitespace between the `>` of the start tag and the inner content, or when there's no whitespace after the `>` of the end tag. 
+
+Example:
+
+```html
+<!-- before formatting -->
+<span><div>foo</div><span>bar</span></span>
+<div pretend break>content</div>
+
+<!-- after formatting, svelteBracketNewLine true -->
+<span
+    ><div>asd</div>
+    <span>asd</span></span
+>
+<div
+     pretend
+     break
+>
+    content
+</div>
+
+<!-- after formatting, svelteBracketNewLine false -->
+<span
+    ><div>asd</div>
+    <span>asd</span></span>
+<div
+     pretend
+     break>
+    content
+</div>
+```
 
 | Default | CLI Override                       | API Override                   |
 | ------- | ---------------------------------- | ------------------------------ |
