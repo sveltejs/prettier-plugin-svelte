@@ -50,6 +50,8 @@ Format: join the keywords `options`, `scripts`, `markup`, `styles` with a `-` in
 | ------------------------------- | ------------------------------ | --------------------------- |
 | `options-scripts-markup-styles` | `--svelte-sort-order <string>` | `svelteSortOrder: <string>` |
 
+> The `options` order option only exists since version 2. If you use version 1 of `prettier-plugin-svelte`, omit that option (so for example only write `scripts-markup-styles`).
+
 ### Svelte Strict Mode
 
 More strict HTML syntax: less self-closed tags, quotes in attributes, no attribute shorthand (overrules `svelteAllowShorthand`).
