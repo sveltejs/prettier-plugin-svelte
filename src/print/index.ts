@@ -209,7 +209,6 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             // which would wrongfully change the other checks about hugging etc done beforehand
             let body: () => Doc;
 
-            let hugContent = false;
             const hugStart = shouldHugStart(node, isSupportedLanguage, options);
             const hugEnd = shouldHugEnd(node, isSupportedLanguage, options);
 
@@ -225,10 +224,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 body = () => printRaw(node, options.originalText);
             } else if (!isSupportedLanguage) {
                 body = () => printRaw(node, options.originalText, true);
-                hugContent = true;
             } else if (isInlineElement(path, options, node) && !isPreTagContent(path)) {
                 body = () => printChildren(path, print, options);
-                hugContent = true;
             } else {
                 body = () => printChildren(path, print, options);
             }
@@ -241,7 +238,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     groupConcat([
                         possibleThisBinding,
                         ...attributes,
-                        hugContent
+                        hugStart
                             ? ''
                             : options.svelteBracketNewLine && !isPreTagContent(path)
                             ? dedent(softline)
@@ -263,13 +260,17 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             }
 
             if (hugStart && hugEnd) {
+                const huggedContent = concat([
+                    softline,
+                    groupConcat(['>', body(), `</${node.name}`]),
+                ]);
+                const omitSoftlineBeforeClosingTag =
+                    (isEmpty && options.svelteBracketNewLine) ||
+                    canOmitSoftlineBeforeClosingTag(node, path, options);
                 return groupConcat([
                     ...openingTag,
-                    group(indent(concat([softline, groupConcat(['>', body(), `</${node.name}`])]))),
-                    (isEmpty && options.svelteBracketNewLine) ||
-                    canOmitSoftlineBeforeClosingTag(node, path, options)
-                        ? ''
-                        : softline,
+                    isEmpty ? group(huggedContent) : group(indent(huggedContent)),
+                    omitSoftlineBeforeClosingTag ? '' : softline,
                     '>',
                 ]);
             }
@@ -309,7 +310,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             if (hugStart) {
                 return groupConcat([
                     ...openingTag,
-                    group(indent(concat([softline, groupConcat(['>', body()])]))),
+                    indent(concat([softline, groupConcat(['>', body()])])),
                     noHugSeparatorEnd,
                     `</${node.name}>`,
                 ]);
@@ -319,11 +320,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return groupConcat([
                     ...openingTag,
                     '>',
-                    group(
-                        indent(
-                            concat([noHugSeparatorStart, groupConcat([body(), `</${node.name}`])]),
-                        ),
-                    ),
+                    indent(concat([noHugSeparatorStart, groupConcat([body(), `</${node.name}`])])),
                     canOmitSoftlineBeforeClosingTag(node, path, options) ? '' : softline,
                     '>',
                 ]);
@@ -336,7 +333,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return groupConcat([
                 ...openingTag,
                 '>',
-                groupConcat([indent(concat([noHugSeparatorStart, body()])), noHugSeparatorEnd]),
+                indent(concat([noHugSeparatorStart, body()])),
+                noHugSeparatorEnd,
                 `</${node.name}>`,
             ]);
         }
