@@ -15,6 +15,8 @@ This plugin comes with [Svelte for VS Code](https://github.com/sveltejs/language
 
 If you want to customize some formatting behavior, see section "Options" below.
 
+Some of the extensions let you define options through extension-specific configuration. These settings are ignored however if there's any configuration file (`.prettierrc` for example) present.
+
 ## How to install manually
 
 ```bash
