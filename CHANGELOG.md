@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## 2.1.1 (Unreleased)
+## 2.1.1
 
 * Fix `svelteBracketNewLine: true` sometimes not having `>` on a separate line ([#194](https://github.com/sveltejs/prettier-plugin-svelte/issues/194))
 
