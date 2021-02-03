@@ -1,9 +1,9 @@
 # prettier-plugin-svelte changelog
 
-## 2.1.2 (Unreleased)
+## 2.1.2
 
-* Keep whitespace around script/style tags ([#197](https://github.com/sveltejs/prettier-plugin-svelte/issues/197))
-* Make script/style tag snipping case sensitive ([#198](https://github.com/sveltejs/prettier-plugin-svelte/issues/198))
+* Keep whitespace around `<script>`/`<style>` tags ([#197](https://github.com/sveltejs/prettier-plugin-svelte/issues/197))
+* Make `<script>`/`<style>` tag snipping case-sensitive ([#198](https://github.com/sveltejs/prettier-plugin-svelte/issues/198))
 
 ## 2.1.1
 
