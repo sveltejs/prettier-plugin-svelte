@@ -1,7 +1,7 @@
 export const snippedTagContentAttribute = '✂prettier:content✂';
 
 export function snipTagContent(tagName: string, source: string, placeholder = ''): string {
-    const regex = new RegExp(`<${tagName}([^]*?)>([^]*?)<\/${tagName}>`, 'gi');
+    const regex = new RegExp(`<${tagName}([^]*?)>([^]*?)<\/${tagName}>`, 'g');
     return source.replace(regex, (_, attributes, content) => {
         const encodedContent = Buffer.from(content).toString('base64');
         return `<${tagName}${attributes} ${snippedTagContentAttribute}="${encodedContent}">${placeholder}</${tagName}>`;
