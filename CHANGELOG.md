@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.1.2 (Unreleased)
+
+* Keep whitespace around script/style tags ([#197](https://github.com/sveltejs/prettier-plugin-svelte/issues/197))
+
 ## 2.1.1
 
 * Fix `svelteBracketNewLine: true` sometimes not having `>` on a separate line ([#194](https://github.com/sveltejs/prettier-plugin-svelte/issues/194))

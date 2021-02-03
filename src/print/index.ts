@@ -9,7 +9,7 @@ import { flatten, isASTNode, isPreTagContent } from './helpers';
 import {
     checkWhitespaceAtEndOfSvelteBlock,
     checkWhitespaceAtStartOfSvelteBlock,
-    doesEmbedStartAt,
+    doesEmbedStartAfterNode,
     endsWithLinebreak,
     getUnencodedText,
     isBlockElement,
@@ -32,6 +32,7 @@ import {
     trimTextNodeLeft,
     trimTextNodeRight,
     canOmitSoftlineBeforeClosingTag,
+    getNextNode,
 } from './node-helpers';
 import {
     ASTNode,
@@ -568,6 +569,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Ref':
             return concat([line, 'ref:', node.name]);
         case 'Comment': {
+            const nodeAfterComment = getNextNode(path);
+
             /**
              * If there is no sibling node that starts right after us but the parent indicates
              * that there used to be, that means that node was actually an embedded `<style>`
@@ -575,7 +578,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
              * If so, the comment does not refer to the next line we will see.
              * The `embed` function handles printing the comment in the right place.
              */
-            if (doesEmbedStartAt(node.end, path)) {
+            if (
+                doesEmbedStartAfterNode(node, path) ||
+                (isEmptyTextNode(nodeAfterComment) &&
+                    doesEmbedStartAfterNode(nodeAfterComment, path))
+            ) {
                 return '';
             } else if (isIgnoreDirective(node)) {
                 ignoreNext = true;
@@ -881,6 +888,10 @@ function prepareChildren(children: Node[], path: FastPath, print: PrintFn): Node
         const currentChild = children[idx];
 
         if (currentChild.type === 'Text' && getUnencodedText(currentChild) === '') {
+            continue;
+        }
+
+        if (isEmptyTextNode(currentChild) && doesEmbedStartAfterNode(currentChild, path)) {
             continue;
         }
 

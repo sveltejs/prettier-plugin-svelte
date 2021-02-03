@@ -18,6 +18,7 @@ import {
     KeyBlockNode,
     PendingBlockNode,
     ThenBlockNode,
+    CommentNode,
 } from './nodes';
 import { blockElements, TagName } from '../lib/elements';
 import { FastPath, ParserOptions } from 'prettier';
@@ -73,32 +74,64 @@ export function getChildren(node: Node): Node[] {
 }
 
 /**
- * Returns the previous sibling node.
+ * Returns siblings, that is, the children of the parent.
  */
-export function getPreviousNode(path: FastPath): Node | undefined {
-    const node: Node = path.getNode();
+export function getSiblings(path: FastPath): Node[] {
     let parent: Node = path.getParentNode();
 
     if (isASTNode(parent)) {
         parent = parent.html;
     }
 
-    return getChildren(parent).find((child) => child.end === node.start);
+    return getChildren(parent);
+}
+
+/**
+ * Returns the previous sibling node.
+ */
+export function getPreviousNode(path: FastPath): Node | undefined {
+    const node: Node = path.getNode();
+    return getSiblings(path).find((child) => child.end === node.start);
+}
+
+/**
+ * Returns the next sibling node.
+ */
+export function getNextNode(path: FastPath, node: Node = path.getNode()): Node | undefined {
+    return getSiblings(path).find((child) => child.start === node.end);
+}
+
+/**
+ * Returns the comment that is above the current node.
+ */
+export function getLeadingComment(path: FastPath): CommentNode | undefined {
+    const siblings = getSiblings(path);
+
+    let node: Node = path.getNode();
+    let prev: Node | undefined = siblings.find((child) => child.end === node.start);
+    while (prev && (prev.type !== 'Comment' || isEmptyTextNode(prev))) {
+        node = prev;
+        prev = siblings.find((child) => child.end === node.start);
+    }
+
+    return prev && prev.type === 'Comment' ? prev : undefined;
 }
 
 /**
  * Did there use to be any embedded object (that has been snipped out of the AST to be moved)
  * at the specified position?
  */
-export function doesEmbedStartAt(position: number, path: FastPath) {
+export function doesEmbedStartAfterNode(node: Node, path: FastPath, siblings = getSiblings(path)) {
+    const position = node.end;
     const root = path.stack[0];
     const embeds = [root.css, root.html, root.instance, root.js, root.module] as Node[];
 
-    return embeds.find((n) => n && n.start === position) != null;
+    const nextNode = siblings[siblings.indexOf(node) + 1];
+    return embeds.find((n) => n && n.start >= position && (!nextNode || n.end <= nextNode.start));
 }
 
-export function isEmptyTextNode(node: Node): node is TextNode {
-    return node.type === 'Text' && getUnencodedText(node).trim() === '';
+export function isEmptyTextNode(node: Node | undefined): node is TextNode {
+    return !!node && node.type === 'Text' && getUnencodedText(node).trim() === '';
 }
 
 export function isIgnoreDirective(node: Node | undefined | null): boolean {
@@ -254,17 +287,17 @@ export function trimTextNodeLeft(node: TextNode): void {
  */
 export function trimChildren(children: Node[], path: FastPath): void {
     let firstNonEmptyNode = children.findIndex(
-        (n) => !isEmptyTextNode(n) && !doesEmbedStartAt(n.end, path),
+        (n) => !isEmptyTextNode(n) && !doesEmbedStartAfterNode(n, path),
     );
     firstNonEmptyNode = firstNonEmptyNode === -1 ? children.length - 1 : firstNonEmptyNode;
 
     let lastNonEmptyNode = findLastIndex((n, idx) => {
-        // Last node is ok to end and the start of an embeded region,
+        // Last node is ok to end at the start of an embedded region,
         // if it's not a comment (which should stick to the region)
         return (
             !isEmptyTextNode(n) &&
             ((idx === children.length - 1 && n.type !== 'Comment') ||
-                !doesEmbedStartAt(n.end, path))
+                !doesEmbedStartAfterNode(n, path))
         );
     }, children);
     lastNonEmptyNode = lastNonEmptyNode === -1 ? 0 : lastNonEmptyNode;

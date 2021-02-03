@@ -4,7 +4,7 @@ import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { PrintFn } from './print';
 import {
     getAttributeTextValue,
-    getPreviousNode,
+    getLeadingComment,
     isIgnoreDirective,
     isNodeSupportedLanguage,
 } from './print/node-helpers';
@@ -176,9 +176,7 @@ function embedTag(
 ) {
     const node: Node = path.getNode();
     const content = getSnippedContent(node);
-
-    const previousNode = getPreviousNode(path);
-    const previousComment = previousNode && previousNode.type === 'Comment' ? previousNode : null;
+    const previousComment = getLeadingComment(path);
 
     const body: Doc =
         isNodeSupportedLanguage(node) && !isIgnoreDirective(previousComment)
