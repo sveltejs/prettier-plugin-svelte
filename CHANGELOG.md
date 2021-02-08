@@ -1,8 +1,8 @@
 # prettier-plugin-svelte changelog
 
-## 2.1.3 (Unreleased)
+## 2.1.3
 
-* Don't print empty line at the end of the code if embedded inside markdown ([#202](https://github.com/sveltejs/prettier-plugin-svelte/issues/202))
+* Don't print an empty line at the end of code embedded inside Markdown ([#202](https://github.com/sveltejs/prettier-plugin-svelte/issues/202))
 
 ## 2.1.2
 
