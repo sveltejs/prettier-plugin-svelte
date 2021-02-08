@@ -17,5 +17,4 @@ by offloading the formatting of the fenced code block to prettier-plugin-svelte.
         color: green;
     }
 </style>
-
 ```
