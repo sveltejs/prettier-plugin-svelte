@@ -94,7 +94,12 @@ export function trimRight(group: Doc[], isWhitespace: (doc: Doc) => boolean): Do
 }
 
 function getParts(doc: Doc): Doc[] | undefined {
-    if (typeof doc === 'object' && (doc.type === 'fill' || doc.type === 'concat')) {
-        return doc.parts;
+    if (typeof doc === 'object') {
+        if (doc.type === 'fill' || doc.type === 'concat') {
+            return doc.parts;
+        }
+        if (doc.type === 'group') {
+            return getParts(doc.contents);
+        }
     }
 }
