@@ -44,5 +44,5 @@ by offloading the formatting of the fenced code block to prettier-plugin-svelte.
 ```
 
 ```svelte
-<h1>{greeting}, {name}!</h1>
+<h1>{greeting}, {name}!</h1
 ```

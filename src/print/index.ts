@@ -4,7 +4,7 @@ import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
 import { parseSortOrder, SortOrderPart } from '../options';
-import { isEmptyDoc, isLine, trim } from './doc-helpers';
+import { isEmptyDoc, isLine, trim, trimRight } from './doc-helpers';
 import { flatten, isASTNode, isPreTagContent } from './helpers';
 import {
     checkWhitespaceAtEndOfSvelteBlock,
@@ -672,6 +672,15 @@ function printTopLevelParts(
     // Need to reset these because they are global and could affect the next formatting run
     ignoreNext = false;
     svelteOptionsDoc = undefined;
+
+    // If this is invoked as an embed of markdown, remove the last hardline.
+    // The markdown parser tries this, too, but fails because it does not
+    // recurse into concats. Doing this will prevent an empty line
+    // at the end of the embedded code block.
+    if (options.parentParser === 'markdown') {
+        const lastDoc = docs[docs.length - 1];
+        trimRight([lastDoc], isLine);
+    }
 
     return groupConcat([join(hardline, docs)]);
 }

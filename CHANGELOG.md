@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.1.3
+
+* Don't print an empty line at the end of code embedded inside Markdown ([#202](https://github.com/sveltejs/prettier-plugin-svelte/issues/202))
+
 ## 2.1.2
 
 * Keep whitespace around `<script>`/`<style>` tags ([#197](https://github.com/sveltejs/prettier-plugin-svelte/issues/197))
