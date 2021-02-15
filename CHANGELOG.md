@@ -1,8 +1,8 @@
 # prettier-plugin-svelte changelog
 
-## 2.1.5 (Unreleased)
+## 2.1.5
 
-* Fix retrieval of comment belonging to script/style block ([#205](https://github.com/sveltejs/prettier-plugin-svelte/issues/205))
+* Fix retrieval of comment belonging to `<script>`/`<style>` block ([#205](https://github.com/sveltejs/prettier-plugin-svelte/issues/205))
 
 ## 2.1.4
 
