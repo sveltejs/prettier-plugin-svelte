@@ -109,12 +109,16 @@ export function getLeadingComment(path: FastPath): CommentNode | undefined {
 
     let node: Node = path.getNode();
     let prev: Node | undefined = siblings.find((child) => child.end === node.start);
-    while (prev && (prev.type !== 'Comment' || isEmptyTextNode(prev))) {
-        node = prev;
-        prev = siblings.find((child) => child.end === node.start);
+    while (prev) {
+        if (prev.type === 'Comment') {
+            return prev;
+        } else if (isEmptyTextNode(prev)) {
+            node = prev;
+            prev = siblings.find((child) => child.end === node.start);
+        } else {
+            return undefined;
+        }
     }
-
-    return prev && prev.type === 'Comment' ? prev : undefined;
 }
 
 /**

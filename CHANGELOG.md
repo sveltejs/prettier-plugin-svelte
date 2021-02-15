@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.1.5 (Unreleased)
+
+* Fix retrieval of comment belonging to script/style block ([#205](https://github.com/sveltejs/prettier-plugin-svelte/issues/205))
+
 ## 2.1.4
 
 * Don't print an empty line at the end of code embedded inside Markdown (further fixes) ([#202](https://github.com/sveltejs/prettier-plugin-svelte/issues/202))
