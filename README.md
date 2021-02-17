@@ -103,8 +103,8 @@ Example:
 
 <!-- after formatting, svelteBracketNewLine true -->
 <span
-    ><div>asd</div>
-    <span>asd</span></span
+    ><div>foor</div>
+    <span>bar</span></span
 >
 <div
      pretend
@@ -115,8 +115,8 @@ Example:
 
 <!-- after formatting, svelteBracketNewLine false -->
 <span
-    ><div>asd</div>
-    <span>asd</span></span>
+    ><div>foo</div>
+    <span>bar</span></span>
 <div
      pretend
      break>
