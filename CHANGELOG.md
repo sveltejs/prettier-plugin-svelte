@@ -1,8 +1,8 @@
 # prettier-plugin-svelte changelog
 
-## 2.1.6 (Unreleased)
+## 2.1.6
 
-* Fix wrong removal of comment ([#207](https://github.com/sveltejs/prettier-plugin-svelte/issues/207))
+* Fix incorrect removal of comment ([#207](https://github.com/sveltejs/prettier-plugin-svelte/issues/207))
 
 ## 2.1.5
 
