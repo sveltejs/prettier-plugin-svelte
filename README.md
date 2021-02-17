@@ -103,7 +103,7 @@ Example:
 
 <!-- after formatting, svelteBracketNewLine true -->
 <span
-    ><div>foor</div>
+    ><div>foo</div>
     <span>bar</span></span
 >
 <div
