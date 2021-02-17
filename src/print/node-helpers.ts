@@ -128,6 +128,12 @@ export function getLeadingComment(path: FastPath): CommentNode | undefined {
 export function doesEmbedStartAfterNode(node: Node, path: FastPath, siblings = getSiblings(path)) {
     const position = node.end;
     const root = path.stack[0];
+    // If node is not at the top level of html, an embed cannot start after it,
+    // because embeds are only at the top level
+    if (!root.html || !root.html.children || !root.html.children.includes(node)) {
+        return false;
+    }
+
     const embeds = [root.css, root.html, root.instance, root.js, root.module] as Node[];
 
     const nextNode = siblings[siblings.indexOf(node) + 1];
