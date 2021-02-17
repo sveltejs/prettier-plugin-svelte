@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.1.6 (Unreleased)
+
+* Fix wrong removal of comment ([#207](https://github.com/sveltejs/prettier-plugin-svelte/issues/207))
+
 ## 2.1.5
 
 * Fix retrieval of comment belonging to `<script>`/`<style>` block ([#205](https://github.com/sveltejs/prettier-plugin-svelte/issues/205))
