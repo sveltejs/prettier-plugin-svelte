@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.2.0 (Unreleased)
+
+* Add support for `svelte:fragment` ([#213](https://github.com/sveltejs/prettier-plugin-svelte/pull/213))
+
 ## 2.1.6
 
 * Fix incorrect removal of comment ([#207](https://github.com/sveltejs/prettier-plugin-svelte/issues/207))
