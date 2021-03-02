@@ -253,6 +253,12 @@ export interface OptionsNode extends BaseNode {
     attributes: Node[];
 }
 
+export interface SlotTemplateNode extends BaseNode {
+    type: 'SlotTemplate';
+    name: string;
+    attributes: Node[];
+}
+
 export type Node =
     | FragmentNode
     | ElementNode
@@ -293,7 +299,8 @@ export type Node =
     | InstanceScriptNode
     | ModuleScriptNode
     | BodyNode
-    | OptionsNode;
+    | OptionsNode
+    | SlotTemplateNode;
 
 /**
  * The Svelte AST root node

@@ -164,6 +164,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Element':
         case 'InlineComponent':
         case 'Slot':
+        case 'SlotTemplate':
         case 'Window':
         case 'Head':
         case 'Title': {
