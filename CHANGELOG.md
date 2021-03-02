@@ -1,8 +1,8 @@
 # prettier-plugin-svelte changelog
 
-## 2.2.0 (Unreleased)
+## 2.2.0
 
-* Add support for `svelte:fragment` ([#213](https://github.com/sveltejs/prettier-plugin-svelte/pull/213))
+* Add support for `<svelte:fragment>` ([#213](https://github.com/sveltejs/prettier-plugin-svelte/pull/213))
 
 ## 2.1.6
 
