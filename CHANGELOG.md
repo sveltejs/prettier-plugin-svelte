@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.2.1 (Unreleased)
+
+* (fix) adjust snip regex to not break commented-out script/style tags ([#212](https://github.com/sveltejs/prettier-plugin-svelte/issues/212))
+
 ## 2.2.0
 
 * Add support for `<svelte:fragment>` ([#213](https://github.com/sveltejs/prettier-plugin-svelte/pull/213))
