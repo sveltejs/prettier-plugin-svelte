@@ -8,6 +8,7 @@ import {
     getLeadingComment,
     isIgnoreDirective,
     isNodeSupportedLanguage,
+    isTypeScript,
 } from './print/node-helpers';
 import { Node } from './print/nodes';
 
@@ -40,7 +41,11 @@ export function embed(
         }
     }
 
-    const embedType = (tag: string, parser: 'typescript' | 'css', isTopLevel: boolean) =>
+    const embedType = (
+        tag: string,
+        parser: 'typescript' | 'babel-ts' | 'css',
+        isTopLevel: boolean,
+    ) =>
         embedTag(
             tag,
             path,
@@ -49,7 +54,16 @@ export function embed(
             isTopLevel,
         );
 
-    const embedScript = (isTopLevel: boolean) => embedType('script', 'typescript', isTopLevel);
+    const embedScript = (isTopLevel: boolean) =>
+        embedType(
+            'script',
+            // Use babel-ts as fallback because the absence does not mean the content is not TS,
+            // the user could have set the default language. babel-ts will format things a little
+            // bit different though, especially preserving parentheses around dot notation which
+            // fixes https://github.com/sveltejs/prettier-plugin-svelte/issues/218
+            isTypeScript(node) ? 'typescript' : 'babel-ts',
+            isTopLevel,
+        );
     const embedStyle = (isTopLevel: boolean) => embedType('style', 'css', isTopLevel);
 
     switch (node.type) {
@@ -102,7 +116,7 @@ function getSnippedContent(node: Node) {
 
 function formatBodyContent(
     content: string,
-    parser: 'typescript' | 'css',
+    parser: 'typescript' | 'babel-ts' | 'css',
     textToDoc: (text: string, options: object) => Doc,
     options: ParserOptions,
 ) {

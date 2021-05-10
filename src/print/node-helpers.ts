@@ -226,7 +226,7 @@ function getLangAttribute(node: Node): string | null {
 }
 
 /**
- * Checks whether the node contains a `lang` attribute with a value corresponding to
+ * Checks whether the node contains a `lang` or `type` attribute with a value corresponding to
  * a language we cannot format. This might for example be `<template lang="pug">`.
  * If the node does not contain a `lang` attribute, the result is true.
  */
@@ -234,6 +234,17 @@ export function isNodeSupportedLanguage(node: Node) {
     const lang = getLangAttribute(node);
 
     return !(lang && unsupportedLanguages.includes(lang));
+}
+
+/**
+ * Checks whether the node contains a `lang` or `type` attribute which indicates that
+ * the script contents are written in TypeScript. Note that the absence of the tag
+ * does not mean it's not TypeScript, because the user could have set the default
+ * to TypeScript in his settings.
+ */
+export function isTypeScript(node: Node) {
+    const lang = getLangAttribute(node) || '';
+    return ['typescript', 'ts'].includes(lang);
 }
 
 export function isLoneMustacheTag(node: true | Node[]): node is [MustacheTagNode] {
