@@ -111,7 +111,11 @@ export function getLeadingComment(path: FastPath): CommentNode | undefined {
     let node: Node = path.getNode();
     let prev: Node | undefined = siblings.find((child) => child.end === node.start);
     while (prev) {
-        if (prev.type === 'Comment') {
+        if (
+            prev.type === 'Comment' &&
+            !isIgnoreStartDirective(prev) &&
+            !isIgnoreEndDirective(prev)
+        ) {
             return prev;
         } else if (isEmptyTextNode(prev)) {
             node = prev;
@@ -127,18 +131,24 @@ export function getLeadingComment(path: FastPath): CommentNode | undefined {
  * at the specified position?
  */
 export function doesEmbedStartAfterNode(node: Node, path: FastPath, siblings = getSiblings(path)) {
-    const position = node.end;
-    const root = path.stack[0];
     // If node is not at the top level of html, an embed cannot start after it,
     // because embeds are only at the top level
-    if (!root.html || !root.html.children || !root.html.children.includes(node)) {
+    if (!isNodeTopLevelHTML(node, path)) {
         return false;
     }
+
+    const position = node.end;
+    const root = path.stack[0];
 
     const embeds = [root.css, root.html, root.instance, root.js, root.module] as Node[];
 
     const nextNode = siblings[siblings.indexOf(node) + 1];
     return embeds.find((n) => n && n.start >= position && (!nextNode || n.end <= nextNode.start));
+}
+
+export function isNodeTopLevelHTML(node: Node, path: FastPath): boolean {
+    const root = path.stack[0];
+    return !!root.html && !!root.html.children && root.html.children.includes(node);
 }
 
 export function isEmptyTextNode(node: Node | undefined): node is TextNode {
@@ -147,6 +157,14 @@ export function isEmptyTextNode(node: Node | undefined): node is TextNode {
 
 export function isIgnoreDirective(node: Node | undefined | null): boolean {
     return !!node && node.type === 'Comment' && node.data.trim() === 'prettier-ignore';
+}
+
+export function isIgnoreStartDirective(node: Node | undefined | null): boolean {
+    return !!node && node.type === 'Comment' && node.data.trim() === 'prettier-ignore-start';
+}
+
+export function isIgnoreEndDirective(node: Node | undefined | null): boolean {
+    return !!node && node.type === 'Comment' && node.data.trim() === 'prettier-ignore-end';
 }
 
 export function printRaw(
