@@ -6,6 +6,7 @@
 * (fix) Don't snip style tag that is inside script tag ([#219](https://github.com/sveltejs/prettier-plugin-svelte/issues/219), [#70](https://github.com/sveltejs/prettier-plugin-svelte/issues/70))
 * (fix) Better formatting of long attribute values with mustache tags inbetween ([#221](https://github.com/sveltejs/prettier-plugin-svelte/pull/221))
 * (fix) Format properly when using Prettier 2.3.0+ ([#222](https://github.com/sveltejs/prettier-plugin-svelte/pull/222))
+* (fix) Keep parantheses in script tags for which JS is assumed ([#218](https://github.com/sveltejs/prettier-plugin-svelte/issues/218))
 
 ## 2.2.0
 
