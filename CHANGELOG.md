@@ -7,6 +7,7 @@
 * (fix) Better formatting of long attribute values with mustache tags inbetween ([#221](https://github.com/sveltejs/prettier-plugin-svelte/pull/221))
 * (fix) Format properly when using Prettier 2.3.0+ ([#222](https://github.com/sveltejs/prettier-plugin-svelte/pull/222))
 * (fix) Keep parantheses in script tags for which JS is assumed ([#218](https://github.com/sveltejs/prettier-plugin-svelte/issues/218))
+* (feat) Support range ignores in HTML top level ([#225](https://github.com/sveltejs/prettier-plugin-svelte/issues/225))
 
 ## 2.2.0
 
