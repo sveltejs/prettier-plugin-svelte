@@ -23,6 +23,11 @@ export function isEmptyDoc(doc: Doc): boolean {
         return !doc.keepIfLonely;
     }
 
+    // Since Prettier 2.3.0, concats are represented as flat arrays
+    if (Array.isArray(doc)) {
+        return doc.length === 0;
+    }
+
     const { contents } = doc as { contents?: Doc };
 
     if (contents) {
@@ -54,18 +59,21 @@ export function trim(docs: Doc[], isWhitespace: (doc: Doc) => boolean): Doc[] {
 }
 
 /**
- * Trims the leading nodes matching `isWhitespace` independent of nesting level (though all nodes need to be a the same level)
- * and returnes the removed nodes.
+ * Trims the leading nodes matching `isWhitespace` independent of nesting level (though all nodes need to be a the same level).
+ * If there are empty docs before the first whitespace, they are removed, too.
  */
-export function trimLeft(group: Doc[], isWhitespace: (doc: Doc) => boolean): Doc[] | undefined {
-    let firstNonWhitespace = group.findIndex((doc) => !isWhitespace(doc));
+export function trimLeft(group: Doc[], isWhitespace: (doc: Doc) => boolean): void {
+    let firstNonWhitespace = group.findIndex((doc) => !isEmptyDoc(doc) && !isWhitespace(doc));
 
     if (firstNonWhitespace < 0 && group.length) {
         firstNonWhitespace = group.length;
     }
 
     if (firstNonWhitespace > 0) {
-        return group.splice(0, firstNonWhitespace);
+        const removed = group.splice(0, firstNonWhitespace);
+        if (removed.every(isEmptyDoc)) {
+            return trimLeft(group, isWhitespace);
+        }
     } else {
         const parts = getParts(group[0]);
 
@@ -76,14 +84,19 @@ export function trimLeft(group: Doc[], isWhitespace: (doc: Doc) => boolean): Doc
 }
 
 /**
- * Trims the trailing nodes matching `isWhitespace` independent of nesting level (though all nodes need to be a the same level)
- * and returnes the removed nodes.
+ * Trims the trailing nodes matching `isWhitespace` independent of nesting level (though all nodes need to be a the same level).
+ * If there are empty docs after the last whitespace, they are removed, too.
  */
-export function trimRight(group: Doc[], isWhitespace: (doc: Doc) => boolean): Doc[] | undefined {
-    let lastNonWhitespace = group.length ? findLastIndex((doc) => !isWhitespace(doc), group) : 0;
+export function trimRight(group: Doc[], isWhitespace: (doc: Doc) => boolean): void {
+    let lastNonWhitespace = group.length
+        ? findLastIndex((doc) => !isEmptyDoc(doc) && !isWhitespace(doc), group)
+        : 0;
 
     if (lastNonWhitespace < group.length - 1) {
-        return group.splice(lastNonWhitespace + 1);
+        const removed = group.splice(lastNonWhitespace + 1);
+        if (removed.every(isEmptyDoc)) {
+            return trimRight(group, isWhitespace);
+        }
     } else {
         const parts = getParts(group[group.length - 1]);
 
@@ -95,6 +108,10 @@ export function trimRight(group: Doc[], isWhitespace: (doc: Doc) => boolean): Do
 
 function getParts(doc: Doc): Doc[] | undefined {
     if (typeof doc === 'object') {
+        // Since Prettier 2.3.0, concats are represented as flat arrays
+        if (Array.isArray(doc)) {
+            return doc;
+        }
         if (doc.type === 'fill' || doc.type === 'concat') {
             return doc.parts;
         }
