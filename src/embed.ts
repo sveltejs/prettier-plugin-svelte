@@ -2,6 +2,7 @@ import { Doc, doc, FastPath, ParserOptions } from 'prettier';
 import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { PrintFn } from './print';
+import { isLine, trimRight } from './print/doc-helpers';
 import {
     getAttributeTextValue,
     getLeadingComment,
@@ -80,44 +81,6 @@ function expressionParser(text: string, parsers: any, options: any) {
     return { ...ast, program: ast.program.body[0].expression };
 }
 
-function skipBlank(docs: Doc[]): number {
-    for (let i = docs.length - 1; i >= 0; i--) {
-        const doc = docs[i];
-        if (typeof doc !== 'string') {
-            if (doc.type === 'break-parent') {
-                continue;
-            }
-        }
-
-        return i;
-    }
-
-    return -1;
-}
-
-function nukeLastLine(doc: Doc): Doc {
-    if (typeof doc === 'string') {
-        return doc;
-    }
-
-    switch (doc.type) {
-        case 'concat':
-            const end = skipBlank(doc.parts);
-            if (end > -1) {
-                return concat([
-                    ...doc.parts.slice(0, end),
-                    nukeLastLine(doc.parts[end]),
-                    ...doc.parts.slice(end + 1),
-                ]);
-            }
-            break;
-        case 'line':
-            return '';
-    }
-
-    return doc;
-}
-
 function preformattedBody(str: string): Doc {
     const firstNewline = /^[\t\f\r ]*\n/;
     const lastNewline = /\n[\t\f\r ]*$/;
@@ -148,10 +111,9 @@ function formatBodyContent(
     try {
         const indentIfDesired = (doc: Doc) => (indentContent ? indent(doc) : doc);
 
-        return concat([
-            indentIfDesired(concat([hardline, nukeLastLine(textToDoc(content, { parser }))])),
-            hardline,
-        ]);
+        const body = textToDoc(content, { parser });
+        trimRight([body], isLine);
+        return concat([indentIfDesired(concat([hardline, body])), hardline]);
     } catch (error) {
         if (process.env.PRETTIER_DEBUG) {
             throw error;
