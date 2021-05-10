@@ -33,6 +33,9 @@ import {
     trimTextNodeRight,
     canOmitSoftlineBeforeClosingTag,
     getNextNode,
+    isIgnoreStartDirective,
+    isIgnoreEndDirective,
+    isNodeTopLevelHTML,
 } from './node-helpers';
 import {
     ASTNode,
@@ -71,6 +74,7 @@ declare module 'prettier' {
 }
 
 let ignoreNext = false;
+let ignoreRange = false;
 let svelteOptionsDoc: Doc | undefined;
 
 function groupConcat(contents: doc.builders.Doc[]): doc.builders.Doc {
@@ -95,8 +99,13 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     ];
     const node = n as Node;
 
-    if (ignoreNext && (node.type !== 'Text' || !isEmptyTextNode(node))) {
-        ignoreNext = false;
+    if (
+        (ignoreNext || (ignoreRange && !isIgnoreEndDirective(node))) &&
+        (node.type !== 'Text' || !isEmptyTextNode(node))
+    ) {
+        if (ignoreNext) {
+            ignoreNext = false;
+        }
         return concat(
             flatten(
                 options.originalText
@@ -578,14 +587,16 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Comment': {
             const nodeAfterComment = getNextNode(path);
 
-            /**
-             * If there is no sibling node that starts right after us but the parent indicates
-             * that there used to be, that means that node was actually an embedded `<style>`
-             * or `<script>` node that was cut out.
-             * If so, the comment does not refer to the next line we will see.
-             * The `embed` function handles printing the comment in the right place.
-             */
-            if (
+            if (isIgnoreStartDirective(node) && isNodeTopLevelHTML(node, path)) {
+                ignoreRange = true;
+            } else if (isIgnoreEndDirective(node) && isNodeTopLevelHTML(node, path)) {
+                ignoreRange = false;
+            } else if (
+                // If there is no sibling node that starts right after us but the parent indicates
+                // that there used to be, that means that node was actually an embedded `<style>`
+                // or `<script>` node that was cut out.
+                // If so, the comment does not refer to the next line we will see.
+                // The `embed` function handles printing the comment in the right place.
                 doesEmbedStartAfterNode(node, path) ||
                 (isEmptyTextNode(nodeAfterComment) &&
                     doesEmbedStartAfterNode(nodeAfterComment, path))
@@ -678,6 +689,7 @@ function printTopLevelParts(
 
     // Need to reset these because they are global and could affect the next formatting run
     ignoreNext = false;
+    ignoreRange = false;
     svelteOptionsDoc = undefined;
 
     // If this is invoked as an embed of markdown, remove the last hardline.
@@ -967,7 +979,7 @@ function prepareChildren(children: Node[], path: FastPath, print: PrintFn): Node
     }
 
     function isCommentFollowedByOptions(node: Node, idx: number): node is CommentNode {
-        if (node.type !== 'Comment') {
+        if (node.type !== 'Comment' || isIgnoreEndDirective(node) || isIgnoreStartDirective(node)) {
             return false;
         }
 
