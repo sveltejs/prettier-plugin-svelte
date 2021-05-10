@@ -1,14 +1,54 @@
 export const snippedTagContentAttribute = '✂prettier:content✂';
 
-export function snipTagContent(tagName: string, source: string, placeholder = ''): string {
-    const regex = new RegExp(`<!--[^]*?-->|<${tagName}([^]*?)>([^]*?)<\/${tagName}>`, 'g');
-    return source.replace(regex, (match, attributes, content) => {
-        if (match.startsWith('<!--')) {
-            return match;
+export function snipScriptAndStyleTagContent(source: string): string {
+    const scriptMatchSpans = getMatchIndexes('script');
+    const styleMatchSpans = getMatchIndexes('style');
+
+    return snipTagContent(
+        snipTagContent(source, 'script', '{}', scriptMatchSpans, styleMatchSpans),
+        'style',
+        '',
+        styleMatchSpans,
+        scriptMatchSpans,
+    );
+
+    function getMatchIndexes(tagName: string) {
+        const regex = getRegexp(tagName);
+        const indexes: [number, number][] = [];
+        let match = null;
+        while ((match = regex.exec(source)) != null) {
+            indexes.push([match.index, regex.lastIndex]);
         }
-        const encodedContent = Buffer.from(content).toString('base64');
-        return `<${tagName}${attributes} ${snippedTagContentAttribute}="${encodedContent}">${placeholder}</${tagName}>`;
-    });
+        return indexes;
+    }
+
+    function snipTagContent(
+        _source: string,
+        tagName: string,
+        placeholder: string,
+        ownSpans: [number, number][],
+        otherSpans: [number, number][],
+    ) {
+        const regex = getRegexp(tagName);
+        let idx = 0;
+        return _source.replace(regex, (match, attributes, content) => {
+            if (match.startsWith('<!--') || withinOtherSpan(idx)) {
+                return match;
+            }
+            const encodedContent = Buffer.from(content).toString('base64');
+            return `<${tagName}${attributes} ${snippedTagContentAttribute}="${encodedContent}">${placeholder}</${tagName}>`;
+        });
+
+        function withinOtherSpan(idx: number) {
+            return otherSpans.some(
+                (otherSpan) => ownSpans[idx][0] > otherSpan[0] && ownSpans[idx][1] < otherSpan[1],
+            );
+        }
+    }
+
+    function getRegexp(tagName: string) {
+        return new RegExp(`<!--[^]*?-->|<${tagName}([^]*?)>([^]*?)<\/${tagName}>`, 'g');
+    }
 }
 
 export function hasSnippedContent(text: string) {

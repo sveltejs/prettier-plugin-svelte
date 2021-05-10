@@ -2,7 +2,7 @@ import { SupportLanguage, Parser, Printer } from 'prettier';
 import { print } from './print';
 import { ASTNode } from './print/nodes';
 import { embed } from './embed';
-import { snipTagContent } from './lib/snipTagContent';
+import { snipScriptAndStyleTagContent } from './lib/snipTagContent';
 
 function locStart(node: any) {
     return node.start;
@@ -40,8 +40,7 @@ export const parsers: Record<string, Parser> = {
             }
         },
         preprocess: (text, options) => {
-            text = snipTagContent('style', text);
-            text = snipTagContent('script', text, '{}');
+            text = snipScriptAndStyleTagContent(text);
             text = text.trim();
             // Prettier sets the preprocessed text as the originalText in case
             // the Svelte formatter is called directly. In case it's called
