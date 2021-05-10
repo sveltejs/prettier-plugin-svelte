@@ -4,7 +4,7 @@
 
 * (fix) adjust snip regex to not break commented-out script/style tags ([#212](https://github.com/sveltejs/prettier-plugin-svelte/issues/212))
 * (fix) Don't snip style tag that is inside script tag ([#219](https://github.com/sveltejs/prettier-plugin-svelte/issues/219), [#70](https://github.com/sveltejs/prettier-plugin-svelte/issues/70))
-* (fix) Better formatting of long attribute values with mustache tags inbetween ([#220](https://github.com/sveltejs/prettier-plugin-svelte/pull/220))
+* (fix) Better formatting of long attribute values with mustache tags inbetween ([#221](https://github.com/sveltejs/prettier-plugin-svelte/pull/221))
 
 ## 2.2.0
 
