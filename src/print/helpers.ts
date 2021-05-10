@@ -1,5 +1,5 @@
 import { ASTNode, Node } from './nodes';
-import { FastPath } from 'prettier';
+import { Doc, FastPath } from 'prettier';
 import { formattableAttributes } from '../lib/elements';
 
 /**
@@ -32,4 +32,19 @@ export function findLastIndex<T>(isMatch: (item: T, idx: number) => boolean, ite
     }
 
     return -1;
+}
+
+export function replaceEndOfLineWith(text: string, replacement: Doc) {
+    const parts: Doc[] = [];
+    for (const part of text.split('\n')) {
+        if (parts.length > 0) {
+            parts.push(replacement);
+        }
+        if (part.endsWith('\r')) {
+            parts.push(part.slice(0, -1));
+        } else {
+            parts.push(part);
+        }
+    }
+    return parts;
 }

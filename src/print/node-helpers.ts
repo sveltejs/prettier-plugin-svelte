@@ -19,6 +19,7 @@ import {
     PendingBlockNode,
     ThenBlockNode,
     CommentNode,
+    SlotTemplateNode,
 } from './nodes';
 import { blockElements, TagName } from '../lib/elements';
 import { FastPath, ParserOptions } from 'prettier';
@@ -149,7 +150,14 @@ export function isIgnoreDirective(node: Node | undefined | null): boolean {
 }
 
 export function printRaw(
-    node: ElementNode | InlineComponentNode | SlotNode | WindowNode | HeadNode | TitleNode,
+    node:
+        | ElementNode
+        | InlineComponentNode
+        | SlotNode
+        | WindowNode
+        | HeadNode
+        | TitleNode
+        | SlotTemplateNode,
     originalText: string,
     stripLeadingAndTrailingNewline: boolean = false,
 ): string {

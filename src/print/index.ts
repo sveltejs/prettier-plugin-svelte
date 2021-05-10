@@ -5,7 +5,7 @@ import { getText } from '../lib/getText';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
 import { parseSortOrder, SortOrderPart } from '../options';
 import { isEmptyDoc, isLine, trim, trimRight } from './doc-helpers';
-import { flatten, isASTNode, isPreTagContent } from './helpers';
+import { flatten, isASTNode, isPreTagContent, replaceEndOfLineWith } from './helpers';
 import {
     checkWhitespaceAtEndOfSvelteBlock,
     checkWhitespaceAtStartOfSvelteBlock,
@@ -159,7 +159,13 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                  */
                 return fill(splitTextToDocs(node));
             } else {
-                return getUnencodedText(node);
+                const rawText = getUnencodedText(node);
+                if (path.getParentNode().type === 'Attribute') {
+                    // Direct child of attribute value -> add literallines at end of lines
+                    // so that other things don't break in unexpected places
+                    return concat(replaceEndOfLineWith(rawText, literalline));
+                }
+                return rawText;
             }
         case 'Element':
         case 'InlineComponent':
