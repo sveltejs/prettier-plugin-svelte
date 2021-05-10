@@ -3,6 +3,7 @@
 ## 2.2.1 (Unreleased)
 
 * (fix) adjust snip regex to not break commented-out script/style tags ([#212](https://github.com/sveltejs/prettier-plugin-svelte/issues/212))
+* (fix) Don't snip style tag that is inside script tag ([#219](https://github.com/sveltejs/prettier-plugin-svelte/issues/219), [#70](https://github.com/sveltejs/prettier-plugin-svelte/issues/70))
 
 ## 2.2.0
 
