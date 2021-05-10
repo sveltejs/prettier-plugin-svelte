@@ -257,6 +257,7 @@ export interface SlotTemplateNode extends BaseNode {
     type: 'SlotTemplate';
     name: string;
     attributes: Node[];
+    children: Node[];
 }
 
 export type Node =
