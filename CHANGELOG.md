@@ -1,8 +1,8 @@
 # prettier-plugin-svelte changelog
 
-## 2.3.1 (Unreleased)
+## 2.3.1
 
-* (fix) More robust check for hardline to prevent trailing empty lines in style/script tags ([#222](https://github.com/sveltejs/prettier-plugin-svelte/issues/222))
+* (fix) More robust check for `hardline` to prevent trailing empty lines in `<style>`/`<script>` tags ([#222](https://github.com/sveltejs/prettier-plugin-svelte/issues/222))
 
 ## 2.3.0
 
