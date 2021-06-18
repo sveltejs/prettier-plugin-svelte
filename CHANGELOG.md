@@ -1,11 +1,15 @@
 # prettier-plugin-svelte changelog
 
+## 2.3.1 (Unreleased)
+
+* (fix) More robust check for hardline to prevent trailing empty lines in style/script tags ([#222](https://github.com/sveltejs/prettier-plugin-svelte/issues/222))
+
 ## 2.3.0
 
 * (fix) Adjust snip regex to not break commented-out `<script>`/`<style>` tags ([#212](https://github.com/sveltejs/prettier-plugin-svelte/issues/212))
 * (fix) Don't snip `<style>` tags that are inside `<script>` tags ([#219](https://github.com/sveltejs/prettier-plugin-svelte/issues/219), [#70](https://github.com/sveltejs/prettier-plugin-svelte/issues/70))
 * (fix) Better formatting of long attribute values with mustache tags in between ([#221](https://github.com/sveltejs/prettier-plugin-svelte/pull/221))
-* (fix) Format properly when using Prettier 2.3.0+ ([#222](https://github.com/sveltejs/prettier-plugin-svelte/pull/222))
+* (fix) Format properly when using Prettier 2.3.0+ ([#222](https://github.com/sveltejs/prettier-plugin-svelte/issues/222))
 * (fix) Keep parentheses in `<script>` tags for which JS is assumed ([#218](https://github.com/sveltejs/prettier-plugin-svelte/issues/218))
 * (feat) Support range ignores at HTML top level ([#225](https://github.com/sveltejs/prettier-plugin-svelte/issues/225))
 
