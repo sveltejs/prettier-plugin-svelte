@@ -1,9 +1,41 @@
 import { Doc, doc } from 'prettier';
 import { findLastIndex } from './helpers';
 
+/**
+ * Check if doc is a hardline.
+ * We can't just rely on a simple equality check because the doc could be created with another
+ * runtime version of prettier than what we import, making a reference check fail.
+ */
+export function isHardline(docToCheck: Doc): boolean {
+    return docToCheck === doc.builders.hardline || deepEqual(docToCheck, doc.builders.hardline);
+}
+
+/**
+ * Simple deep equal function which suits our needs. Only works properly on POJOs without cyclic deps.
+ */
+function deepEqual(x: any, y: any): boolean {
+    if (x === y) {
+        return true;
+    } else if (typeof x == 'object' && x != null && typeof y == 'object' && y != null) {
+        if (Object.keys(x).length != Object.keys(y).length) return false;
+
+        for (var prop in x) {
+            if (y.hasOwnProperty(prop)) {
+                if (!deepEqual(x[prop], y[prop])) return false;
+            } else {
+                return false;
+            }
+        }
+
+        return true;
+    } else {
+        return false;
+    }
+}
+
 export function isLine(docToCheck: Doc): boolean {
     return (
-        docToCheck === doc.builders.hardline ||
+        isHardline(docToCheck) ||
         (typeof docToCheck === 'object' && docToCheck.type === 'line') ||
         (typeof docToCheck === 'object' &&
             docToCheck.type === 'concat' &&
