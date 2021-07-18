@@ -5,12 +5,11 @@ import inject from '@rollup/plugin-inject';
 import alias from '@rollup/plugin-alias';
 import path from 'path';
 
-const srcDir = path.resolve(__dirname, 'src');
 export default {
     input: 'src/index.ts',
     plugins: [
         alias({
-            entries: [{ find: /^prettier$/gm, replacement: `${srcDir}/standalone-shim` }],
+            entries: [{ find: /^prettier$/gm, replacement: `prettier/standalone` }],
         }),
         resolve({
             preferBuiltins: false,
@@ -22,17 +21,10 @@ export default {
             Buffer: ['buffer', 'Buffer'],
         }),
     ],
-    external: ['prettier/esm/standalone', 'svelte'],
-    output: [
-        {
-            file: 'standalone/index.js',
-            format: 'cjs',
-            sourcemap: true,
-        },
-        {
-            file: 'standalone/index.mjs',
-            format: 'esm',
-            sourcemap: true,
-        },
-    ],
+    external: ['prettier/standalone', 'svelte'],
+    output: {
+        file: 'standalone/index.js',
+        format: 'cjs',
+        sourcemap: true,
+    },
 };

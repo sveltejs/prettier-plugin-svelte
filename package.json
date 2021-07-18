@@ -16,7 +16,7 @@
         "standalone/index.mjs.map"
     ],
     "scripts": {
-        "build": "rollup -c && rollup -c rollup.standalone.config.js",
+        "build": "rollup -c && rollup -c rollup.standalone.cjs.config.js && rollup -c rollup.standalone.esm.config.js",
         "test": "ava",
         "prepare": "npm run build",
         "prepublishOnly": "npm test"
