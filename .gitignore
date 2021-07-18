@@ -3,3 +3,6 @@ node_modules
 .history
 plugin.js
 plugin.js.map
+standalone.js
+standalone.js.map
+esm

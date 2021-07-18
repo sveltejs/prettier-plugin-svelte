@@ -3,13 +3,28 @@
     "version": "2.3.1",
     "description": "Svelte plugin for prettier",
     "main": "plugin.js",
+    "module": "esm/plugin.mjs",
+    "exports": {
+        ".": {
+            "browser": {
+                "import": "./esm/standalone.mjs",
+                "default": "./standalone.js"
+            },
+            "default": "./plugin.js"
+        },
+        "./standalone": {
+            "import": "./esm/standalone.mjs",
+            "default": "./standalone.js"
+        }
+    },
     "files": [
         "plugin.js",
-        "plugin.js.map"
+        "plugin.js.map",
+        "esm/**/*.mjs",
+        "esm/**/*.mjs.map"
     ],
     "scripts": {
-        "build": "rollup -c",
-        "test": "ava",
+        "build": "rollup -c && rollup -c rollup.standalone.cjs.config.js && rollup -c rollup.standalone.esm.config.js",
         "prepare": "npm run build",
         "prepublishOnly": "npm test"
     },
@@ -28,6 +43,8 @@
     },
     "homepage": "https://github.com/sveltejs/prettier-plugin-svelte#readme",
     "devDependencies": {
+        "@rollup/plugin-alias": "^3.1.4",
+        "@rollup/plugin-inject": "^4.0.2",
         "@types/node": "^10.12.18",
         "@types/prettier": "^2.1.6",
         "ava": "3.15.0",
@@ -44,5 +61,8 @@
     "peerDependencies": {
         "prettier": "^1.16.4 || ^2.0.0",
         "svelte": "^3.2.0"
+    },
+    "dependencies": {
+        "buffer": "^5.7.1"
     }
 }
