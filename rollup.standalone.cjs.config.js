@@ -3,7 +3,6 @@ import commonjs from '@rollup/plugin-commonjs';
 import typescript from 'rollup-plugin-typescript';
 import inject from '@rollup/plugin-inject';
 import alias from '@rollup/plugin-alias';
-import path from 'path';
 
 export default {
     input: 'src/index.ts',
@@ -23,7 +22,7 @@ export default {
     ],
     external: ['prettier/standalone', 'svelte'],
     output: {
-        file: 'standalone/index.js',
+        file: 'standalone.js',
         format: 'cjs',
         sourcemap: true,
     },
