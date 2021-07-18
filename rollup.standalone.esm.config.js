@@ -22,7 +22,7 @@ export default {
             Buffer: ['buffer', 'Buffer'],
         }),
     ],
-    external: ['prettier/esm/standalone', 'svelte'],
+    external: ['prettier/esm/standalone', 'svelte/compiler'],
     output: {
         file: 'esm/standalone.mjs',
         format: 'esm',

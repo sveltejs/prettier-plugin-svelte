@@ -20,7 +20,7 @@ export default {
             Buffer: ['buffer', 'Buffer'],
         }),
     ],
-    external: ['prettier/standalone', 'svelte'],
+    external: ['prettier/standalone', 'svelte/compiler'],
     output: {
         file: 'standalone.js',
         format: 'cjs',
