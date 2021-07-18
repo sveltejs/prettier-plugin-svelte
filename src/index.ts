@@ -3,6 +3,7 @@ import { print } from './print';
 import { ASTNode } from './print/nodes';
 import { embed } from './embed';
 import { snipScriptAndStyleTagContent } from './lib/snipTagContent';
+import { parse as parseSvelte } from 'svelte/compiler';
 
 function locStart(node: any) {
     return node.start;
@@ -25,7 +26,8 @@ export const parsers: Record<string, Parser> = {
     svelte: {
         parse: (text) => {
             try {
-                return <ASTNode>{ ...require(`svelte/compiler`).parse(text), __isRoot: true };
+                // @ts-ignore
+                return <ASTNode>{ ...parseSvelte(text), __isRoot: true };
             } catch (err) {
                 if (err.start != null && err.end != null) {
                     // Prettier expects error objects to have loc.start and loc.end fields.
