@@ -8,9 +8,11 @@ import {
     getLeadingComment,
     isIgnoreDirective,
     isNodeSupportedLanguage,
+    isPugTemplate,
     isTypeScript,
+    printRaw,
 } from './print/node-helpers';
-import { Node } from './print/nodes';
+import { ElementNode, Node } from './print/nodes';
 
 const {
     builders: { concat, hardline, group, indent, literalline },
@@ -42,16 +44,18 @@ export function embed(
     }
 
     const embedType = (
-        tag: string,
-        parser: 'typescript' | 'babel-ts' | 'css',
+        tag: 'script' | 'style' | 'template',
+        parser: 'typescript' | 'babel-ts' | 'css' | 'pug',
         isTopLevel: boolean,
     ) =>
         embedTag(
             tag,
+            options.originalText,
             path,
             (content) => formatBodyContent(content, parser, textToDoc, options),
             print,
             isTopLevel,
+            options,
         );
 
     const embedScript = (isTopLevel: boolean) =>
@@ -65,6 +69,7 @@ export function embed(
             isTopLevel,
         );
     const embedStyle = (isTopLevel: boolean) => embedType('style', 'css', isTopLevel);
+    const embedPug = () => embedType('template', 'pug', false);
 
     switch (node.type) {
         case 'Script':
@@ -76,6 +81,8 @@ export function embed(
                 return embedScript(false);
             } else if (node.name === 'style') {
                 return embedStyle(false);
+            } else if (isPugTemplate(node)) {
+                return embedPug();
             }
         }
     }
@@ -116,16 +123,32 @@ function getSnippedContent(node: Node) {
 
 function formatBodyContent(
     content: string,
-    parser: 'typescript' | 'babel-ts' | 'css',
+    parser: 'typescript' | 'babel-ts' | 'css' | 'pug',
     textToDoc: (text: string, options: object) => Doc,
-    options: ParserOptions,
+    options: ParserOptions & { pugTabWidth?: number },
 ) {
-    const indentContent = options.svelteIndentScriptAndStyle;
-
     try {
-        const indentIfDesired = (doc: Doc) => (indentContent ? indent(doc) : doc);
-
         const body = textToDoc(content, { parser });
+
+        if (parser === 'pug' && typeof body === 'string') {
+            // Pug returns no docs but a final string.
+            // Therefore prepend the line offsets
+            const whitespace = options.useTabs
+                ? '\t'
+                : ' '.repeat(
+                      options.pugTabWidth && options.pugTabWidth > 0
+                          ? options.pugTabWidth
+                          : options.tabWidth,
+                  );
+            const pugBody = body
+                .split('\n')
+                .map((line) => (line ? whitespace + line : line))
+                .join('\n');
+            return concat([hardline, pugBody]);
+        }
+
+        const indentIfDesired = (doc: Doc) =>
+            options.svelteIndentScriptAndStyle ? indent(doc) : doc;
         trimRight([body], isLine);
         return concat([indentIfDesired(concat([hardline, body])), hardline]);
     } catch (error) {
@@ -144,24 +167,33 @@ function formatBodyContent(
 }
 
 function embedTag(
-    tag: string,
+    tag: 'script' | 'style' | 'template',
+    text: string,
     path: FastPath,
     formatBodyContent: (content: string) => Doc,
     print: PrintFn,
     isTopLevel: boolean,
+    options: ParserOptions,
 ) {
     const node: Node = path.getNode();
-    const content = getSnippedContent(node);
+    const content =
+        tag === 'template' ? printRaw(node as ElementNode, text) : getSnippedContent(node);
     const previousComment = getLeadingComment(path);
 
-    const body: Doc =
-        isNodeSupportedLanguage(node) && !isIgnoreDirective(previousComment)
-            ? content.trim() !== ''
-                ? formatBodyContent(content)
-                : content === ''
-                ? ''
-                : hardline
-            : preformattedBody(content);
+    const canFormat =
+        isNodeSupportedLanguage(node) &&
+        !isIgnoreDirective(previousComment) &&
+        (tag !== 'template' ||
+            options.plugins.some(
+                (plugin) => typeof plugin !== 'string' && plugin.parsers && plugin.parsers.pug,
+            ));
+    const body: Doc = canFormat
+        ? content.trim() !== ''
+            ? formatBodyContent(content)
+            : content === ''
+            ? ''
+            : hardline
+        : preformattedBody(content);
 
     const attributes = concat(
         path.map(
