@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## Unreleased
+
+* (fix) Adjust "is inside other tag"-checks when snipping tags ([#244](https://github.com/sveltejs/prettier-plugin-svelte/issues/244))
+
 ## 2.3.1
 
 * (fix) More robust check for `hardline` to prevent trailing empty lines in `<style>`/`<script>` tags ([#222](https://github.com/sveltejs/prettier-plugin-svelte/issues/222))

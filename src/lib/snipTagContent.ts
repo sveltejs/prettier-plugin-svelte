@@ -5,10 +5,9 @@ export function snipScriptAndStyleTagContent(source: string): string {
     const styleMatchSpans = getMatchIndexes('style');
 
     return snipTagContent(
-        snipTagContent(source, 'script', '{}', scriptMatchSpans, styleMatchSpans),
+        snipTagContent(source, 'script', '{}', styleMatchSpans),
         'style',
         '',
-        styleMatchSpans,
         scriptMatchSpans,
     );
 
@@ -26,13 +25,11 @@ export function snipScriptAndStyleTagContent(source: string): string {
         _source: string,
         tagName: string,
         placeholder: string,
-        ownSpans: [number, number][],
         otherSpans: [number, number][],
     ) {
         const regex = getRegexp(tagName);
-        let idx = 0;
-        return _source.replace(regex, (match, attributes, content) => {
-            if (match.startsWith('<!--') || withinOtherSpan(idx)) {
+        return _source.replace(regex, (match, attributes, content, index) => {
+            if (match.startsWith('<!--') || withinOtherSpan(index)) {
                 return match;
             }
             const encodedContent = Buffer.from(content).toString('base64');
@@ -40,9 +37,7 @@ export function snipScriptAndStyleTagContent(source: string): string {
         });
 
         function withinOtherSpan(idx: number) {
-            return otherSpans.some(
-                (otherSpan) => ownSpans[idx][0] > otherSpan[0] && ownSpans[idx][1] < otherSpan[1],
-            );
+            return otherSpans.some((otherSpan) => idx > otherSpan[0] && idx < otherSpan[1]);
         }
     }
 
