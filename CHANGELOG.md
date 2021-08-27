@@ -1,9 +1,9 @@
 # prettier-plugin-svelte changelog
 
-## 2.4.0 (Unreleased)
+## 2.4.0
 
-* (feat) add support for formatting pug inside `<template>` tags, if the corresponding plugin is available ([#248](https://github.com/sveltejs/prettier-plugin-svelte/pull/248))
-* (fix) Adjust "is inside other tag"-checks when snipping tags ([#244](https://github.com/sveltejs/prettier-plugin-svelte/issues/244), [#246](https://github.com/sveltejs/prettier-plugin-svelte/issues/246))
+* (feat) Add support for formatting Pug inside `<template>` tags, if the corresponding plugin is available ([#248](https://github.com/sveltejs/prettier-plugin-svelte/pull/248))
+* (fix) Adjust checks for whether we're inside another tag when snipping tags ([#244](https://github.com/sveltejs/prettier-plugin-svelte/issues/244), [#246](https://github.com/sveltejs/prettier-plugin-svelte/issues/246))
 
 ## 2.3.1
 
