@@ -68,8 +68,8 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
         since: '0.6.0',
         category: 'Svelte',
         type: 'boolean',
-        default: true,
         description: 'Put the `>` of a multiline element on a new line',
+        deprecated: '2.5.0',
     },
     svelteAllowShorthand: {
         since: '1.0.0',

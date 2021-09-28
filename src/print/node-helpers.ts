@@ -519,8 +519,14 @@ export function canOmitSoftlineBeforeClosingTag(
     path: FastPath,
     options: ParserOptions,
 ): boolean {
+    const bracketSameLine =
+        options.svelteBracketNewLine != null
+            ? !options.svelteBracketNewLine
+            : options.bracketSameLine != null
+            ? options.bracketSameLine
+            : false;
     return (
-        !options.svelteBracketNewLine &&
+        bracketSameLine &&
         (!hugsStartOfNextNode(node, options) || isLastChildWithinParentBlockElement(path, options))
     );
 }

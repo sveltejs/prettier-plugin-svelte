@@ -82,6 +82,13 @@ function groupConcat(contents: doc.builders.Doc[]): doc.builders.Doc {
 }
 
 export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
+    const bracketSameLine =
+        options.svelteBracketNewLine != null
+            ? !options.svelteBracketNewLine
+            : options.bracketSameLine != null
+            ? options.bracketSameLine
+            : false;
+
     const n = path.getValue();
     if (!n) {
         return '';
@@ -210,11 +217,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         groupConcat([
                             possibleThisBinding,
                             ...attributes,
-                            options.svelteBracketNewLine ? dedent(line) : '',
+                            bracketSameLine ? '' : dedent(line),
                         ]),
                     ),
 
-                    ...[options.svelteBracketNewLine ? '' : ' ', `/>`],
+                    ...[bracketSameLine ? ' ' : '', `/>`],
                 ]);
             }
 
@@ -236,7 +243,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     isTextNodeStartingWithWhitespace(node.children[0]) &&
                     !isPreTagContent(path)
                         ? () => line
-                        : () => (options.svelteBracketNewLine ? '' : softline);
+                        : () => (bracketSameLine ? softline : '');
             } else if (isPreTagContent(path)) {
                 body = () => printRaw(node, options.originalText);
             } else if (!isSupportedLanguage) {
@@ -257,7 +264,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         ...attributes,
                         hugStart
                             ? ''
-                            : options.svelteBracketNewLine && !isPreTagContent(path)
+                            : !bracketSameLine && !isPreTagContent(path)
                             ? dedent(softline)
                             : '',
                     ]),
@@ -282,7 +289,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     groupConcat(['>', body(), `</${node.name}`]),
                 ]);
                 const omitSoftlineBeforeClosingTag =
-                    (isEmpty && options.svelteBracketNewLine) ||
+                    (isEmpty && !bracketSameLine) ||
                     canOmitSoftlineBeforeClosingTag(node, path, options);
                 return groupConcat([
                     ...openingTag,
