@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.5.0 (Unreleased)
+
+* (feat) Support `bracketSameLine` option and deprecate `svelteBracketNewLine` ([#251](https://github.com/sveltejs/prettier-plugin-svelte/pull/251))
+
 ## 2.4.0
 
 * (feat) Add support for formatting Pug inside `<template>` tags, if the corresponding plugin is available ([#248](https://github.com/sveltejs/prettier-plugin-svelte/pull/248))
