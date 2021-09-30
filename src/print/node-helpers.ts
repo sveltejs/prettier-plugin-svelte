@@ -24,6 +24,7 @@ import {
 import { blockElements, TagName } from '../lib/elements';
 import { FastPath, ParserOptions } from 'prettier';
 import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
+import { isBracketSameLine } from '../options';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
 
@@ -519,14 +520,8 @@ export function canOmitSoftlineBeforeClosingTag(
     path: FastPath,
     options: ParserOptions,
 ): boolean {
-    const bracketSameLine =
-        options.svelteBracketNewLine != null
-            ? !options.svelteBracketNewLine
-            : options.bracketSameLine != null
-            ? options.bracketSameLine
-            : false;
     return (
-        bracketSameLine &&
+        isBracketSameLine(options) &&
         (!hugsStartOfNextNode(node, options) || isLastChildWithinParentBlockElement(path, options))
     );
 }
