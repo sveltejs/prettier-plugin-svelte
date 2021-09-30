@@ -1,4 +1,4 @@
-import { SupportOption } from 'prettier';
+import { ParserOptions, SupportOption } from 'prettier';
 
 declare module 'prettier' {
     interface RequiredOptions extends PluginOptions {}
@@ -138,4 +138,12 @@ export function parseSortOrder(sortOrder: SortOrder): SortOrderPart[] {
         order.unshift('options');
     }
     return order;
+}
+
+export function isBracketSameLine(options: ParserOptions): boolean {
+    return options.svelteBracketNewLine != null
+        ? !options.svelteBracketNewLine
+        : options.bracketSameLine != null
+        ? options.bracketSameLine
+        : false;
 }
