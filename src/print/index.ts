@@ -3,7 +3,7 @@ import { formattableAttributes, selfClosingTags } from '../lib/elements';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
-import { parseSortOrder, SortOrderPart } from '../options';
+import { isBracketSameLine, parseSortOrder, SortOrderPart } from '../options';
 import { isEmptyDoc, isLine, trim, trimRight } from './doc-helpers';
 import { flatten, isASTNode, isPreTagContent, replaceEndOfLineWith } from './helpers';
 import {
@@ -82,12 +82,7 @@ function groupConcat(contents: doc.builders.Doc[]): doc.builders.Doc {
 }
 
 export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
-    const bracketSameLine =
-        options.svelteBracketNewLine != null
-            ? !options.svelteBracketNewLine
-            : options.bracketSameLine != null
-            ? options.bracketSameLine
-            : false;
+    const bracketSameLine = isBracketSameLine(options);
 
     const n = path.getValue();
     if (!n) {
