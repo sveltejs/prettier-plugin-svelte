@@ -1,4 +1,5 @@
 import { Doc, doc, FastPath, ParserOptions } from 'prettier';
+import { base64ToString } from './helpers';
 import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { PrintFn } from './print';
@@ -108,7 +109,7 @@ function getSnippedContent(node: Node) {
     const encodedContent = getAttributeTextValue(snippedTagContentAttribute, node);
 
     if (encodedContent) {
-        return Buffer.from(encodedContent, 'base64').toString('utf-8');
+        return base64ToString(encodedContent);
     } else {
         return '';
     }

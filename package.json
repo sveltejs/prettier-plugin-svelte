@@ -3,7 +3,7 @@
     "version": "2.3.1",
     "description": "Svelte plugin for prettier",
     "main": "plugin.js",
-    "module": "esm/plugin.mjs",
+    "browser": "esm/standalone.mjs",
     "exports": {
         ".": {
             "browser": {
@@ -20,8 +20,8 @@
     "files": [
         "plugin.js",
         "plugin.js.map",
-        "esm/**/*.mjs",
-        "esm/**/*.mjs.map"
+        "standalone.js",
+        "esm/**/*.mjs"
     ],
     "scripts": {
         "build": "rollup -c && rollup -c rollup.standalone.cjs.config.js && rollup -c rollup.standalone.esm.config.js",
@@ -62,8 +62,5 @@
     "peerDependencies": {
         "prettier": "^1.16.4 || ^2.0.0",
         "svelte": "^3.2.0"
-    },
-    "dependencies": {
-        "buffer": "^5.7.1"
     }
 }

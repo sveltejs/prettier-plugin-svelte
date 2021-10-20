@@ -1,7 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
 import typescript from 'rollup-plugin-typescript';
-import inject from '@rollup/plugin-inject';
 import alias from '@rollup/plugin-alias';
 import path from 'path';
 
@@ -18,14 +17,11 @@ export default {
         }),
         commonjs(),
         typescript({}),
-        inject({
-            Buffer: ['buffer', 'Buffer'],
-        }),
     ],
     external: ['prettier/esm/standalone', 'svelte/compiler'],
     output: {
         file: 'esm/standalone.mjs',
         format: 'esm',
-        sourcemap: true,
+        sourcemap: false,
     },
 };
