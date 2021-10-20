@@ -16,7 +16,9 @@ export function snipScriptAndStyleTagContent(source: string): string {
         const indexes: [number, number][] = [];
         let match = null;
         while ((match = regex.exec(source)) != null) {
-            indexes.push([match.index, regex.lastIndex]);
+            if (!source.substr(match.index, 10).startsWith('<!--')) {
+                indexes.push([match.index, regex.lastIndex]);
+            }
         }
         return indexes;
     }
@@ -27,8 +29,9 @@ export function snipScriptAndStyleTagContent(source: string): string {
         placeholder: string,
         otherSpans: [number, number][],
     ) {
+        // Replace valid matches
         const regex = getRegexp(tagName);
-        return _source.replace(regex, (match, attributes, content, index) => {
+        const newSource = _source.replace(regex, (match, attributes, content, index) => {
             if (match.startsWith('<!--') || withinOtherSpan(index)) {
                 return match;
             }
@@ -36,8 +39,21 @@ export function snipScriptAndStyleTagContent(source: string): string {
             return `<${tagName}${attributes} ${snippedTagContentAttribute}="${encodedContent}">${placeholder}</${tagName}>`;
         });
 
+        // Adjust the spans because the source now has a different content length
+        adjustSpans(scriptMatchSpans);
+        adjustSpans(styleMatchSpans);
+
+        return newSource;
+
         function withinOtherSpan(idx: number) {
             return otherSpans.some((otherSpan) => idx > otherSpan[0] && idx < otherSpan[1]);
+        }
+        function adjustSpans(spans: [number, number][]) {
+            const lengthDiff = _source.length - newSource.length;
+            spans.forEach((span) => {
+                span[0] -= lengthDiff;
+                span[1] -= lengthDiff;
+            });
         }
     }
 
