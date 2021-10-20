@@ -24,8 +24,9 @@ import {
 import { blockElements, TagName } from '../lib/elements';
 import { FastPath, ParserOptions } from 'prettier';
 import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
+import { isBracketSameLine } from '../options';
 
-const unsupportedLanguages = ['coffee', 'coffeescript', 'pug', 'styl', 'stylus', 'sass'];
+const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
 
 export function isInlineElement(path: FastPath, options: ParserOptions, node: Node) {
     return (
@@ -263,6 +264,10 @@ export function isNodeSupportedLanguage(node: Node) {
 export function isTypeScript(node: Node) {
     const lang = getLangAttribute(node) || '';
     return ['typescript', 'ts'].includes(lang);
+}
+
+export function isPugTemplate(node: Node): boolean {
+    return node.type === 'Element' && node.name === 'template' && getLangAttribute(node) === 'pug';
 }
 
 export function isLoneMustacheTag(node: true | Node[]): node is [MustacheTagNode] {
@@ -516,7 +521,7 @@ export function canOmitSoftlineBeforeClosingTag(
     options: ParserOptions,
 ): boolean {
     return (
-        !options.svelteBracketNewLine &&
+        isBracketSameLine(options) &&
         (!hugsStartOfNextNode(node, options) || isLastChildWithinParentBlockElement(path, options))
     );
 }

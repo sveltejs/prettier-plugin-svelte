@@ -3,7 +3,7 @@ import { formattableAttributes, selfClosingTags } from '../lib/elements';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
-import { parseSortOrder, SortOrderPart } from '../options';
+import { isBracketSameLine, parseSortOrder, SortOrderPart } from '../options';
 import { isEmptyDoc, isLine, trim, trimRight } from './doc-helpers';
 import { flatten, isASTNode, isPreTagContent, replaceEndOfLineWith } from './helpers';
 import {
@@ -82,6 +82,8 @@ function groupConcat(contents: doc.builders.Doc[]): doc.builders.Doc {
 }
 
 export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
+    const bracketSameLine = isBracketSameLine(options);
+
     const n = path.getValue();
     if (!n) {
         return '';
@@ -210,11 +212,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         groupConcat([
                             possibleThisBinding,
                             ...attributes,
-                            options.svelteBracketNewLine ? dedent(line) : '',
+                            bracketSameLine ? '' : dedent(line),
                         ]),
                     ),
 
-                    ...[options.svelteBracketNewLine ? '' : ' ', `/>`],
+                    ...[bracketSameLine ? ' ' : '', `/>`],
                 ]);
             }
 
@@ -236,7 +238,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     isTextNodeStartingWithWhitespace(node.children[0]) &&
                     !isPreTagContent(path)
                         ? () => line
-                        : () => (options.svelteBracketNewLine ? '' : softline);
+                        : () => (bracketSameLine ? softline : '');
             } else if (isPreTagContent(path)) {
                 body = () => printRaw(node, options.originalText);
             } else if (!isSupportedLanguage) {
@@ -257,7 +259,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         ...attributes,
                         hugStart
                             ? ''
-                            : options.svelteBracketNewLine && !isPreTagContent(path)
+                            : !bracketSameLine && !isPreTagContent(path)
                             ? dedent(softline)
                             : '',
                     ]),
@@ -282,7 +284,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     groupConcat(['>', body(), `</${node.name}`]),
                 ]);
                 const omitSoftlineBeforeClosingTag =
-                    (isEmpty && options.svelteBracketNewLine) ||
+                    (isEmpty && !bracketSameLine) ||
                     canOmitSoftlineBeforeClosingTag(node, path, options);
                 return groupConcat([
                     ...openingTag,

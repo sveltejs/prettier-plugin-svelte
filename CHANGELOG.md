@@ -1,5 +1,15 @@
 # prettier-plugin-svelte changelog
 
+## 2.5.0 (Unreleased)
+
+* (feat) Support `bracketSameLine` option and deprecate `svelteBracketNewLine` ([#251](https://github.com/sveltejs/prettier-plugin-svelte/pull/251))
+* (fix) Prevent script/style contents from being erased in certain cases ([#255](https://github.com/sveltejs/prettier-plugin-svelte/issues/255))
+
+## 2.4.0
+
+* (feat) Add support for formatting Pug inside `<template>` tags, if the corresponding plugin is available ([#248](https://github.com/sveltejs/prettier-plugin-svelte/pull/248))
+* (fix) Adjust checks for whether we're inside another tag when snipping tags ([#244](https://github.com/sveltejs/prettier-plugin-svelte/issues/244), [#246](https://github.com/sveltejs/prettier-plugin-svelte/issues/246))
+
 ## 2.3.1
 
 * (fix) More robust check for `hardline` to prevent trailing empty lines in `<style>`/`<script>` tags ([#222](https://github.com/sveltejs/prettier-plugin-svelte/issues/222))
