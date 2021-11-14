@@ -4,6 +4,7 @@
 
 * (feat) Support `bracketSameLine` option and deprecate `svelteBracketNewLine` ([#251](https://github.com/sveltejs/prettier-plugin-svelte/pull/251))
 * (fix) Prevent script/style contents from being erased in certain cases ([#255](https://github.com/sveltejs/prettier-plugin-svelte/issues/255))
+* (fix) Properly format nested array patterns ([#259](https://github.com/sveltejs/prettier-plugin-svelte/issues/259))
 
 ## 2.4.0
 
