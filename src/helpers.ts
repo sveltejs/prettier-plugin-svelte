@@ -3,8 +3,7 @@
  * converting a string to a base64 string
  */
 export function stringToBase64(str: string): string {
-    // @ts-expect-error
-    return typeof btoa !== 'undefined' ? bota : Buffer.from(str).toString('base64');
+    return typeof btoa !== 'undefined' ? btoa(str) : Buffer.from(str).toString('base64');
 }
 
 /**
@@ -12,6 +11,5 @@ export function stringToBase64(str: string): string {
  * converting a base64 string to a string
  */
 export function base64ToString(str: string): string {
-    // @ts-expect-error
-    return typeof atob !== 'undefined' ? atob : Buffer.from(str, 'base64').toString();
+    return typeof atob !== 'undefined' ? atob(str) : Buffer.from(str, 'base64').toString();
 }

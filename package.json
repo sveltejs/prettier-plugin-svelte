@@ -24,7 +24,7 @@
         "esm/**/*.mjs"
     ],
     "scripts": {
-        "build": "rollup -c && rollup -c rollup.standalone.cjs.config.js && rollup -c rollup.standalone.esm.config.js",
+        "build": "rollup -c",
         "test": "ava",
         "prepare": "npm run build",
         "prepublishOnly": "npm test"
