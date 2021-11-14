@@ -3,6 +3,7 @@
 ## 2.5.0 (Unreleased)
 
 * (feat) Support `bracketSameLine` option and deprecate `svelteBracketNewLine` ([#251](https://github.com/sveltejs/prettier-plugin-svelte/pull/251))
+* (feat) Add a CJS/ESM standalone build, enables usage inside the browser ([#69](https://github.com/sveltejs/prettier-plugin-svelte/pull/69))
 * (fix) Prevent script/style contents from being erased in certain cases ([#255](https://github.com/sveltejs/prettier-plugin-svelte/issues/255))
 
 ## 2.4.0
