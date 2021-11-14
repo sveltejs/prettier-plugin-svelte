@@ -15,7 +15,8 @@
         "./standalone": {
             "import": "./esm/standalone.mjs",
             "default": "./standalone.js"
-        }
+        },
+        "./package.json": "./package.json"
     },
     "files": [
         "plugin.js",
