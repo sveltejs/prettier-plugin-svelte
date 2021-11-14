@@ -1066,7 +1066,7 @@ function expandNode(node: any): string {
         case 'ObjectPattern':
             return ' {' + node.properties.map(expandNode).join(',') + ' }';
         case 'Property':
-            if (node.value.type === 'ObjectPattern') {
+            if (node.value.type === 'ObjectPattern' || node.value.type === 'ArrayPattern') {
                 return ' ' + node.key.name + ':' + expandNode(node.value);
             } else if (node.value.type === 'Identifier' && node.key.name !== node.value.name) {
                 return expandNode(node.key) + ':' + expandNode(node.value);
