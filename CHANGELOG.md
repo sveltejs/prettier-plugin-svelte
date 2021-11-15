@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## 2.5.0 (Unreleased)
+## 2.5.0
 
 * (feat) Support `bracketSameLine` option and deprecate `svelteBracketNewLine` ([#251](https://github.com/sveltejs/prettier-plugin-svelte/pull/251))
 * (fix) Prevent script/style contents from being erased in certain cases ([#255](https://github.com/sveltejs/prettier-plugin-svelte/issues/255))
