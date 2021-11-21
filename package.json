@@ -38,7 +38,7 @@
         "rollup": "2.60.0",
         "rollup-plugin-typescript": "1.0.1",
         "svelte": "^3.38.2",
-        "ts-node": "^9.1.1",
+        "ts-node": "^10.4.0",
         "tslib": "^2.0.3",
         "typescript": "4.1.3"
     },
