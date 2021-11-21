@@ -29,7 +29,7 @@
     "homepage": "https://github.com/sveltejs/prettier-plugin-svelte#readme",
     "devDependencies": {
         "@prettier/plugin-pug": "^1.16.0",
-        "@rollup/plugin-commonjs": "14.0.0",
+        "@rollup/plugin-commonjs": "18.1.0",
         "@rollup/plugin-node-resolve": "11.0.1",
         "@types/node": "^10.12.18",
         "@types/prettier": "^2.4.1",
