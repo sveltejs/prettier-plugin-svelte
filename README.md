@@ -39,8 +39,7 @@ If you want to customize some formatting behavior, see section "Options" below.
 
 ``Configurations are optional``
 
-Make a `.prettierrc` file in your project directory (Read more about prettier config files [here](https://prettier.io/docs/en/configuration.html))
-and add your preferred configuration options. When using Prettier through the CLI, you can also pass options through CLI flags, but a `.prettierrc` file is recommended.
+Make a `.prettierrc` file in your project directory and add your preferred [options](https://prettier.io/docs/en/options.html) to [configure Prettier](https://prettier.io/docs/en/configuration.html). When using Prettier through the CLI, you can also pass options through CLI flags, but a `.prettierrc` file is recommended.
 
 ### Svelte Sort Order
 
