@@ -453,8 +453,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             const def: Doc[] = [
                 '{#each ',
                 printSvelteBlockJS(path, print, 'expression'),
-                ' as ',
-                printSvelteBlockJS(path, print, 'context'),
+                ' as',
+                expandNode(node.context),
             ];
 
             if (node.index) {
@@ -1044,7 +1044,7 @@ function printJS(
     return path.call(print, name);
 }
 
-function expandNode(node: any): string {
+function expandNode(node: any, parent?: any): string {
     if (node === null) {
         return '';
     }
@@ -1055,6 +1055,7 @@ function expandNode(node: any): string {
     }
 
     switch (node.type) {
+        case 'ArrayExpression':
         case 'ArrayPattern':
             return ' [' + node.elements.map(expandNode).join(',').slice(1) + ']';
         case 'AssignmentPattern':
@@ -1063,12 +1064,17 @@ function expandNode(node: any): string {
             return ' ' + node.name;
         case 'Literal':
             return ' ' + node.raw;
+        case 'ObjectExpression':
+            return ' {' + node.properties.map((p: any) => expandNode(p, node)).join(',') + ' }';
         case 'ObjectPattern':
             return ' {' + node.properties.map(expandNode).join(',') + ' }';
         case 'Property':
             if (node.value.type === 'ObjectPattern' || node.value.type === 'ArrayPattern') {
                 return ' ' + node.key.name + ':' + expandNode(node.value);
-            } else if (node.value.type === 'Identifier' && node.key.name !== node.value.name) {
+            } else if (
+                (node.value.type === 'Identifier' && node.key.name !== node.value.name) ||
+                (parent && parent.type === 'ObjectExpression')
+            ) {
                 return expandNode(node.key) + ':' + expandNode(node.value);
             } else {
                 return expandNode(node.value);
