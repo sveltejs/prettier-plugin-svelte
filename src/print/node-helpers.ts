@@ -335,7 +335,7 @@ export function trimTextNodeLeft(node: TextNode): void {
 
 /**
  * Remove all leading whitespace up until the first non-empty text node,
- * and all trailing whitepsace from the last non-empty text node onwards.
+ * and all trailing whitespace from the last non-empty text node onwards.
  */
 export function trimChildren(children: Node[], path: FastPath): void {
     let firstNonEmptyNode = children.findIndex(
@@ -370,7 +370,7 @@ export function trimChildren(children: Node[], path: FastPath): void {
 }
 
 /**
- * Check if given node's starg tag should hug its first child. This is the case for inline elements when there's
+ * Check if given node's start tag should hug its first child. This is the case for inline elements when there's
  * no whitespace between the `>` and the first child.
  */
 export function shouldHugStart(
