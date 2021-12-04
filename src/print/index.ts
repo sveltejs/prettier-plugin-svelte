@@ -768,10 +768,14 @@ function printPre(
     const length = node.children.length;
     for (let i = 0; i < length; i++) {
         const child = node.children[i];
-        if (child.type === 'MustacheTag') {
-            result.push(path.call(print, 'children', i));
+        if (child.type === 'Text') {
+            const lines = originalText.substring(child.start, child.end).split(/\r?\n/);
+            lines.forEach((line, j) => {
+                if (j > 0) result.push(literalline);
+                result.push(line);
+            });
         } else {
-            result.push(originalText.substring(child.start, child.end));
+            result.push(path.call(print, 'children', i));
         }
     }
     return concat(result);
