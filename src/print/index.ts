@@ -240,7 +240,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         ? () => line
                         : () => (bracketSameLine ? softline : '');
             } else if (isPreTagContent(path)) {
-                body = () => printRaw(node, options.originalText);
+                body = () => printPre(node, options.originalText, path, print);
             } else if (!isSupportedLanguage) {
                 body = () => printRaw(node, options.originalText, true);
             } else if (isInlineElement(path, options, node) && !isPreTagContent(path)) {
@@ -267,7 +267,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             ];
 
             if (!isSupportedLanguage && !isEmpty) {
-                // Format template tags so that there's a hardline but no intendation.
+                // Format template tags so that there's a hardline but no indention.
                 // That way the `lang="X"` and the closing `>` of the start tag stay in one line
                 // which is the 99% use case.
                 return groupConcat([
@@ -758,13 +758,36 @@ function printSvelteBlockChildren(path: FastPath, print: PrintFn, options: Parse
     ]);
 }
 
+function printPre(
+    node: Parameters<typeof printRaw>[0],
+    originalText: string,
+    path: FastPath,
+    print: PrintFn,
+): Doc {
+    const result: Doc = [];
+    const length = node.children.length;
+    for (let i = 0; i < length; i++) {
+        const child = node.children[i];
+        if (child.type === 'Text') {
+            const lines = originalText.substring(child.start, child.end).split(/\r?\n/);
+            lines.forEach((line, j) => {
+                if (j > 0) result.push(literalline);
+                result.push(line);
+            });
+        } else {
+            result.push(path.call(print, 'children', i));
+        }
+    }
+    return concat(result);
+}
+
 function printChildren(path: FastPath, print: PrintFn, options: ParserOptions): Doc {
     if (isPreTagContent(path)) {
         return concat(path.map(print, 'children'));
     }
 
     const childNodes: Node[] = prepareChildren(path.getValue().children, path, print);
-    // modifiy original array because it's accessed later through map(print, 'children', idx)
+    // modify original array because it's accessed later through map(print, 'children', idx)
     path.getValue().children = childNodes;
     if (childNodes.length === 0) {
         return '';
@@ -838,7 +861,7 @@ function printChildren(path: FastPath, print: PrintFn, options: ParserOptions): 
             (nextChild.type !== 'Text' ||
                 // Only handle text which starts with a whitespace and has text afterwards,
                 // or is empty but followed by an inline element. The latter is done
-                // so that if the children break, the inline element afterwards is in a seperate line.
+                // so that if the children break, the inline element afterwards is in a separate line.
                 ((!isEmptyTextNode(nextChild) ||
                     (childNodes[idx + 2] && isInlineElement(path, options, childNodes[idx + 2]))) &&
                     !isTextNodeStartingWithLinebreak(nextChild)))
@@ -850,7 +873,7 @@ function printChildren(path: FastPath, print: PrintFn, options: ParserOptions): 
 
     /**
      * Print text child. First/last child white space handling
-     * is done in parent already. By defintion of the Svelte AST,
+     * is done in parent already. By definition of the Svelte AST,
      * a text node always is inbetween other tags. Add hardlines
      * if the users wants to have them inbetween.
      * If the text is trimmed right, toggle flag telling
@@ -907,7 +930,7 @@ function printChildren(path: FastPath, print: PrintFn, options: ParserOptions): 
 
 /**
  * `svelte:options` is part of the html part but needs to be snipped out and handled
- * seperately to reorder it as configured. The comment above it should be moved with it.
+ * separately to reorder it as configured. The comment above it should be moved with it.
  * Do that here.
  */
 function prepareChildren(children: Node[], path: FastPath, print: PrintFn): Node[] {

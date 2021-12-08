@@ -33,13 +33,19 @@ function deepEqual(x: any, y: any): boolean {
     }
 }
 
+function isDocCommand(doc: Doc): doc is doc.builders.DocCommand {
+    return typeof doc === 'object' && doc !== null;
+}
+
 export function isLine(docToCheck: Doc): boolean {
     return (
         isHardline(docToCheck) ||
-        (typeof docToCheck === 'object' && docToCheck.type === 'line') ||
-        (typeof docToCheck === 'object' &&
+        (isDocCommand(docToCheck) && docToCheck.type === 'line') ||
+        (isDocCommand(docToCheck) &&
             docToCheck.type === 'concat' &&
-            docToCheck.parts.every(isLine))
+            docToCheck.parts.every(isLine)) ||
+        // Since Prettier 2.3.0, concats are represented as flat arrays
+        (Array.isArray(docToCheck) && docToCheck.every(isLine))
     );
 }
 
@@ -51,7 +57,7 @@ export function isEmptyDoc(doc: Doc): boolean {
         return doc.length === 0;
     }
 
-    if (doc.type === 'line') {
+    if (isDocCommand(doc) && doc.type === 'line') {
         return !doc.keepIfLonely;
     }
 

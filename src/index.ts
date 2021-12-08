@@ -26,7 +26,7 @@ export const parsers: Record<string, Parser> = {
         parse: (text) => {
             try {
                 return <ASTNode>{ ...require(`svelte/compiler`).parse(text), __isRoot: true };
-            } catch (err) {
+            } catch (err: any) {
                 if (err.start != null && err.end != null) {
                     // Prettier expects error objects to have loc.start and loc.end fields.
                     // Svelte uses start and end directly on the error.
