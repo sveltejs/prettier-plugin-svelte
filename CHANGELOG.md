@@ -1,10 +1,10 @@
 # prettier-plugin-svelte changelog
 
-## 2.5.1 (Unreleased)
+## 2.5.1
 
-* (fix) Better handling of destructured values with defaults in each and await blocks ([#269](https://github.com/sveltejs/prettier-plugin-svelte/issues/269))
-* (fix) Prevent script/style contents from being erased in certain cases ([#268](https://github.com/sveltejs/prettier-plugin-svelte/issues/268))
-* (fix) Format mustache tags inside `<pre>` tags ([#266](https://github.com/sveltejs/prettier-plugin-svelte/issues/266))
+* (fix) Better handling of destructured values with defaults in `{#each}` and `{#await}` blocks ([#269](https://github.com/sveltejs/prettier-plugin-svelte/issues/269))
+* (fix) Prevent `<script>`/`<style>` contents from being erased in certain cases ([#268](https://github.com/sveltejs/prettier-plugin-svelte/issues/268))
+* (fix) Format `{expressions}` inside `<pre>` tags ([#266](https://github.com/sveltejs/prettier-plugin-svelte/issues/266))
 
 ## 2.5.0
 
