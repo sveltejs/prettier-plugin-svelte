@@ -388,9 +388,12 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 }
 
                 const quotes = !isLoneMustacheTag(node.value) || options.svelteStrictMode;
+                const quoteCharacter = options.svelteMarkupSingleQuote ? '\'' : '"';
+                const quoteReplacementCharacter = options.svelteMarkupSingleQuote ? '"' : '\'';
+                // TODO: Replace quoteCharacter with quoteReplacementCharacter in attrNodeValue
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
-                    return concat([line, node.name, '=', '"', attrNodeValue, '"']);
+                    return concat([line, node.name, '=', quoteCharacter, attrNodeValue, quoteCharacter]);
                 } else {
                     return concat([line, node.name, '=', attrNodeValue]);
                 }

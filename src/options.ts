@@ -10,6 +10,7 @@ export interface PluginOptions {
     svelteBracketNewLine: boolean;
     svelteAllowShorthand: boolean;
     svelteIndentScriptAndStyle: boolean;
+    svelteMarkupSingleQuote: boolean;
 }
 
 function makeChoice(choice: string) {
@@ -87,6 +88,13 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
         description:
             'Whether or not to indent the code inside <script> and <style> tags in Svelte files',
     },
+    svelteMarkupSingleQuote: {
+        since: '2.6.0',
+        category: 'Svelte',
+        type: 'boolean',
+        default: false,
+        description: 'Use single quotes for markup attributes',
+    }
 };
 
 export type SortOrder =
