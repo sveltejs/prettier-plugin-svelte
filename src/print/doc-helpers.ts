@@ -158,3 +158,10 @@ function getParts(doc: Doc): Doc[] | undefined {
         }
     }
 }
+
+/**
+ * `(foo = bar)` => `foo = bar`
+ */
+export function removeParentheses(doc: Doc): Doc {
+    return trim([doc], (_doc: Doc) => _doc === '(' || _doc === ')')[0];
+}

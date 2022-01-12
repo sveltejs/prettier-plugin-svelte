@@ -96,7 +96,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     const [open, close] = options.svelteStrictMode ? ['"{', '}"'] : ['{', '}'];
     const printJsExpression = () => [
         open,
-        printJS(path, print, options.svelteStrictMode, false, 'expression'),
+        printJS(path, print, options.svelteStrictMode, false, false, 'expression'),
         close,
     ];
     const node = n as Node;
@@ -399,7 +399,14 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'MustacheTag':
             return concat([
                 '{',
-                printJS(path, print, isInsideQuotedAttribute(path, options), false, 'expression'),
+                printJS(
+                    path,
+                    print,
+                    isInsideQuotedAttribute(path, options),
+                    false,
+                    false,
+                    'expression',
+                ),
                 '}',
             ]);
         case 'IfBlock': {
@@ -637,9 +644,24 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.expression ? concat(['=', ...printJsExpression()]) : '',
             ]);
         case 'RawMustacheTag':
-            return concat(['{@html ', printJS(path, print, false, false, 'expression'), '}']);
+            return concat([
+                '{@html ',
+                printJS(path, print, false, false, false, 'expression'),
+                '}',
+            ]);
         case 'Spread':
-            return concat([line, '{...', printJS(path, print, false, false, 'expression'), '}']);
+            return concat([
+                line,
+                '{...',
+                printJS(path, print, false, false, false, 'expression'),
+                '}',
+            ]);
+        case 'ConstTag':
+            return concat([
+                '{@const ',
+                printJS(path, print, false, false, true, 'expression'),
+                '}',
+            ]);
     }
 
     console.error(JSON.stringify(node, null, 4));
@@ -1051,7 +1073,7 @@ function splitTextToDocs(node: TextNode): Doc[] {
 }
 
 function printSvelteBlockJS(path: FastPath, print: PrintFn, name: string) {
-    return printJS(path, print, false, true, name);
+    return printJS(path, print, false, true, false, name);
 }
 
 function printJS(
@@ -1059,11 +1081,13 @@ function printJS(
     print: PrintFn,
     forceSingleQuote: boolean,
     forceSingleLine: boolean,
+    removeParentheses: boolean,
     name: string,
 ) {
     path.getValue()[name].isJS = true;
     path.getValue()[name].forceSingleQuote = forceSingleQuote;
     path.getValue()[name].forceSingleLine = forceSingleLine;
+    path.getValue()[name].removeParentheses = removeParentheses;
     return path.call(print, name);
 }
 

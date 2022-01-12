@@ -1,0 +1,9 @@
+{#each [1, 2] as foo}
+    {@const bar =
+        foo}
+    {foo}{bar}
+{/each}
+
+{#await aPromise then result}
+    {@const bar = result ? 'some super long text which will force the ternary to break' : 'etc etc'}
+{/await}
