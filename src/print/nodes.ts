@@ -4,6 +4,7 @@ export interface BaseNode {
     isJS?: boolean;
     forceSingleQuote?: boolean;
     forceSingleLine?: boolean;
+    removeParentheses?: boolean;
 }
 
 export interface FragmentNode extends BaseNode {
@@ -260,6 +261,11 @@ export interface SlotTemplateNode extends BaseNode {
     children: Node[];
 }
 
+export interface ConstTagNode extends BaseNode {
+    type: 'ConstTag';
+    expression: Node;
+}
+
 export type Node =
     | FragmentNode
     | ElementNode
@@ -301,7 +307,8 @@ export type Node =
     | ModuleScriptNode
     | BodyNode
     | OptionsNode
-    | SlotTemplateNode;
+    | SlotTemplateNode
+    | ConstTagNode;
 
 /**
  * The Svelte AST root node

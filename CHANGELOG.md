@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.6.0 (Unreleased)
+
+* (feat) Support `@const` tag ([#272](https://github.com/sveltejs/prettier-plugin-svelte/issues/272))
+
 ## 2.5.1
 
 * (fix) Better handling of destructured values with defaults in `{#each}` and `{#await}` blocks ([#269](https://github.com/sveltejs/prettier-plugin-svelte/issues/269))

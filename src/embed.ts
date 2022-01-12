@@ -2,7 +2,7 @@ import { Doc, doc, FastPath, ParserOptions } from 'prettier';
 import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { PrintFn } from './print';
-import { isLine, trimRight } from './print/doc-helpers';
+import { isLine, removeParentheses, trimRight } from './print/doc-helpers';
 import {
     getAttributeTextValue,
     getLeadingComment,
@@ -36,8 +36,14 @@ export function embed(
                 embeddedOptions.singleQuote = true;
             }
 
-            const docs = textToDoc(forceIntoExpression(getText(node, options)), embeddedOptions);
-            return node.forceSingleLine ? removeLines(docs) : docs;
+            let docs = textToDoc(forceIntoExpression(getText(node, options)), embeddedOptions);
+            if (node.forceSingleLine) {
+                docs = removeLines(docs);
+            }
+            if (node.removeParentheses) {
+                docs = removeParentheses(docs);
+            }
+            return docs;
         } catch (e) {
             return getText(node, options);
         }
