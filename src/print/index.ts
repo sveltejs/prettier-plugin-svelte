@@ -44,6 +44,7 @@ import {
     IfBlockNode,
     Node,
     OptionsNode,
+    StyleDirectiveNode,
     TextNode,
 } from './nodes';
 
@@ -572,6 +573,46 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     ? ''
                     : concat(['=', ...printJsExpression()]),
             ]);
+        case 'StyleDirective':
+            if (isOrCanBeConvertedToShorthand(node)) {
+                if (options.svelteStrictMode) {
+                    return concat([line, 'style:', node.name, '="{', node.name, '}"']);
+                } else if (options.svelteAllowShorthand) {
+                    return concat([line, 'style:', node.name]);
+                } else {
+                    return concat([line, 'style:', node.name, '={', node.name, '}']);
+                }
+            } else {
+                if (node.value === true) {
+                    return concat([line, 'style:', node.name]);
+                }
+
+                const quotes = !isLoneMustacheTag(node.value) || options.svelteStrictMode;
+                const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
+                if (quotes) {
+                    return concat([line, 'style:', node.name, '=', '"', attrNodeValue, '"']);
+                } else {
+                    return concat([line, 'style:', node.name, '=', attrNodeValue]);
+                }
+            }
+        // console.log(JSON.stringify(node, null, 2));
+        // const reees = concat([
+        //     line,
+        //     'style:',
+        //     node.name,
+        //     (node.expression as any).type === 'TemplateLiteral' &&
+        //     (node.expression as any).expressions.length === 0
+        //         ? // The Svelte parser transforms style:foo="bar" into a template literal, which we need to handle as a string
+        //           concat(['="', (node.expression as any).quasis[0].value.raw, '"'])
+        //         : node.expression.type === 'Identifier' && node.expression.name === node.name
+        //         ? ''
+        //         : concat(['=', ...printJsExpression()]),
+        // ]);
+        // console.log(JSON.stringify(reees, null, 2));
+        // console.log('---1');
+        // console.log(JSON.stringify(printJsExpression(), null, 2));
+        // console.log('---2');
+        // return reees;
         case 'Let':
             return concat([
                 line,
@@ -732,7 +773,7 @@ function printAttributeNodeValue(
     path: FastPath<any>,
     print: PrintFn,
     quotes: boolean,
-    node: AttributeNode,
+    node: AttributeNode | StyleDirectiveNode,
 ) {
     const valueDocs = path.map((childPath) => childPath.call(print), 'value');
 

@@ -119,6 +119,12 @@ export interface ClassNode extends BaseNode {
     expression: Node;
 }
 
+export interface StyleDirectiveNode extends BaseNode {
+    type: 'StyleDirective';
+    name: string;
+    value: Node[] | true;
+}
+
 export interface LetNode extends BaseNode {
     type: 'Let';
     name: string;
@@ -285,6 +291,7 @@ export type Node =
     | EventHandlerNode
     | BindingNode
     | ClassNode
+    | StyleDirectiveNode
     | LetNode
     | DebugTagNode
     | RefNode

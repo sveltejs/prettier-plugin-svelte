@@ -3,6 +3,7 @@
 ## 2.6.0 (Unreleased)
 
 * (feat) Support `@const` tag ([#272](https://github.com/sveltejs/prettier-plugin-svelte/issues/272))
+* (feat) Support `style` directive ([#273](https://github.com/sveltejs/prettier-plugin-svelte/issues/273))
 
 ## 2.5.1
 
