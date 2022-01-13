@@ -20,6 +20,7 @@ import {
     ThenBlockNode,
     CommentNode,
     SlotTemplateNode,
+    StyleDirectiveNode,
 } from './nodes';
 import { blockElements, TagName } from '../lib/elements';
 import { FastPath, ParserOptions } from 'prettier';
@@ -281,7 +282,7 @@ export function isAttributeShorthand(node: true | Node[]): node is [AttributeSho
 /**
  * True if node is of type `{a}` or `a={a}`
  */
-export function isOrCanBeConvertedToShorthand(node: AttributeNode): boolean {
+export function isOrCanBeConvertedToShorthand(node: AttributeNode | StyleDirectiveNode): boolean {
     if (isAttributeShorthand(node.value)) {
         return true;
     }
