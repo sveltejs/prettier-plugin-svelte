@@ -1,9 +1,9 @@
 # prettier-plugin-svelte changelog
 
-## 2.6.0 (Unreleased)
+## 2.6.0
 
-* (feat) Support `@const` tag ([#272](https://github.com/sveltejs/prettier-plugin-svelte/issues/272))
-* (feat) Support `style` directive (requires Svelte 3.46.1 or later) ([#274](https://github.com/sveltejs/prettier-plugin-svelte/issues/274))
+* (feat) Support `{@const}` tag ([#272](https://github.com/sveltejs/prettier-plugin-svelte/issues/272))
+* (feat) Support `style:` directive (requires Svelte 3.46.1 or later) ([#274](https://github.com/sveltejs/prettier-plugin-svelte/issues/274))
 
 ## 2.5.1
 
