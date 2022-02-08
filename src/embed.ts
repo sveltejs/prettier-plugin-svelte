@@ -15,7 +15,7 @@ import {
 import { ElementNode, Node } from './print/nodes';
 
 const {
-    builders: { concat, hardline, group, indent, literalline },
+    builders: { hardline, group, indent, literalline },
     utils: { removeLines },
 } = doc;
 
@@ -114,7 +114,7 @@ function preformattedBody(str: string): Doc {
 
     // If we do not start with a new line prettier might try to break the opening tag
     // to keep it together with the string. Use a literal line to skip indentation.
-    return concat([literalline, str.replace(firstNewline, '').replace(lastNewline, ''), hardline]);
+    return [literalline, str.replace(firstNewline, '').replace(lastNewline, ''), hardline];
 }
 
 function getSnippedContent(node: Node) {
@@ -150,13 +150,13 @@ function formatBodyContent(
                 .split('\n')
                 .map((line) => (line ? whitespace + line : line))
                 .join('\n');
-            return concat([hardline, pugBody]);
+            return [hardline, pugBody];
         }
 
         const indentIfDesired = (doc: Doc) =>
             options.svelteIndentScriptAndStyle ? indent(doc) : doc;
         trimRight([body], isLine);
-        return concat([indentIfDesired(concat([hardline, body])), hardline]);
+        return [indentIfDesired([hardline, body]), hardline];
     } catch (error) {
         if (process.env.PRETTIER_DEBUG) {
             throw error;
@@ -201,28 +201,22 @@ function embedTag(
             : hardline
         : preformattedBody(content);
 
-    const attributes = concat(
-        path.map(
-            (childPath) =>
-                childPath.getNode().name !== snippedTagContentAttribute
-                    ? childPath.call(print)
-                    : '',
-            'attributes',
-        ),
+    const attributes = path.map(
+        (childPath) =>
+            childPath.getNode().name !== snippedTagContentAttribute ? childPath.call(print) : '',
+        'attributes',
     );
 
-    let result: Doc = group(
-        concat(['<', tag, indent(group(attributes)), '>', body, '</', tag, '>']),
-    );
+    let result: Doc = group(['<', tag, indent(group(attributes)), '>', body, '</', tag, '>']);
 
     if (isTopLevel) {
         // top level embedded nodes have been moved from their normal position in the
         // node tree. if there is a comment referring to it, it must be recreated at
         // the new position.
         if (previousComment) {
-            result = concat(['<!--', previousComment.data, '-->', hardline, result, hardline]);
+            result = ['<!--', previousComment.data, '-->', hardline, result, hardline];
         } else {
-            result = concat([result, hardline]);
+            result = [result, hardline];
         }
     }
 

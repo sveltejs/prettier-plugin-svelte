@@ -48,19 +48,8 @@ import {
     TextNode,
 } from './nodes';
 
-const {
-    concat,
-    join,
-    line,
-    group,
-    indent,
-    dedent,
-    softline,
-    hardline,
-    fill,
-    breakParent,
-    literalline,
-} = doc.builders;
+const { join, line, group, indent, dedent, softline, hardline, fill, breakParent, literalline } =
+    doc.builders;
 
 export type PrintFn = (path: FastPath) => Doc;
 
@@ -79,7 +68,7 @@ let ignoreRange = false;
 let svelteOptionsDoc: Doc | undefined;
 
 function groupConcat(contents: doc.builders.Doc[]): doc.builders.Doc {
-    return group(concat(contents));
+    return group(contents);
 }
 
 export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
@@ -109,13 +98,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         if (ignoreNext) {
             ignoreNext = false;
         }
-        return concat(
-            flatten(
-                options.originalText
-                    .slice(options.locStart(node), options.locEnd(node))
-                    .split('\n')
-                    .map((o, i) => (i == 0 ? [o] : [literalline, o])),
-            ),
+        return flatten(
+            options.originalText
+                .slice(options.locStart(node), options.locEnd(node))
+                .split('\n')
+                .map((o, i) => (i == 0 ? [o] : [literalline, o])),
         );
     }
 
@@ -152,7 +139,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     const hasOneOrMoreNewlines = /\n/.test(getUnencodedText(node));
                     const hasTwoOrMoreNewlines = /\n\r?\s*\n\r?/.test(getUnencodedText(node));
                     if (hasTwoOrMoreNewlines) {
-                        return concat([hardline, hardline]);
+                        return [hardline, hardline];
                     }
                     if (hasOneOrMoreNewlines) {
                         return hardline;
@@ -175,7 +162,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 if (path.getParentNode().type === 'Attribute') {
                     // Direct child of attribute value -> add literallines at end of lines
                     // so that other things don't break in unexpected places
-                    return concat(replaceEndOfLineWith(rawText, literalline));
+                    return replaceEndOfLineWith(rawText, literalline);
                 }
                 return rawText;
             }
@@ -201,7 +188,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             const attributes = path.map((childPath) => childPath.call(print), 'attributes');
             const possibleThisBinding =
                 node.type === 'InlineComponent' && node.expression
-                    ? concat([line, 'this=', ...printJsExpression()])
+                    ? [line, 'this=', ...printJsExpression()]
                     : '';
 
             if (isSelfClosingTag) {
@@ -280,10 +267,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             }
 
             if (hugStart && hugEnd) {
-                const huggedContent = concat([
-                    softline,
-                    groupConcat(['>', body(), `</${node.name}`]),
-                ]);
+                const huggedContent = [softline, groupConcat(['>', body(), `</${node.name}`])];
                 const omitSoftlineBeforeClosingTag =
                     (isEmpty && !bracketSameLine) ||
                     canOmitSoftlineBeforeClosingTag(node, path, options);
@@ -330,7 +314,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             if (hugStart) {
                 return groupConcat([
                     ...openingTag,
-                    indent(concat([softline, groupConcat(['>', body()])])),
+                    indent([softline, groupConcat(['>', body()])]),
                     noHugSeparatorEnd,
                     `</${node.name}>`,
                 ]);
@@ -340,7 +324,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 return groupConcat([
                     ...openingTag,
                     '>',
-                    indent(concat([noHugSeparatorStart, groupConcat([body(), `</${node.name}`])])),
+                    indent([noHugSeparatorStart, groupConcat([body(), `</${node.name}`])]),
                     canOmitSoftlineBeforeClosingTag(node, path, options) ? '' : softline,
                     '>',
                 ]);
@@ -353,7 +337,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return groupConcat([
                 ...openingTag,
                 '>',
-                indent(concat([noHugSeparatorStart, body()])),
+                indent([noHugSeparatorStart, body()]),
                 noHugSeparatorEnd,
                 `</${node.name}>`,
             ]);
@@ -377,28 +361,28 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Attribute': {
             if (isOrCanBeConvertedToShorthand(node)) {
                 if (options.svelteStrictMode) {
-                    return concat([line, node.name, '="{', node.name, '}"']);
+                    return [line, node.name, '="{', node.name, '}"'];
                 } else if (options.svelteAllowShorthand) {
-                    return concat([line, '{', node.name, '}']);
+                    return [line, '{', node.name, '}'];
                 } else {
-                    return concat([line, node.name, '={', node.name, '}']);
+                    return [line, node.name, '={', node.name, '}'];
                 }
             } else {
                 if (node.value === true) {
-                    return concat([line, node.name]);
+                    return [line, node.name];
                 }
 
                 const quotes = !isLoneMustacheTag(node.value) || options.svelteStrictMode;
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
-                    return concat([line, node.name, '=', '"', attrNodeValue, '"']);
+                    return [line, node.name, '=', '"', attrNodeValue, '"'];
                 } else {
-                    return concat([line, node.name, '=', attrNodeValue]);
+                    return [line, node.name, '=', attrNodeValue];
                 }
             }
         }
         case 'MustacheTag':
-            return concat([
+            return [
                 '{',
                 printJS(
                     path,
@@ -409,7 +393,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     'expression',
                 ),
                 '}',
-            ]);
+            ];
         case 'IfBlock': {
             const def: Doc[] = [
                 '{#if ',
@@ -424,7 +408,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             def.push('{/if}');
 
-            return concat([groupConcat(def), breakParent]);
+            return [groupConcat(def), breakParent];
         }
         case 'ElseBlock': {
             // Else if
@@ -452,10 +436,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 if (ifNode.else) {
                     def.push(path.map((ifPath) => ifPath.call(print, 'else'), 'children')[0]);
                 }
-                return concat(def);
+                return def;
             }
 
-            return concat(['{:else}', printSvelteBlockChildren(path, print, options)]);
+            return ['{:else}', printSvelteBlockChildren(path, print, options)];
         }
         case 'EachBlock': {
             const def: Doc[] = [
@@ -481,7 +465,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             def.push('{/each}');
 
-            return concat([groupConcat(def), breakParent]);
+            return [groupConcat(def), breakParent];
         }
         case 'AwaitBlock': {
             const hasPendingBlock = node.pending.children.some((n) => !isEmptyTextNode(n));
@@ -539,64 +523,62 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             def.push('{/key}');
 
-            return concat([groupConcat(def), breakParent]);
+            return [groupConcat(def), breakParent];
         }
         case 'ThenBlock':
         case 'PendingBlock':
         case 'CatchBlock':
             return printSvelteBlockChildren(path, print, options);
         case 'EventHandler':
-            return concat([
+            return [
                 line,
                 'on:',
                 node.name,
-                node.modifiers && node.modifiers.length
-                    ? concat(['|', join('|', node.modifiers)])
-                    : '',
-                node.expression ? concat(['=', ...printJsExpression()]) : '',
-            ]);
+                node.modifiers && node.modifiers.length ? ['|', join('|', node.modifiers)] : '',
+                node.expression ? ['=', ...printJsExpression()] : '',
+            ];
         case 'Binding':
-            return concat([
+            return [
                 line,
                 'bind:',
                 node.name,
                 node.expression.type === 'Identifier' && node.expression.name === node.name
                     ? ''
-                    : concat(['=', ...printJsExpression()]),
-            ]);
+                    : ['=', ...printJsExpression()],
+            ];
         case 'Class':
-            return concat([
+            return [
                 line,
                 'class:',
                 node.name,
                 node.expression.type === 'Identifier' && node.expression.name === node.name
                     ? ''
-                    : concat(['=', ...printJsExpression()]),
-            ]);
+                    : ['=', ...printJsExpression()],
+            ];
         case 'StyleDirective':
             if (isOrCanBeConvertedToShorthand(node)) {
                 if (options.svelteStrictMode) {
-                    return concat([line, 'style:', node.name, '="{', node.name, '}"']);
+                    return [line, 'style:', node.name, '="{', node.name, '}"'];
                 } else if (options.svelteAllowShorthand) {
-                    return concat([line, 'style:', node.name]);
+                    return [line, 'style:', node.name];
                 } else {
-                    return concat([line, 'style:', node.name, '={', node.name, '}']);
+                    return [line, 'style:', node.name, '={', node.name, '}'];
                 }
             } else {
                 if (node.value === true) {
-                    return concat([line, 'style:', node.name]);
+                    return [line, 'style:', node.name];
                 }
 
                 const quotes = !isLoneMustacheTag(node.value) || options.svelteStrictMode;
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
-                    return concat([line, 'style:', node.name, '=', '"', attrNodeValue, '"']);
+                    return [line, 'style:', node.name, '=', '"', attrNodeValue, '"'];
                 } else {
-                    return concat([line, 'style:', node.name, '=', attrNodeValue]);
+                    return [line, 'style:', node.name, '=', attrNodeValue];
                 }
             }
         case 'Let':
-            return concat([
+            return [
                 line,
                 'let:',
                 node.name,
@@ -604,18 +586,18 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 !node.expression ||
                 (node.expression.type === 'Identifier' && node.expression.name === node.name)
                     ? ''
-                    : concat(['=', ...printJsExpression()]),
-            ]);
+                    : ['=', ...printJsExpression()],
+            ];
         case 'DebugTag':
-            return concat([
+            return [
                 '{@debug',
                 node.identifiers.length > 0
-                    ? concat([' ', join(', ', path.map(print, 'identifiers'))])
+                    ? [' ', join(', ', path.map(print, 'identifiers'))]
                     : '',
                 '}',
-            ]);
+            ];
         case 'Ref':
-            return concat([line, 'ref:', node.name]);
+            return [line, 'ref:', node.name];
         case 'Comment': {
             const nodeAfterComment = getNextNode(path);
 
@@ -642,49 +624,29 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         }
         case 'Transition':
             const kind = node.intro && node.outro ? 'transition' : node.intro ? 'in' : 'out';
-            return concat([
+            return [
                 line,
                 kind,
                 ':',
                 node.name,
-                node.modifiers && node.modifiers.length
-                    ? concat(['|', join('|', node.modifiers)])
-                    : '',
-                node.expression ? concat(['=', ...printJsExpression()]) : '',
-            ]);
+                node.modifiers && node.modifiers.length ? ['|', join('|', node.modifiers)] : '',
+                node.expression ? ['=', ...printJsExpression()] : '',
+            ];
         case 'Action':
-            return concat([
-                line,
-                'use:',
-                node.name,
-                node.expression ? concat(['=', ...printJsExpression()]) : '',
-            ]);
+            return [line, 'use:', node.name, node.expression ? ['=', ...printJsExpression()] : ''];
         case 'Animation':
-            return concat([
+            return [
                 line,
                 'animate:',
                 node.name,
-                node.expression ? concat(['=', ...printJsExpression()]) : '',
-            ]);
+                node.expression ? ['=', ...printJsExpression()] : '',
+            ];
         case 'RawMustacheTag':
-            return concat([
-                '{@html ',
-                printJS(path, print, false, false, false, 'expression'),
-                '}',
-            ]);
+            return ['{@html ', printJS(path, print, false, false, false, 'expression'), '}'];
         case 'Spread':
-            return concat([
-                line,
-                '{...',
-                printJS(path, print, false, false, false, 'expression'),
-                '}',
-            ]);
+            return [line, '{...', printJS(path, print, false, false, false, 'expression'), '}'];
         case 'ConstTag':
-            return concat([
-                '{@const ',
-                printJS(path, print, false, false, true, 'expression'),
-                '}',
-            ]);
+            return ['{@const ', printJS(path, print, false, false, true, 'expression'), '}'];
     }
 
     console.error(JSON.stringify(node, null, 4));
@@ -760,7 +722,7 @@ function printAttributeNodeValue(
     const valueDocs = path.map((childPath) => childPath.call(print), 'value');
 
     if (!quotes || !formattableAttributes.includes(node.name)) {
-        return concat(valueDocs);
+        return valueDocs;
     } else {
         return indent(groupConcat(trim(valueDocs, isLine)));
     }
@@ -797,10 +759,7 @@ function printSvelteBlockChildren(path: FastPath, print: PrintFn, options: Parse
         trimTextNodeRight(lastChild);
     }
 
-    return concat([
-        indent(concat([startline, group(printChildren(path, print, options))])),
-        endline,
-    ]);
+    return [indent([startline, group(printChildren(path, print, options))]), endline];
 }
 
 function printPre(
@@ -823,12 +782,12 @@ function printPre(
             result.push(path.call(print, 'children', i));
         }
     }
-    return concat(result);
+    return result;
 }
 
 function printChildren(path: FastPath, print: PrintFn, options: ParserOptions): Doc {
     if (isPreTagContent(path)) {
-        return concat(path.map(print, 'children'));
+        return path.map(print, 'children');
     }
 
     const childNodes: Node[] = prepareChildren(path.getValue().children, path, print);
@@ -862,7 +821,7 @@ function printChildren(path: FastPath, print: PrintFn, options: ParserOptions): 
         childDocs.push(breakParent);
     }
 
-    return concat(childDocs);
+    return childDocs;
 
     function printChild(idx: number): Doc {
         return path.call(print, 'children', idx);
