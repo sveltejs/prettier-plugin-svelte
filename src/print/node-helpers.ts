@@ -397,7 +397,10 @@ export function shouldHugStart(
     }
 
     const firstChild = children[0];
-    return !isTextNodeStartingWithWhitespace(firstChild);
+    return !(
+        isTextNodeStartingWithWhitespace(firstChild) ||
+        options.htmlWhitespaceSensitivity === 'ignore'
+    );
 }
 
 /**
@@ -427,7 +430,9 @@ export function shouldHugEnd(
     }
 
     const lastChild = children[children.length - 1];
-    return !isTextNodeEndingWithWhitespace(lastChild);
+    return !(
+        isTextNodeEndingWithWhitespace(lastChild) || options.htmlWhitespaceSensitivity === 'ignore'
+    );
 }
 
 /**
