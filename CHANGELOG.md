@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.6.1 (Unreleased)
+
+* (fix) respect whitespace "ignore" setting for components ([#281](https://github.com/sveltejs/prettier-plugin-svelte/issues/281)) 
+
 ## 2.6.0
 
 * (feat) Support `{@const}` tag ([#272](https://github.com/sveltejs/prettier-plugin-svelte/issues/272))

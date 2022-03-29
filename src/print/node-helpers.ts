@@ -396,6 +396,10 @@ export function shouldHugStart(
         return true;
     }
 
+    if (options.htmlWhitespaceSensitivity === 'ignore') {
+        return false;
+    }
+
     const firstChild = children[0];
     return !isTextNodeStartingWithWhitespace(firstChild);
 }
@@ -424,6 +428,10 @@ export function shouldHugEnd(
     const children: Node[] = node.children;
     if (children.length === 0) {
         return true;
+    }
+
+    if (options.htmlWhitespaceSensitivity === 'ignore') {
+        return false;
     }
 
     const lastChild = children[children.length - 1];
