@@ -396,11 +396,12 @@ export function shouldHugStart(
         return true;
     }
 
+    if (options.htmlWhitespaceSensitivity === 'ignore') {
+        return false;
+    }
+
     const firstChild = children[0];
-    return !(
-        isTextNodeStartingWithWhitespace(firstChild) ||
-        options.htmlWhitespaceSensitivity === 'ignore'
-    );
+    return !isTextNodeStartingWithWhitespace(firstChild);
 }
 
 /**
@@ -429,10 +430,12 @@ export function shouldHugEnd(
         return true;
     }
 
+    if (options.htmlWhitespaceSensitivity === 'ignore') {
+        return false;
+    }
+
     const lastChild = children[children.length - 1];
-    return !(
-        isTextNodeEndingWithWhitespace(lastChild) || options.htmlWhitespaceSensitivity === 'ignore'
-    );
+    return !isTextNodeEndingWithWhitespace(lastChild);
 }
 
 /**
