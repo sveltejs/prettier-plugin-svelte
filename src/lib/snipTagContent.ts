@@ -16,7 +16,7 @@ export function snipScriptAndStyleTagContent(source: string): string {
         const indexes: [number, number][] = [];
         let match = null;
         while ((match = regex.exec(source)) != null) {
-            if (!source.slice(match.index, match.index + 10).startsWith('<!--')) {
+            if (source.slice(match.index, match.index + 4) !== '<!--') {
                 indexes.push([match.index, regex.lastIndex]);
             }
         }
