@@ -202,6 +202,25 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             const possibleThisBinding =
                 node.type === 'InlineComponent' && node.expression
                     ? concat([line, 'this=', ...printJsExpression()])
+                    : node.type === 'Element' && node.tag
+                    ? concat([
+                          line,
+                          'this=',
+                          ...(typeof node.tag === 'string'
+                              ? [`"${node.tag}"`]
+                              : [
+                                    open,
+                                    printJS(
+                                        path,
+                                        print,
+                                        options.svelteStrictMode,
+                                        false,
+                                        false,
+                                        'tag',
+                                    ),
+                                    close,
+                                ]),
+                      ])
                     : '';
 
             if (isSelfClosingTag) {
