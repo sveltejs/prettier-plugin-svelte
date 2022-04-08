@@ -17,6 +17,10 @@ export interface ElementNode extends BaseNode {
     name: string;
     attributes: Node[];
     children: Node[];
+    /**
+     * only on svelte:element
+     */
+    tag?: Node;
 }
 
 export interface TextNode extends BaseNode {
