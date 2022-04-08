@@ -1,9 +1,9 @@
 # prettier-plugin-svelte changelog
 
-## 2.7.0 (Unreleased)
+## 2.7.0
 
-* (feat) support `<svelte:element>` ([#285](https://github.com/sveltejs/prettier-plugin-svelte/pull/285)) 
-* (fix) respect whitespace "ignore" setting for components ([#281](https://github.com/sveltejs/prettier-plugin-svelte/issues/281)) 
+* (feat) Support `<svelte:element>` ([#285](https://github.com/sveltejs/prettier-plugin-svelte/pull/285))
+* (fix) Respect `htmlWhitespaceSensitivity: 'ignore'` setting in components ([#281](https://github.com/sveltejs/prettier-plugin-svelte/issues/281))
 
 ## 2.6.0
 
