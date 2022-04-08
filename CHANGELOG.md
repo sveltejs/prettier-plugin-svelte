@@ -2,7 +2,7 @@
 
 ## 2.7.0 (Unreleased)
 
-* (feat) support `<svelte:element>` ([#284](https://github.com/sveltejs/prettier-plugin-svelte/pull/284)) 
+* (feat) support `<svelte:element>` ([#285](https://github.com/sveltejs/prettier-plugin-svelte/pull/285)) 
 * (fix) respect whitespace "ignore" setting for components ([#281](https://github.com/sveltejs/prettier-plugin-svelte/issues/281)) 
 
 ## 2.6.0
