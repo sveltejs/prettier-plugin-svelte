@@ -93,7 +93,7 @@ Example:
 
 > Deprecated since 2.5.0. Use Prettier 2.4.0 and [bracketSameLine](https://prettier.io/docs/en/options.html#bracket-line) instead.
 
-Put the `>` of a multiline element on a new line. Roughly the Svelte equivalent of the [jsxBracketSameLine](https://prettier.io/docs/en/options.html#jsx-brackets) rule. Setting this to `false` will have no effect for whitespace-sensitive tags (inline elements) when there's no whitespace between the `>` of the start tag and the inner content, or when there's no whitespace after the `>` of the end tag. You can read more about HTML whitespace sensitivity [here](https://prettier.io/blog/2018/11/07/1.15.0.html#whitespace-sensitive-formatting). You can adjust whitespace sensitivity through [this setting](https://prettier.io/docs/en/options.html#html-whitespace-sensitivity). 
+Put the `>` of a multiline element on a new line. Roughly the Svelte equivalent of the [jsxBracketSameLine](https://prettier.io/docs/en/options.html#jsx-brackets) rule. Setting this to `false` will have no effect for whitespace-sensitive tags (inline elements) when there's no whitespace between the `>` of the start tag and the inner content, or when there's no whitespace after the `>` of the end tag. You can read more about HTML whitespace sensitivity [here](https://prettier.io/blog/2018/11/07/1.15.0.html#whitespace-sensitive-formatting). You can adjust whitespace sensitivity through [this setting](https://prettier.io/docs/en/options.html#html-whitespace-sensitivity).
 
 Example:
 
@@ -148,3 +148,30 @@ Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte
   "svelteIndentScriptAndStyle": false
 }
 ```
+
+## Usage with Tailwind Prettier Plugin
+
+There's a Tailwind Prettier Plugin to format classes in a certain way. This plugin bundles `prettier-plugin-svelte`, so if you want to use the Tailwind plugin, uninstall `prettier-plugin-svelte` and use the Tailwind plugin instead. If you are using VS Code, make sure to have the Prettier extension installed and switch the default formatter for Svelte files to it.
+
+More info: https://github.com/tailwindlabs/prettier-plugin-tailwindcss#compatibility-with-other-prettier-plugins
+
+## FAQ
+
+### Why is the closing or opening tag (`>` or `<`) hugging the inner tag or text?
+
+If you are wondering why this code
+
+```html
+<span><span>assume very long text</span></span>
+```
+
+becomes this
+
+```html
+<span
+      ><span>assume very long text</span
+    ></span
+>
+```
+
+it's because of whitespsace sensitivity. For inline elements (`span`, `a`, etc) it makes a difference when rendered if there's a space (or newline) between them. Since we don't know if your slot inside your Svelte component is surrounded by inline elements, Svelte components are treated as such, too. You can adjust this whitespace sensitivity through [this setting](https://prettier.io/docs/en/options.html#html-whitespace-sensitivity). You can read more about HTML whitespace sensitivity [here](https://prettier.io/blog/2018/11/07/1.15.0.html#whitespace-sensitive-formatting).

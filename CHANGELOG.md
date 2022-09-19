@@ -1,5 +1,15 @@
 # prettier-plugin-svelte changelog
 
+## 2.7.0
+
+* (feat) Support `<svelte:element>` ([#285](https://github.com/sveltejs/prettier-plugin-svelte/pull/285))
+* (fix) Respect `htmlWhitespaceSensitivity: 'ignore'` setting in components ([#281](https://github.com/sveltejs/prettier-plugin-svelte/issues/281))
+
+## 2.6.0
+
+* (feat) Support `{@const}` tag ([#272](https://github.com/sveltejs/prettier-plugin-svelte/issues/272))
+* (feat) Support `style:` directive (requires Svelte 3.46.1 or later) ([#274](https://github.com/sveltejs/prettier-plugin-svelte/issues/274))
+
 ## 2.5.1
 
 * (fix) Better handling of destructured values with defaults in `{#each}` and `{#await}` blocks ([#269](https://github.com/sveltejs/prettier-plugin-svelte/issues/269))

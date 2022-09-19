@@ -4,6 +4,7 @@ export interface BaseNode {
     isJS?: boolean;
     forceSingleQuote?: boolean;
     forceSingleLine?: boolean;
+    removeParentheses?: boolean;
 }
 
 export interface FragmentNode extends BaseNode {
@@ -16,6 +17,10 @@ export interface ElementNode extends BaseNode {
     name: string;
     attributes: Node[];
     children: Node[];
+    /**
+     * only on svelte:element
+     */
+    tag?: Node;
 }
 
 export interface TextNode extends BaseNode {
@@ -116,6 +121,12 @@ export interface ClassNode extends BaseNode {
     type: 'Class';
     name: string;
     expression: Node;
+}
+
+export interface StyleDirectiveNode extends BaseNode {
+    type: 'StyleDirective';
+    name: string;
+    value: Node[] | true;
 }
 
 export interface LetNode extends BaseNode {
@@ -260,6 +271,11 @@ export interface SlotTemplateNode extends BaseNode {
     children: Node[];
 }
 
+export interface ConstTagNode extends BaseNode {
+    type: 'ConstTag';
+    expression: Node;
+}
+
 export type Node =
     | FragmentNode
     | ElementNode
@@ -279,6 +295,7 @@ export type Node =
     | EventHandlerNode
     | BindingNode
     | ClassNode
+    | StyleDirectiveNode
     | LetNode
     | DebugTagNode
     | RefNode
@@ -301,7 +318,8 @@ export type Node =
     | ModuleScriptNode
     | BodyNode
     | OptionsNode
-    | SlotTemplateNode;
+    | SlotTemplateNode
+    | ConstTagNode;
 
 /**
  * The Svelte AST root node

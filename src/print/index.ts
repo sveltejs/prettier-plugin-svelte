@@ -44,6 +44,7 @@ import {
     IfBlockNode,
     Node,
     OptionsNode,
+    StyleDirectiveNode,
     TextNode,
 } from './nodes';
 
@@ -96,7 +97,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     const [open, close] = options.svelteStrictMode ? ['"{', '}"'] : ['{', '}'];
     const printJsExpression = () => [
         open,
-        printJS(path, print, options.svelteStrictMode, false, 'expression'),
+        printJS(path, print, options.svelteStrictMode, false, false, 'expression'),
         close,
     ];
     const node = n as Node;
@@ -201,6 +202,25 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             const possibleThisBinding =
                 node.type === 'InlineComponent' && node.expression
                     ? concat([line, 'this=', ...printJsExpression()])
+                    : node.type === 'Element' && node.tag
+                    ? concat([
+                          line,
+                          'this=',
+                          ...(typeof node.tag === 'string'
+                              ? [`"${node.tag}"`]
+                              : [
+                                    open,
+                                    printJS(
+                                        path,
+                                        print,
+                                        options.svelteStrictMode,
+                                        false,
+                                        false,
+                                        'tag',
+                                    ),
+                                    close,
+                                ]),
+                      ])
                     : '';
 
             if (isSelfClosingTag) {
@@ -402,7 +422,14 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'MustacheTag':
             return concat([
                 '{',
-                printJS(path, print, isInsideQuotedAttribute(path, options), false, 'expression'),
+                printJS(
+                    path,
+                    print,
+                    isInsideQuotedAttribute(path, options),
+                    false,
+                    false,
+                    'expression',
+                ),
                 '}',
             ]);
         case 'IfBlock': {
@@ -568,6 +595,28 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     ? ''
                     : concat(['=', ...printJsExpression()]),
             ]);
+        case 'StyleDirective':
+            if (isOrCanBeConvertedToShorthand(node)) {
+                if (options.svelteStrictMode) {
+                    return concat([line, 'style:', node.name, '="{', node.name, '}"']);
+                } else if (options.svelteAllowShorthand) {
+                    return concat([line, 'style:', node.name]);
+                } else {
+                    return concat([line, 'style:', node.name, '={', node.name, '}']);
+                }
+            } else {
+                if (node.value === true) {
+                    return concat([line, 'style:', node.name]);
+                }
+
+                const quotes = !isLoneMustacheTag(node.value) || options.svelteStrictMode;
+                const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
+                if (quotes) {
+                    return concat([line, 'style:', node.name, '=', '"', attrNodeValue, '"']);
+                } else {
+                    return concat([line, 'style:', node.name, '=', attrNodeValue]);
+                }
+            }
         case 'Let':
             return concat([
                 line,
@@ -640,9 +689,24 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.expression ? concat(['=', ...printJsExpression()]) : '',
             ]);
         case 'RawMustacheTag':
-            return concat(['{@html ', printJS(path, print, false, false, 'expression'), '}']);
+            return concat([
+                '{@html ',
+                printJS(path, print, false, false, false, 'expression'),
+                '}',
+            ]);
         case 'Spread':
-            return concat([line, '{...', printJS(path, print, false, false, 'expression'), '}']);
+            return concat([
+                line,
+                '{...',
+                printJS(path, print, false, false, false, 'expression'),
+                '}',
+            ]);
+        case 'ConstTag':
+            return concat([
+                '{@const ',
+                printJS(path, print, false, false, true, 'expression'),
+                '}',
+            ]);
     }
 
     console.error(JSON.stringify(node, null, 4));
@@ -713,7 +777,7 @@ function printAttributeNodeValue(
     path: FastPath<any>,
     print: PrintFn,
     quotes: boolean,
-    node: AttributeNode,
+    node: AttributeNode | StyleDirectiveNode,
 ) {
     const valueDocs = path.map((childPath) => childPath.call(print), 'value');
 
@@ -1054,7 +1118,7 @@ function splitTextToDocs(node: TextNode): Doc[] {
 }
 
 function printSvelteBlockJS(path: FastPath, print: PrintFn, name: string) {
-    return printJS(path, print, false, true, name);
+    return printJS(path, print, false, true, false, name);
 }
 
 function printJS(
@@ -1062,11 +1126,13 @@ function printJS(
     print: PrintFn,
     forceSingleQuote: boolean,
     forceSingleLine: boolean,
+    removeParentheses: boolean,
     name: string,
 ) {
     path.getValue()[name].isJS = true;
     path.getValue()[name].forceSingleQuote = forceSingleQuote;
     path.getValue()[name].forceSingleLine = forceSingleLine;
+    path.getValue()[name].removeParentheses = removeParentheses;
     return path.call(print, name);
 }
 
