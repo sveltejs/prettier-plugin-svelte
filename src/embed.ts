@@ -36,7 +36,14 @@ export function embed(
                 embeddedOptions.singleQuote = true;
             }
 
-            let docs = textToDoc(forceIntoExpression(getText(node, options)), embeddedOptions);
+            let docs = textToDoc(
+                forceIntoExpression(
+                    // If we have snipped content, it was done wrongly and we need to unsnip it.
+                    // This happens for example for {@html `<script>{foo}</script>`}
+                    getText(node, options, true),
+                ),
+                embeddedOptions,
+            );
             if (node.forceSingleLine) {
                 docs = removeLines(docs);
             }
@@ -45,7 +52,7 @@ export function embed(
             }
             return docs;
         } catch (e) {
-            return getText(node, options);
+            return getText(node, options, true);
         }
     }
 
