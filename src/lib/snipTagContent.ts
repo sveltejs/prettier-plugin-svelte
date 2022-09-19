@@ -34,11 +34,7 @@ export function snipScriptAndStyleTagContent(source: string): string {
         let newStyleMatchSpans = styleMatchSpans;
         // Replace valid matches
         const newSource = _source.replace(regex, (match, attributes, content, index) => {
-            if (
-                match.startsWith('<!--') ||
-                withinOtherSpan(index) ||
-                attributes.includes('type="application/') // this hints at <script type="application/ld+json" etc which are typically in non-top-level script tags
-            ) {
+            if (match.startsWith('<!--') || withinOtherSpan(index)) {
                 return match;
             }
             const encodedContent = Buffer.from(content).toString('base64');
