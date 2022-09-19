@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.7.1 (unreleased)
+
+* (fix) check for snipped content in JS expressions ([#290](https://github.com/sveltejs/prettier-plugin-svelte/issues/290))
+
 ## 2.7.0
 
 * (feat) Support `<svelte:element>` ([#285](https://github.com/sveltejs/prettier-plugin-svelte/pull/285))
