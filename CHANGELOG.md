@@ -1,8 +1,9 @@
 # prettier-plugin-svelte changelog
 
-## 2.7.1 (unreleased)
+## 2.7.1
 
 * (fix) check for snipped content in JS expressions ([#290](https://github.com/sveltejs/prettier-plugin-svelte/issues/290))
+* (fix) handle `<!DOCTYPE>` ([#298](https://github.com/sveltejs/prettier-plugin-svelte/issues/298))
 
 ## 2.7.0
 
