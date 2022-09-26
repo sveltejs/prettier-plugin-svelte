@@ -190,12 +190,14 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name === 'template' && !isNodeSupportedLanguage(node)
             );
             const isEmpty = node.children.every((child) => isEmptyTextNode(child));
+            const isDoctypeTag = node.name.toUpperCase() === '!DOCTYPE';
 
             const isSelfClosingTag =
                 isEmpty &&
                 (!options.svelteStrictMode ||
                     node.type !== 'Element' ||
-                    selfClosingTags.indexOf(node.name) !== -1);
+                    selfClosingTags.indexOf(node.name) !== -1 ||
+                    isDoctypeTag);
 
             // Order important: print attributes first
             const attributes = path.map((childPath) => childPath.call(print), 'attributes');
@@ -232,11 +234,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         groupConcat([
                             possibleThisBinding,
                             ...attributes,
-                            bracketSameLine ? '' : dedent(line),
+                            bracketSameLine || isDoctypeTag ? '' : dedent(line),
                         ]),
                     ),
 
-                    ...[bracketSameLine ? ' ' : '', `/>`],
+                    ...[bracketSameLine && !isDoctypeTag ? ' ' : '', `${isDoctypeTag ? '' : '/'}>`],
                 ]);
             }
 
