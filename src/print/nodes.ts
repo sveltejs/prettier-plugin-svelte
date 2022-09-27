@@ -45,6 +45,12 @@ export interface IdentifierNode extends BaseNode {
     name: string;
 }
 
+export interface LiteralNode extends BaseNode {
+    type: 'Literal';
+    data: string;
+    raw: string;
+}
+
 export interface AttributeShorthandNode extends BaseNode {
     type: 'AttributeShorthand';
     name: string;
@@ -283,6 +289,7 @@ export type Node =
     | MustacheTagNode
     | AttributeNode
     | IdentifierNode
+    | LiteralNode
     | AttributeShorthandNode
     | IfBlockNode
     | ElseBlockNode

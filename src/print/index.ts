@@ -392,6 +392,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             ]);
         case 'Identifier':
             return node.name;
+        case 'Literal':
+            return ' ' + node.raw;
         case 'AttributeShorthand': {
             return (node.expression as any).name;
         }
