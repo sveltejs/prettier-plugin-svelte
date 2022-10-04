@@ -10,6 +10,7 @@ export interface PluginOptions {
     svelteBracketNewLine: boolean;
     svelteAllowShorthand: boolean;
     svelteIndentScriptAndStyle: boolean;
+    svelteSingleAttributePerLine: boolean;
 }
 
 function makeChoice(choice: string) {
@@ -86,6 +87,14 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
         default: true,
         description:
             'Whether or not to indent the code inside <script> and <style> tags in Svelte files',
+    },
+    svelteSingleAttributePerLine: {
+        since: '',
+        category: 'Svelte',
+        type: 'boolean',
+        default: false,
+        description:
+            'Whether or not to enforce single attribute per line when there are multiple attributes',
     },
 };
 

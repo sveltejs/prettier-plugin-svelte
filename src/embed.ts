@@ -3,6 +3,7 @@ import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { PrintFn } from './print';
 import { isLine, removeParentheses, trimRight } from './print/doc-helpers';
+import { groupConcat, printWithPrependedAttributeLine } from './print/helpers';
 import {
     getAttributeTextValue,
     getLeadingComment,
@@ -12,10 +13,10 @@ import {
     isTypeScript,
     printRaw,
 } from './print/node-helpers';
-import { ElementNode, Node } from './print/nodes';
+import { ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
 
 const {
-    builders: { concat, hardline, group, indent, literalline },
+    builders: { concat, hardline, indent, literalline },
     utils: { removeLines },
 } = doc;
 
@@ -188,7 +189,7 @@ function embedTag(
     isTopLevel: boolean,
     options: ParserOptions,
 ) {
-    const node: Node = path.getNode();
+    const node: ScriptNode | StyleNode | ElementNode = path.getNode();
     const content =
         tag === 'template' ? printRaw(node as ElementNode, text) : getSnippedContent(node);
     const previousComment = getLeadingComment(path);
@@ -208,19 +209,17 @@ function embedTag(
             : hardline
         : preformattedBody(content);
 
-    const attributes = concat(
-        path.map(
-            (childPath) =>
-                childPath.getNode().name !== snippedTagContentAttribute
-                    ? childPath.call(print)
-                    : '',
-            'attributes',
+    const openingTag = groupConcat([
+        '<',
+        tag,
+        indent(
+            groupConcat(
+                path.map(printWithPrependedAttributeLine(node, options, print), 'attributes'),
+            ),
         ),
-    );
-
-    let result: Doc = group(
-        concat(['<', tag, indent(group(attributes)), '>', body, '</', tag, '>']),
-    );
+        '>',
+    ]);
+    let result = groupConcat([openingTag, body, '</', tag, '>']);
 
     if (isTopLevel) {
         // top level embedded nodes have been moved from their normal position in the

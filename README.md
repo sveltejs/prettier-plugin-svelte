@@ -137,15 +137,44 @@ Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte
 | ------- | ----------------------------------------- | ------------------------------------ |
 | `true`  | `--svelte-indent-script-and-style <bool>` | `svelteIndentScriptAndStyle: <bool>` |
 
+### Svelte Single Attribute Per Line
+
+Whether or not to enforce single attribute per line when there are multiple attributes.
+
+Example:
+
+```html
+<!-- before formatting -->
+<div class="foo" bar={true}>content</div>
+<span class="foo" bar={true}>content</span>
+
+<!-- after formatting, svelteSingleAttributePerLine true -->
+<div
+    class="foo"
+    bar={true}
+>
+    content
+</div>
+<span
+    class="foo"
+    bar={true}>content</span
+>
+```
+
+| Default | CLI Override                                | API Override                           |
+| ------- | ------------------------------------------- | -------------------------------------- |
+| `false` | `--svelte-single-line-per-attribute <bool>` | `svelteSingleAttributePerLine: <bool>` |
+
 ### `.prettierrc` example
 
 ```json
 {
-  "svelteSortOrder" : "options-styles-scripts-markup",
-  "svelteStrictMode": true,
-  "svelteBracketNewLine": false,
-  "svelteAllowShorthand": false,
-  "svelteIndentScriptAndStyle": false
+    "svelteSortOrder": "options-styles-scripts-markup",
+    "svelteStrictMode": true,
+    "svelteBracketNewLine": false,
+    "svelteAllowShorthand": false,
+    "svelteIndentScriptAndStyle": false,
+    "svelteSingleAttributePerLine": true
 }
 ```
 
