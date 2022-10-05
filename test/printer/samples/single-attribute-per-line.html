@@ -1,10 +1,12 @@
 <svelte:options
     immutable={true}
-    accessors={true} />
+    accessors={true}
+/>
 
 <script
     type="typescript"
-    context="module">
+    context="module"
+>
     const hi = "";
 </script>
 
@@ -33,13 +35,13 @@
     id="x"
     class:y={true}
     style:marginLeft="4px"
-    data-my-prop
     on:click={onClick}
 />
 
 <svelte:body
     on:mouseenter={handleMouseenter}
-    on:mouseleave={handleMouseleave} />
+    on:mouseleave={handleMouseleave}
+/>
 
 <svelte:component
     this={component}

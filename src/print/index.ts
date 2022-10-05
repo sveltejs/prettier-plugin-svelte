@@ -394,14 +394,15 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 '<',
                 node.name,
                 indent(
-                    groupConcat(
-                        path.map(
+                    groupConcat([
+                        ...path.map(
                             printWithPrependedAttributeLine(node, options, print),
                             'attributes',
                         ),
-                    ),
+                        bracketSameLine ? '' : dedent(line),
+                    ]),
                 ),
-                ' />',
+                ...[bracketSameLine ? ' ' : '', '/>'],
             ]);
         case 'Identifier':
             return node.name;
@@ -1008,6 +1009,7 @@ function prepareChildren(
 ): Node[] {
     let svelteOptionsComment: Doc | undefined;
     const childrenWithoutOptions = [];
+    const bracketSameLine = isBracketSameLine(options);
 
     for (let idx = 0; idx < children.length; idx++) {
         const currentChild = children[idx];
@@ -1064,16 +1066,17 @@ function prepareChildren(
                 '<',
                 node.name,
                 indent(
-                    groupConcat(
-                        path.map(
+                    groupConcat([
+                        ...path.map(
                             printWithPrependedAttributeLine(node, options, print),
                             'children',
                             idx,
                             'attributes',
                         ),
-                    ),
+                        bracketSameLine ? '' : dedent(line),
+                    ]),
                 ),
-                ' />',
+                ...[bracketSameLine ? ' ' : '', '/>'],
             ]),
             hardline,
         ]);

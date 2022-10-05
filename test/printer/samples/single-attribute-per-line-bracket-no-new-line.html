@@ -1,12 +1,10 @@
 <svelte:options
     immutable={true}
-    accessors={true}
-/>
+    accessors={true} />
 
 <script
     type="typescript"
-    context="module"
->
+    context="module">
     const hi = "";
 </script>
 
@@ -19,8 +17,7 @@
     class="y"
     animate:flip
     use:autofocus
-    {...props}
->
+    {...props}>
     Copy
 </div>
 
@@ -28,43 +25,34 @@
 
 <span
     id="x"
-    class="y">Copy</span
->
+    class="y">Copy</span>
 
 <div
     id="x"
     class:y={true}
     style:marginLeft="4px"
-    on:click={onClick}
-/>
+    on:click={onClick} />
 
 <svelte:body
     on:mouseenter={handleMouseenter}
-    on:mouseleave={handleMouseleave}
-/>
+    on:mouseleave={handleMouseleave} />
 
 <svelte:component
     this={component}
-    foo={bar}
-/>
+    foo={bar} />
 
 <svelte:component this={component} />
 
 <svelte:element
     this={tag}
-    on:click={handler}
->
+    on:click={handler}>
     Foo
 </svelte:element>
 
 <svelte:fragment
     slot="named"
-    let:foo
->
-    <p>hi</p>
-</svelte:fragment>
+    let:foo><p>hi</p></svelte:fragment>
 
 <svelte:window
     on:event={handler}
-    bind:prop={value}
-/>
+    bind:prop={value} />

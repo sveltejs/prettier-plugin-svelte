@@ -1,6 +1,7 @@
 import { Doc, doc, FastPath, ParserOptions } from 'prettier';
 import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
+import { isBracketSameLine } from './options';
 import { PrintFn } from './print';
 import { isLine, removeParentheses, trimRight } from './print/doc-helpers';
 import { groupConcat, printWithPrependedAttributeLine } from './print/helpers';
@@ -16,7 +17,7 @@ import {
 import { ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
 
 const {
-    builders: { concat, hardline, indent, literalline },
+    builders: { concat, hardline, softline, indent, dedent, literalline },
     utils: { removeLines },
 } = doc;
 
@@ -213,9 +214,10 @@ function embedTag(
         '<',
         tag,
         indent(
-            groupConcat(
-                path.map(printWithPrependedAttributeLine(node, options, print), 'attributes'),
-            ),
+            groupConcat([
+                ...path.map(printWithPrependedAttributeLine(node, options, print), 'attributes'),
+                isBracketSameLine(options) ? '' : dedent(softline),
+            ]),
         ),
         '>',
     ]);
