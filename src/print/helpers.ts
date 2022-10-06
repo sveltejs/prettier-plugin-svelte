@@ -118,6 +118,6 @@ export function printWithPrependedAttributeLine(
 ): PrintFn {
     return (path) =>
         path.getNode().name !== snippedTagContentAttribute
-            ? [getAttributeLine(node, options), path.call(print)]
+            ? doc.builders.concat([getAttributeLine(node, options), path.call(print)])
             : '';
 }
