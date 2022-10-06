@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.8.0 (unreleased)
+
+* (feat) support `singleAttributePerLine` Prettier option ([#305](https://github.com/sveltejs/prettier-plugin-svelte/issues/305))
+
 ## 2.7.1
 
 * (fix) check for snipped content in JS expressions ([#290](https://github.com/sveltejs/prettier-plugin-svelte/issues/290))
