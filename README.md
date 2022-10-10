@@ -45,7 +45,7 @@ Make a `.prettierrc` file in your project directory and add your preferred [opti
 
 Sort order for `svelte:options`, scripts, markup, and styles.
 
-Format: join the keywords `options`, `scripts`, `markup`, `styles` with a `-` in the order you want.
+Format: join the keywords `options`, `scripts`, `markup`, `styles` with a `-` in the order you want; or `none` if you don't want Prettier to reorder anything.
 
 | Default                         | CLI Override                   | API Override                |
 | ------------------------------- | ------------------------------ | --------------------------- |
