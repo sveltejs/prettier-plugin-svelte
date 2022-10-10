@@ -223,7 +223,7 @@ function embedTag(
     ]);
     let result = groupConcat([openingTag, body, '</', tag, '>']);
 
-    if (isTopLevel) {
+    if (isTopLevel && options.svelteSortOrder !== 'none') {
         // top level embedded nodes have been moved from their normal position in the
         // node tree. if there is a comment referring to it, it must be recreated at
         // the new position.

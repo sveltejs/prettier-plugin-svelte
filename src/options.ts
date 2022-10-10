@@ -48,6 +48,7 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
             makeChoice('markup-scripts-styles-options'),
             makeChoice('styles-markup-scripts-options'),
             makeChoice('styles-scripts-markup-options'),
+            makeChoice('none'),
             // Deprecated, keep in 2.x for backwards-compatibility. svelte:options will be moved to the top
             makeChoice('scripts-markup-styles'),
             makeChoice('scripts-styles-markup'),
@@ -114,6 +115,7 @@ export type SortOrder =
     | 'markup-scripts-styles-options'
     | 'styles-markup-scripts-options'
     | 'styles-scripts-markup-options'
+    | 'none'
     | DeprecatedSortOrder;
 
 export type DeprecatedSortOrder =
@@ -129,6 +131,10 @@ export type SortOrderPart = 'scripts' | 'markup' | 'styles' | 'options';
 const sortOrderSeparator = '-';
 
 export function parseSortOrder(sortOrder: SortOrder): SortOrderPart[] {
+    if (sortOrder === 'none') {
+        return [];
+    }
+
     const order = sortOrder.split(sortOrderSeparator) as SortOrderPart[];
     // For backwards compatibility: Add options to beginning if not present
     if (!order.includes('options')) {

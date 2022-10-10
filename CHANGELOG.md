@@ -3,6 +3,7 @@
 ## 2.8.0 (unreleased)
 
 * (feat) support `singleAttributePerLine` Prettier option ([#305](https://github.com/sveltejs/prettier-plugin-svelte/issues/305))
+* (feat) add `svelteSortOrder: none` Prettier option which skips reordering scripts/styles/html ([#305](https://github.com/sveltejs/prettier-plugin-svelte/issues/314))
 
 ## 2.7.1
 

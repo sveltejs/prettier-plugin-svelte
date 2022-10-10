@@ -44,6 +44,7 @@ import {
     isIgnoreStartDirective,
     isIgnoreEndDirective,
     isNodeTopLevelHTML,
+    getChildren,
 } from './node-helpers';
 import {
     ASTNode,
@@ -388,7 +389,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             ]);
         }
         case 'Options':
-            throw new Error('Options tags should have been handled by prepareChildren');
+            if (options.svelteSortOrder !== 'none') {
+                throw new Error('Options tags should have been handled by prepareChildren');
+            }
+        // else fall through to Body
         case 'Body':
             return groupConcat([
                 '<',
@@ -720,6 +724,36 @@ function printTopLevelParts(
     path: FastPath<any>,
     print: PrintFn,
 ): Doc {
+    if (options.svelteSortOrder === 'none') {
+        const topLevelPartsByEnd: Record<number, any> = {};
+
+        if (n.module) {
+            n.module.type = 'Script';
+            n.module.attributes = extractAttributes(getText(n.module, options));
+            topLevelPartsByEnd[n.module.end] = n.module;
+        }
+        if (n.instance) {
+            n.instance.type = 'Script';
+            n.instance.attributes = extractAttributes(getText(n.instance, options));
+            topLevelPartsByEnd[n.instance.end] = n.instance;
+        }
+        if (n.css) {
+            n.css.type = 'Style';
+            n.css.content.type = 'StyleProgram';
+            topLevelPartsByEnd[n.css.end] = n.css;
+        }
+
+        const children = getChildren(n.html);
+        for (let i = 0; i < children.length; i++) {
+            const node = children[i];
+            if (topLevelPartsByEnd[node.start]) {
+                children.splice(i, 0, topLevelPartsByEnd[node.start]);
+                delete topLevelPartsByEnd[node.start];
+            }
+        }
+        return path.call(print, 'html');
+    }
+
     const parts: Record<SortOrderPart, Doc[]> = {
         options: [],
         scripts: [],
@@ -1022,16 +1056,18 @@ function prepareChildren(
             continue;
         }
 
-        if (isCommentFollowedByOptions(currentChild, idx)) {
-            svelteOptionsComment = printComment(currentChild);
-            const nextChild = children[idx + 1];
-            idx += nextChild && isEmptyTextNode(nextChild) ? 1 : 0;
-            continue;
-        }
+        if (options.svelteSortOrder !== 'none') {
+            if (isCommentFollowedByOptions(currentChild, idx)) {
+                svelteOptionsComment = printComment(currentChild);
+                const nextChild = children[idx + 1];
+                idx += nextChild && isEmptyTextNode(nextChild) ? 1 : 0;
+                continue;
+            }
 
-        if (currentChild.type === 'Options') {
-            printSvelteOptions(currentChild, idx, path, print);
-            continue;
+            if (currentChild.type === 'Options') {
+                printSvelteOptions(currentChild, idx, path, print);
+                continue;
+            }
         }
 
         childrenWithoutOptions.push(currentChild);
