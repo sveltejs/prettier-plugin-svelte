@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.8.1 (Unreleased)
+
+* (fix) format `{#await .. catch ..}..{/await}` correctly ([#323](https://github.com/sveltejs/prettier-plugin-svelte/issues/323)) 
+
 ## 2.8.0
 
 * (feat) support `singleAttributePerLine` Prettier option ([#305](https://github.com/sveltejs/prettier-plugin-svelte/issues/305))
