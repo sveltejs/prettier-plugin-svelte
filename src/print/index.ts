@@ -540,6 +540,17 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     ]),
                     path.call(print, 'then'),
                 );
+            } else if (!hasPendingBlock && hasCatchBlock) {
+                block.push(
+                    groupConcat([
+                        '{#await ',
+                        printSvelteBlockJS(path, print, 'expression'),
+                        ' catch',
+                        expandNode(node.error),
+                        '}',
+                    ]),
+                    path.call(print, 'catch'),
+                );
             } else {
                 block.push(
                     groupConcat(['{#await ', printSvelteBlockJS(path, print, 'expression'), '}']),
@@ -557,7 +568,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 }
             }
 
-            if (hasCatchBlock) {
+            if ((hasPendingBlock || hasThenBlock) && hasCatchBlock) {
                 block.push(
                     groupConcat(['{:catch', expandNode(node.error), '}']),
                     path.call(print, 'catch'),
