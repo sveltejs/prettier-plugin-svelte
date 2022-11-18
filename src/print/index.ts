@@ -608,7 +608,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return concat([
                 'bind:',
                 node.name,
-                node.expression.type === 'Identifier' && node.expression.name === node.name
+                node.expression.type === 'Identifier' &&
+                node.expression.name === node.name &&
+                options.svelteAllowShorthand &&
+                !options.svelteStrictMode
                     ? ''
                     : concat(['=', ...printJsExpression()]),
             ]);
