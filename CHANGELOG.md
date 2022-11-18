@@ -3,6 +3,7 @@
 ## 2.8.1 (Unreleased)
 
 * (fix) format `{#await .. catch ..}..{/await}` correctly ([#323](https://github.com/sveltejs/prettier-plugin-svelte/issues/323)) 
+* (fix) respect strict mode and shorthand options when formatting bindings ([#321](https://github.com/sveltejs/prettier-plugin-svelte/issues/321)) 
 
 ## 2.8.0
 
