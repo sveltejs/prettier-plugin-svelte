@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## 2.8.1 (Unreleased)
+## 2.8.1
 
 * (fix) format `{#await .. catch ..}..{/await}` correctly ([#323](https://github.com/sveltejs/prettier-plugin-svelte/issues/323)) 
 * (fix) respect strict mode and shorthand options when formatting bindings ([#321](https://github.com/sveltejs/prettier-plugin-svelte/issues/321)) 
