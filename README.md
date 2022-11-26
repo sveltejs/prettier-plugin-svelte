@@ -151,7 +151,19 @@ Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte
 
 ## Usage with Tailwind Prettier Plugin
 
-There's a Tailwind Prettier Plugin to format classes in a certain way. This plugin bundles `prettier-plugin-svelte`, so if you want to use the Tailwind plugin, uninstall `prettier-plugin-svelte` and use the Tailwind plugin instead. If you are using VS Code, make sure to have the Prettier extension installed and switch the default formatter for Svelte files to it.
+There is a [Tailwind Prettier Plugin](https://github.com/tailwindlabs/prettier-plugin-tailwindcss) to format classes in a certain way. This plugin must be loaded last, so if you want to use the Tailwind plugin, disable Prettier auto-loading and place `prettier-plugin-tailwindcss` in the end of the plugins array. If you are using VS Code, make sure to have the Prettier extension installed and switch the default formatter for Svelte files to it.
+
+```json5
+// .prettierrc
+{
+  // ..
+  "plugins": [
+    "prettier-plugin-svelte",
+    "prettier-plugin-tailwindcss" // MUST come last
+  ],
+  "pluginSearchDirs": false
+}
+```
 
 More info: https://github.com/tailwindlabs/prettier-plugin-tailwindcss#compatibility-with-other-prettier-plugins
 
