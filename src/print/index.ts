@@ -619,7 +619,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return concat([
                 'class:',
                 node.name,
-                node.expression.type === 'Identifier' && node.expression.name === node.name
+                node.expression.type === 'Identifier' &&
+                node.expression.name === node.name &&
+                options.svelteAllowShorthand &&
+                !options.svelteStrictMode
                     ? ''
                     : concat(['=', ...printJsExpression()]),
             ]);
@@ -632,7 +635,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     : '',
             ];
 
-            if (isOrCanBeConvertedToShorthand(node)) {
+            if (isOrCanBeConvertedToShorthand(node) || node.value === true) {
                 if (options.svelteStrictMode) {
                     return concat([...prefix, '="{', node.name, '}"']);
                 } else if (options.svelteAllowShorthand) {
@@ -641,10 +644,6 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     return concat([...prefix, '={', node.name, '}']);
                 }
             } else {
-                if (node.value === true) {
-                    return concat([...prefix]);
-                }
-
                 const quotes = !isLoneMustacheTag(node.value) || options.svelteStrictMode;
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {

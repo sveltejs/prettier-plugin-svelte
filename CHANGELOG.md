@@ -3,6 +3,7 @@
 ## 2.9.0 (unreleased)
 
 -   (feat) support style modifiers ([#330](https://github.com/sveltejs/prettier-plugin-svelte/issues/330))
+-   (fix) respect strict mode and shorthand options when formatting style/class directives ([#328](https://github.com/sveltejs/prettier-plugin-svelte/issues/328))
 
 ## 2.8.1
 
