@@ -624,25 +624,33 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     : concat(['=', ...printJsExpression()]),
             ]);
         case 'StyleDirective':
+            const prefix = [
+                'style:',
+                node.name,
+                node.modifiers && node.modifiers.length
+                    ? concat(['|', join('|', node.modifiers)])
+                    : '',
+            ];
+
             if (isOrCanBeConvertedToShorthand(node)) {
                 if (options.svelteStrictMode) {
-                    return concat(['style:', node.name, '="{', node.name, '}"']);
+                    return concat([...prefix, '="{', node.name, '}"']);
                 } else if (options.svelteAllowShorthand) {
-                    return concat(['style:', node.name]);
+                    return concat([...prefix]);
                 } else {
-                    return concat(['style:', node.name, '={', node.name, '}']);
+                    return concat([...prefix, '={', node.name, '}']);
                 }
             } else {
                 if (node.value === true) {
-                    return concat(['style:', node.name]);
+                    return concat([...prefix]);
                 }
 
                 const quotes = !isLoneMustacheTag(node.value) || options.svelteStrictMode;
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
-                    return concat(['style:', node.name, '=', '"', attrNodeValue, '"']);
+                    return concat([...prefix, '=', '"', attrNodeValue, '"']);
                 } else {
-                    return concat(['style:', node.name, '=', attrNodeValue]);
+                    return concat([...prefix, '=', attrNodeValue]);
                 }
             }
         case 'Let':

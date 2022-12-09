@@ -127,6 +127,7 @@ export interface StyleDirectiveNode extends BaseNode {
     type: 'StyleDirective';
     name: string;
     value: Node[] | true;
+    modifiers?: string[];
 }
 
 export interface LetNode extends BaseNode {
