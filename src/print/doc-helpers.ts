@@ -41,10 +41,6 @@ export function isLine(docToCheck: Doc): boolean {
     return (
         isHardline(docToCheck) ||
         (isDocCommand(docToCheck) && docToCheck.type === 'line') ||
-        (isDocCommand(docToCheck) &&
-            docToCheck.type === 'concat' &&
-            docToCheck.parts.every(isLine)) ||
-        // Since Prettier 2.3.0, concats are represented as flat arrays
         (Array.isArray(docToCheck) && docToCheck.every(isLine))
     );
 }
@@ -61,7 +57,6 @@ export function isEmptyDoc(doc: Doc): boolean {
         return !doc.keepIfLonely;
     }
 
-    // Since Prettier 2.3.0, concats are represented as flat arrays
     if (Array.isArray(doc)) {
         return doc.length === 0;
     }
@@ -146,11 +141,10 @@ export function trimRight(group: Doc[], isWhitespace: (doc: Doc) => boolean): vo
 
 function getParts(doc: Doc): Doc[] | undefined {
     if (typeof doc === 'object') {
-        // Since Prettier 2.3.0, concats are represented as flat arrays
         if (Array.isArray(doc)) {
             return doc;
         }
-        if (doc.type === 'fill' || doc.type === 'concat') {
+        if (doc.type === 'fill') {
             return doc.parts;
         }
         if (doc.type === 'group') {
