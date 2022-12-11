@@ -4,7 +4,7 @@ import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { isBracketSameLine } from './options';
 import { PrintFn } from './print';
 import { isLine, removeParentheses, trimRight } from './print/doc-helpers';
-import { groupConcat, printWithPrependedAttributeLine } from './print/helpers';
+import { printWithPrependedAttributeLine } from './print/helpers';
 import {
     getAttributeTextValue,
     getLeadingComment,
@@ -12,12 +12,12 @@ import {
     isNodeSupportedLanguage,
     isPugTemplate,
     isTypeScript,
-    printRaw,
+    printRaw
 } from './print/node-helpers';
 import { ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
 
 const {
-    builders: { concat, hardline, softline, indent, dedent, literalline },
+    builders: { group, hardline, softline, indent, dedent, literalline },
     utils: { removeLines },
 } = doc;
 
@@ -123,7 +123,7 @@ function preformattedBody(str: string): Doc {
 
     // If we do not start with a new line prettier might try to break the opening tag
     // to keep it together with the string. Use a literal line to skip indentation.
-    return concat([literalline, str.replace(firstNewline, '').replace(lastNewline, ''), hardline]);
+    return [literalline, str.replace(firstNewline, '').replace(lastNewline, ''), hardline];
 }
 
 function getSnippedContent(node: Node) {
@@ -159,13 +159,13 @@ function formatBodyContent(
                 .split('\n')
                 .map((line) => (line ? whitespace + line : line))
                 .join('\n');
-            return concat([hardline, pugBody]);
+            return [hardline, pugBody];
         }
 
         const indentIfDesired = (doc: Doc) =>
             options.svelteIndentScriptAndStyle ? indent(doc) : doc;
         trimRight([body], isLine);
-        return concat([indentIfDesired(concat([hardline, body])), hardline]);
+        return [indentIfDesired([hardline, body]), hardline];
     } catch (error) {
         if (process.env.PRETTIER_DEBUG) {
             throw error;
@@ -210,27 +210,27 @@ function embedTag(
             : hardline
         : preformattedBody(content);
 
-    const openingTag = groupConcat([
+    const openingTag = group([
         '<',
         tag,
         indent(
-            groupConcat([
+            group([
                 ...path.map(printWithPrependedAttributeLine(node, options, print), 'attributes'),
                 isBracketSameLine(options) ? '' : dedent(softline),
             ]),
         ),
         '>',
     ]);
-    let result = groupConcat([openingTag, body, '</', tag, '>']);
+    let result: Doc = group([openingTag, body, '</', tag, '>']);
 
     if (isTopLevel && options.svelteSortOrder !== 'none') {
         // top level embedded nodes have been moved from their normal position in the
         // node tree. if there is a comment referring to it, it must be recreated at
         // the new position.
         if (previousComment) {
-            result = concat(['<!--', previousComment.data, '-->', hardline, result, hardline]);
+            result = ['<!--', previousComment.data, '-->', hardline, result, hardline];
         } else {
-            result = concat([result, hardline]);
+            result = [result, hardline];
         }
     }
 
