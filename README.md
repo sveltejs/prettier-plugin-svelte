@@ -29,8 +29,14 @@ Install `prettier` and `prettier-plugin-svelte` as dev dependencies in your proj
 
 Then format your code using Prettier CLI. You may need to add `--plugin-search-dir=.`
 
+As a one-time run:
 ```
-prettier --write --plugin-search-dir=. ./**/*.html
+npx prettier --write --plugin-search-dir=. ./**/*.html
+```
+
+As part of your scripts in `package.json`:
+```
+"format": "prettier --write --plugin-search-dir=. ./**/*.html"
 ```
 
 If you want to customize some formatting behavior, see section "Options" below.
