@@ -83,6 +83,10 @@ declare module 'prettier' {
     }
 }
 
+export function hasPragma(text: string) {
+    return /^\s*<!--\s*@(format|prettier)\W/.test(text);
+}
+
 let ignoreNext = false;
 let ignoreRange = false;
 let svelteOptionsDoc: Doc | undefined;
@@ -772,7 +776,13 @@ function printTopLevelParts(
                 delete topLevelPartsByEnd[node.start];
             }
         }
-        return path.call(print, 'html');
+
+        const result = path.call(print, 'html');
+        if (options.insertPragma && !hasPragma(options.originalText)) {
+            return concat([`<!-- @format -->`, hardline, result]);
+        } else {
+            return result;
+        }
     }
 
     const parts: Record<SortOrderPart, Doc[]> = {
@@ -826,7 +836,11 @@ function printTopLevelParts(
         trimRight([lastDoc], isLine);
     }
 
-    return groupConcat([join(hardline, docs)]);
+    if (options.insertPragma && !hasPragma(options.originalText)) {
+        return concat([`<!-- @format -->`, hardline, groupConcat(docs)]);
+    } else {
+        return groupConcat([join(hardline, docs)]);
+    }
 }
 
 function printAttributeNodeValue(
