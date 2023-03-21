@@ -412,6 +412,21 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 ),
                 ...[bracketSameLine ? ' ' : '', '/>'],
             ]);
+        case 'Document':
+            return groupConcat([
+                '<',
+                node.name,
+                indent(
+                    groupConcat([
+                        ...path.map(
+                            printWithPrependedAttributeLine(node, options, print),
+                            'attributes',
+                        ),
+                        bracketSameLine ? '' : dedent(line),
+                    ]),
+                ),
+                ...[bracketSameLine ? ' ' : '', '/>'],
+            ]);
         case 'Identifier':
             return node.name;
         case 'AttributeShorthand': {

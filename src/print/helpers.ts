@@ -2,6 +2,7 @@ import {
     ASTNode,
     AttributeNode,
     BodyNode,
+    DocumentNode,
     ElementNode,
     HeadNode,
     InlineComponentNode,
@@ -82,6 +83,7 @@ export function getAttributeLine(
         | StyleNode
         | ScriptNode
         | BodyNode
+        | DocumentNode
         | OptionsNode
         | SlotTemplateNode,
     options: ParserOptions,
@@ -111,6 +113,7 @@ export function printWithPrependedAttributeLine(
         | StyleNode
         | ScriptNode
         | BodyNode
+        | DocumentNode
         | OptionsNode
         | SlotTemplateNode,
     options: ParserOptions,
