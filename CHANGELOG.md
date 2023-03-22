@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## 2.10.0 (unreleased)
+## 2.10.0
 
 -   (feat) support `requirePragma` and `insertPragma` options ([#350](https://github.com/sveltejs/prettier-plugin-svelte/issues/350))
 -   (feat) support `<svelte:document>`
