@@ -14,7 +14,7 @@ import {
     isTypeScript,
     printRaw,
 } from './print/node-helpers';
-import { ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
+import { CommentNode, ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
 
 const {
     builders: { concat, hardline, softline, indent, dedent, literalline },
@@ -193,11 +193,16 @@ function embedTag(
     const node: ScriptNode | StyleNode | ElementNode = path.getNode();
     const content =
         tag === 'template' ? printRaw(node as ElementNode, text) : getSnippedContent(node);
-    const previousComment = getLeadingComment(path);
+    const previousComments =
+        node.type === 'Script' || node.type === 'Style'
+            ? node.comments
+            : [getLeadingComment(path)]
+                  .filter(Boolean)
+                  .map((comment) => ({ comment: comment as CommentNode, emptyLineAfter: false }));
 
     const canFormat =
         isNodeSupportedLanguage(node) &&
-        !isIgnoreDirective(previousComment) &&
+        !isIgnoreDirective(previousComments[previousComments.length - 1]?.comment) &&
         (tag !== 'template' ||
             options.plugins.some(
                 (plugin) => typeof plugin !== 'string' && plugin.parsers && plugin.parsers.pug,
@@ -223,16 +228,21 @@ function embedTag(
     ]);
     let result = groupConcat([openingTag, body, '</', tag, '>']);
 
+    const comments = [];
+    for (const comment of previousComments) {
+        comments.push('<!--', comment.comment.data, '-->');
+        comments.push(hardline);
+        if (comment.emptyLineAfter) {
+            comments.push(hardline);
+        }
+    }
+
     if (isTopLevel && options.svelteSortOrder !== 'none') {
         // top level embedded nodes have been moved from their normal position in the
         // node tree. if there is a comment referring to it, it must be recreated at
         // the new position.
-        if (previousComment) {
-            result = concat(['<!--', previousComment.data, '-->', hardline, result, hardline]);
-        } else {
-            result = concat([result, hardline]);
-        }
+        return concat([...comments, result, hardline]);
+    } else {
+        return comments.length ? concat([...comments, result]) : result;
     }
-
-    return result;
 }

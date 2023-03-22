@@ -49,6 +49,7 @@ import {
 import {
     ASTNode,
     AttributeNode,
+    CommentInfo,
     CommentNode,
     IfBlockNode,
     Node,
@@ -100,6 +101,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     }
 
     if (isASTNode(n)) {
+        assignCommentsToNodes(n);
         return printTopLevelParts(n, options, path, print);
     }
 
@@ -784,6 +786,70 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
     console.error(JSON.stringify(node, null, 4));
     throw new Error('unknown node type: ' + node.type);
+}
+
+function assignCommentsToNodes(ast: ASTNode) {
+    if (ast.module) {
+        ast.module.comments = removeAndGetLeadingComments(ast, ast.module);
+    }
+    if (ast.instance) {
+        ast.instance.comments = removeAndGetLeadingComments(ast, ast.instance);
+    }
+    if (ast.css) {
+        ast.css.comments = removeAndGetLeadingComments(ast, ast.css);
+    }
+}
+
+/**
+ * Returns the comments that are above the current node and deletes them from the html ast.
+ */
+function removeAndGetLeadingComments(ast: ASTNode, current: Node): CommentInfo[] {
+    const siblings = getChildren(ast.html);
+    const comments: CommentNode[] = [];
+    const newlines: TextNode[] = [];
+
+    if (!siblings.length) {
+        return [];
+    }
+
+    let node: Node = current;
+    let prev: Node | undefined = siblings.find((child) => child.end === node.start);
+    while (prev) {
+        if (
+            prev.type === 'Comment' &&
+            !isIgnoreStartDirective(prev) &&
+            !isIgnoreEndDirective(prev)
+        ) {
+            comments.push(prev);
+            if (comments.length !== newlines.length) {
+                newlines.push({ type: 'Text', data: '', raw: '', start: -1, end: -1 });
+            }
+        } else if (isEmptyTextNode(prev)) {
+            newlines.push(prev);
+        } else {
+            break;
+        }
+
+        node = prev;
+        prev = siblings.find((child) => child.end === node.start);
+    }
+
+    newlines.length = comments.length; // could be one more if first comment is preceeded by empty text node
+
+    for (const comment of comments) {
+        siblings.splice(siblings.indexOf(comment), 1);
+    }
+
+    for (const text of newlines) {
+        siblings.splice(siblings.indexOf(text), 1);
+    }
+
+    return comments
+        .map((comment, i) => ({
+            comment,
+            emptyLineAfter: getUnencodedText(newlines[i]).split('\n').length > 2,
+        }))
+        .reverse();
 }
 
 function printTopLevelParts(
