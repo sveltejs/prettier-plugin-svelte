@@ -207,17 +207,20 @@ export interface StyleNode extends BaseNode {
     attributes: Node[];
     children: Node[];
     content: StyleProgramNode;
+    comments: CommentInfo[]; // doesn't exist on original node but we use it to store comments
 }
 
 export interface ScriptNode extends BaseNode {
     type: 'Script';
     attributes: Node[];
     content: Node;
+    comments: CommentInfo[]; // doesn't exist on original node but we use it to store comments
 }
 
 export interface StyleProgramNode extends BaseNode {
     type: 'StyleProgram';
     styles: string;
+    comments: CommentInfo[]; // doesn't exist on original node but we use it to store comments
 }
 
 export interface ProgramNode extends BaseNode {
@@ -283,6 +286,11 @@ export interface ConstTagNode extends BaseNode {
     expression: Node;
 }
 
+export interface CommentInfo {
+    comment: CommentNode;
+    emptyLineAfter: boolean;
+}
+
 export type Node =
     | FragmentNode
     | ElementNode
@@ -334,13 +342,7 @@ export type Node =
  */
 export interface ASTNode {
     html: Node;
-    css?: Node & {
-        attributes: Node[];
-        children: Node[];
-        content: Node & {
-            styles: string;
-        };
-    };
+    css?: StyleNode;
     js?: ScriptNode;
     instance?: ScriptNode;
     module?: ScriptNode;
