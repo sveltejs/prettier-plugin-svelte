@@ -259,6 +259,12 @@ export interface BodyNode extends BaseNode {
     attributes: Node[];
 }
 
+export interface DocumentNode extends BaseNode {
+    type: 'Document';
+    name: string;
+    attributes: Node[];
+}
+
 export interface OptionsNode extends BaseNode {
     type: 'Options';
     name: string;
@@ -318,6 +324,7 @@ export type Node =
     | InstanceScriptNode
     | ModuleScriptNode
     | BodyNode
+    | DocumentNode
     | OptionsNode
     | SlotTemplateNode
     | ConstTagNode;

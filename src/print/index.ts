@@ -83,6 +83,10 @@ declare module 'prettier' {
     }
 }
 
+export function hasPragma(text: string) {
+    return /^\s*<!--\s*@(format|prettier)\W/.test(text);
+}
+
 let ignoreNext = false;
 let ignoreRange = false;
 let svelteOptionsDoc: Doc | undefined;
@@ -176,10 +180,38 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                  */
                 return fill(splitTextToDocs(node));
             } else {
-                const rawText = getUnencodedText(node);
-                if (path.getParentNode().type === 'Attribute') {
+                let rawText = getUnencodedText(node);
+                const parent = path.getParentNode();
+                if (parent.type === 'Attribute') {
                     // Direct child of attribute value -> add literallines at end of lines
                     // so that other things don't break in unexpected places
+                    if (parent.name === 'class' && path.getParentNode(1).type === 'Element') {
+                        // Special treatment for class attribute on html elements. Prettier
+                        // will force everything into one line, we deviate from that and preserve lines.
+                        rawText = rawText.replace(
+                            /([^ \t\n])(([ \t]+$)|([ \t]+(\r?\n))|[ \t]+)/g,
+                            // Remove trailing whitespace in lines with non-whitespace characters
+                            // except at the end of the string
+                            (
+                                match,
+                                characterBeforeWhitespace,
+                                _,
+                                isEndOfString,
+                                isEndOfLine,
+                                endOfLine,
+                            ) =>
+                                isEndOfString
+                                    ? match
+                                    : characterBeforeWhitespace + (isEndOfLine ? endOfLine : ' '),
+                        );
+                        // Shrink trailing whitespace in case it's followed by a mustache tag
+                        // and remove it completely if it's at the end of the string, but not
+                        // if it's on its own line
+                        rawText = rawText.replace(
+                            /([^ \t\n])[ \t]+$/,
+                            parent.value.indexOf(node) === parent.value.length - 1 ? '$1' : '$1 ',
+                        );
+                    }
                     return concat(replaceEndOfLineWith(rawText, literalline));
                 }
                 return rawText;
@@ -394,6 +426,21 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             }
         // else fall through to Body
         case 'Body':
+            return groupConcat([
+                '<',
+                node.name,
+                indent(
+                    groupConcat([
+                        ...path.map(
+                            printWithPrependedAttributeLine(node, options, print),
+                            'attributes',
+                        ),
+                        bracketSameLine ? '' : dedent(line),
+                    ]),
+                ),
+                ...[bracketSameLine ? ' ' : '', '/>'],
+            ]);
+        case 'Document':
             return groupConcat([
                 '<',
                 node.name,
@@ -772,7 +819,13 @@ function printTopLevelParts(
                 delete topLevelPartsByEnd[node.start];
             }
         }
-        return path.call(print, 'html');
+
+        const result = path.call(print, 'html');
+        if (options.insertPragma && !hasPragma(options.originalText)) {
+            return concat([`<!-- @format -->`, hardline, result]);
+        } else {
+            return result;
+        }
     }
 
     const parts: Record<SortOrderPart, Doc[]> = {
@@ -826,7 +879,11 @@ function printTopLevelParts(
         trimRight([lastDoc], isLine);
     }
 
-    return groupConcat([join(hardline, docs)]);
+    if (options.insertPragma && !hasPragma(options.originalText)) {
+        return concat([`<!-- @format -->`, hardline, groupConcat(docs)]);
+    } else {
+        return groupConcat([join(hardline, docs)]);
+    }
 }
 
 function printAttributeNodeValue(

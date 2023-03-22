@@ -1,5 +1,11 @@
 # prettier-plugin-svelte changelog
 
+## 2.10.0 (unreleased)
+
+-   (feat) support `requirePragma` and `insertPragma` options ([#350](https://github.com/sveltejs/prettier-plugin-svelte/issues/350))
+-   (feat) support `<svelte:document>`
+-   (feat) trim whitespace in `class` attributes ([#339](https://github.com/sveltejs/prettier-plugin-svelte/issues/339))
+
 ## 2.9.0
 
 -   (feat) support style modifiers ([#330](https://github.com/sveltejs/prettier-plugin-svelte/issues/330))

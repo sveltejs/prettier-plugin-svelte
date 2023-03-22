@@ -1,5 +1,5 @@
 import { SupportLanguage, Parser, Printer } from 'prettier';
-import { print } from './print';
+import { hasPragma, print } from './print';
 import { ASTNode } from './print/nodes';
 import { embed } from './embed';
 import { snipScriptAndStyleTagContent } from './lib/snipTagContent';
@@ -23,6 +23,7 @@ export const languages: Partial<SupportLanguage>[] = [
 
 export const parsers: Record<string, Parser> = {
     svelte: {
+        hasPragma,
         parse: (text) => {
             try {
                 return <ASTNode>{ ...require(`svelte/compiler`).parse(text), __isRoot: true };
