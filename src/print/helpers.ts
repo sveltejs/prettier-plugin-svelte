@@ -72,6 +72,8 @@ export function groupConcat(contents: doc.builders.Doc[]): doc.builders.Doc {
     return group(concat(contents));
 }
 
+type Options = { singleAttributePerLine?: boolean } & ParserOptions;
+
 export function getAttributeLine(
     node:
         | ElementNode
@@ -86,7 +88,7 @@ export function getAttributeLine(
         | DocumentNode
         | OptionsNode
         | SlotTemplateNode,
-    options: ParserOptions,
+    options: Options,
 ) {
     const { hardline, line } = doc.builders;
     const hasThisBinding =

@@ -4,7 +4,7 @@ import typescript from 'rollup-plugin-typescript';
 
 export default {
     input: 'src/index.ts',
-    plugins: [resolve(), commonjs(), typescript()],
+    plugins: [resolve(), commonjs(), typescript({ tsconfig: './tsconfig.json' })],
     external: ['prettier', 'svelte'],
     output: {
         file: 'plugin.js',

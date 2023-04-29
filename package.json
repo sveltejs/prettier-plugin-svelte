@@ -3,12 +3,14 @@
     "version": "2.10.0",
     "description": "Svelte plugin for prettier",
     "main": "plugin.js",
+    "types": "types/index.d.ts",
     "files": [
         "plugin.js",
-        "plugin.js.map"
+        "plugin.js.map",
+        "types/index.d.ts"
     ],
     "scripts": {
-        "build": "rollup -c",
+        "build": "rollup -c && tsc --emitDeclarationOnly",
         "test": "ava",
         "prepare": "npm run build",
         "prepublishOnly": "npm test"
