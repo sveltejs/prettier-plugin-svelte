@@ -1135,9 +1135,9 @@ function prepareChildren(
  */
 function splitTextToDocs(node: TextNode): Doc[] {
     const text = getUnencodedText(node);
-    let docs: Doc[] = text.split(/[\t\n\f\r ]+/);
+    const lines = text.split(/[\t\n\f\r ]+/);
 
-    docs = join(line, docs).parts.filter((s) => s !== '');
+    let docs = join(line, lines).filter((doc) => !isEmptyDoc(doc));
 
     if (startsWithLinebreak(text)) {
         docs[0] = hardline;
