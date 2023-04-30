@@ -9,7 +9,7 @@
     ],
     "scripts": {
         "build": "rollup -c",
-        "test": "ava",
+        "test": "PRETTIER_DEBUG=1 ava",
         "prepare": "npm run build",
         "prepublishOnly": "npm test"
     },
