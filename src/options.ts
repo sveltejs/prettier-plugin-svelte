@@ -1,7 +1,6 @@
-import { ParserOptions, SupportOption } from 'prettier';
+import { ParserOptions as PrettierParserOptions, SupportOption } from 'prettier';
 
-declare module 'prettier' {
-    interface RequiredOptions extends PluginOptions {}
+export interface ParserOptions<T = any> extends PrettierParserOptions<T>, Partial<PluginOptions> {
 }
 
 export interface PluginOptions {
@@ -125,7 +124,7 @@ export type SortOrderPart = 'scripts' | 'markup' | 'styles' | 'options';
 
 const sortOrderSeparator = '-';
 
-export function parseSortOrder(sortOrder: SortOrder): SortOrderPart[] {
+export function parseSortOrder(sortOrder: SortOrder = 'options-scripts-markup-styles'): SortOrderPart[] {
     if (sortOrder === 'none') {
         return [];
     }

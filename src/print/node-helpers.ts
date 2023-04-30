@@ -23,9 +23,9 @@ import {
     StyleDirectiveNode,
 } from './nodes';
 import { blockElements, TagName } from '../lib/elements';
-import { FastPath, ParserOptions } from 'prettier';
+import { FastPath } from 'prettier';
 import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
-import { isBracketSameLine } from '../options';
+import { ParserOptions, isBracketSameLine } from '../options';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
 

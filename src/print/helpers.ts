@@ -1,4 +1,4 @@
-import { Doc, doc, FastPath, ParserOptions } from 'prettier';
+import { Doc, doc, FastPath } from 'prettier';
 import { PrintFn } from '.';
 import { formattableAttributes } from '../lib/elements';
 import { snippedTagContentAttribute } from '../lib/snipTagContent';
@@ -18,6 +18,7 @@ import {
     TitleNode,
     WindowNode
 } from './nodes';
+import { ParserOptions } from '../options';
 
 /**
  * Determines whether or not given node

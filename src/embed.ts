@@ -1,7 +1,7 @@
-import { Doc, doc, FastPath, ParserOptions } from 'prettier';
+import { Doc, doc, FastPath, Options } from 'prettier';
 import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
-import { isBracketSameLine } from './options';
+import { isBracketSameLine, ParserOptions } from './options';
 import { PrintFn } from './print';
 import { isLine, removeParentheses, trimRight } from './print/doc-helpers';
 import { printWithPrependedAttributeLine } from './print/helpers';
@@ -23,86 +23,91 @@ const {
 
 export function embed(
     path: FastPath,
-    print: PrintFn,
-    textToDoc: (text: string, options: object) => Doc,
-    options: ParserOptions,
-): Doc | null {
-    const node: Node = path.getNode();
+    _options: Options,
+    ) {
+    return (
+        textToDoc: (text: string, options: Options) => Doc,
+        print: PrintFn,
+    ): Doc | undefined => {
+        const node: Node = path.getNode();
+        const options = _options as ParserOptions
+        if (!options.locStart || !options.locEnd || !options.originalText) {
+            throw new Error(`Missing required options`)
+        }
 
-    if (node.isJS) {
-        try {
-            const embeddedOptions: any = {
-                parser: expressionParser,
-            };
-            if (node.forceSingleQuote) {
-                embeddedOptions.singleQuote = true;
+        if (node.isJS) {
+            try {
+                const embeddedOptions = {
+                    parser: expressionParser,
+                    singleQuote: node.forceSingleQuote ? true : undefined
+                };
+
+                let docs = textToDoc(
+                    forceIntoExpression(
+                        // If we have snipped content, it was done wrongly and we need to unsnip it.
+                        // This happens for example for {@html `<script>{foo}</script>`}
+                        getText(node, options, true),
+                    ),
+                    embeddedOptions,
+                );
+                if (node.forceSingleLine) {
+                    docs = removeLines(docs);
+                }
+                if (node.removeParentheses) {
+                    docs = removeParentheses(docs);
+                }
+                return docs;
+            } catch (e) {
+                return getText(node, options, true);
             }
+        }
 
-            let docs = textToDoc(
-                forceIntoExpression(
-                    // If we have snipped content, it was done wrongly and we need to unsnip it.
-                    // This happens for example for {@html `<script>{foo}</script>`}
-                    getText(node, options, true),
-                ),
-                embeddedOptions,
+        const embedType = (
+            tag: 'script' | 'style' | 'template',
+            parser: 'typescript' | 'babel-ts' | 'css' | 'pug',
+            isTopLevel: boolean,
+        ) =>
+            embedTag(
+                tag,
+                options.originalText,
+                path,
+                (content) => formatBodyContent(content, parser, textToDoc, options),
+                print,
+                isTopLevel,
+                options,
             );
-            if (node.forceSingleLine) {
-                docs = removeLines(docs);
-            }
-            if (node.removeParentheses) {
-                docs = removeParentheses(docs);
-            }
-            return docs;
-        } catch (e) {
-            return getText(node, options, true);
-        }
-    }
 
-    const embedType = (
-        tag: 'script' | 'style' | 'template',
-        parser: 'typescript' | 'babel-ts' | 'css' | 'pug',
-        isTopLevel: boolean,
-    ) =>
-        embedTag(
-            tag,
-            options.originalText,
-            path,
-            (content) => formatBodyContent(content, parser, textToDoc, options),
-            print,
-            isTopLevel,
-            options,
-        );
+        const embedScript = (isTopLevel: boolean) =>
+            embedType(
+                'script',
+                // Use babel-ts as fallback because the absence does not mean the content is not TS,
+                // the user could have set the default language. babel-ts will format things a little
+                // bit different though, especially preserving parentheses around dot notation which
+                // fixes https://github.com/sveltejs/prettier-plugin-svelte/issues/218
+                isTypeScript(node) ? 'typescript' : 'babel-ts',
+                isTopLevel,
+            );
+        const embedStyle = (isTopLevel: boolean) => embedType('style', 'css', isTopLevel);
+        const embedPug = () => embedType('template', 'pug', false);
 
-    const embedScript = (isTopLevel: boolean) =>
-        embedType(
-            'script',
-            // Use babel-ts as fallback because the absence does not mean the content is not TS,
-            // the user could have set the default language. babel-ts will format things a little
-            // bit different though, especially preserving parentheses around dot notation which
-            // fixes https://github.com/sveltejs/prettier-plugin-svelte/issues/218
-            isTypeScript(node) ? 'typescript' : 'babel-ts',
-            isTopLevel,
-        );
-    const embedStyle = (isTopLevel: boolean) => embedType('style', 'css', isTopLevel);
-    const embedPug = () => embedType('template', 'pug', false);
-
-    switch (node.type) {
-        case 'Script':
-            return embedScript(true);
-        case 'Style':
-            return embedStyle(true);
-        case 'Element': {
-            if (node.name === 'script') {
-                return embedScript(false);
-            } else if (node.name === 'style') {
-                return embedStyle(false);
-            } else if (isPugTemplate(node)) {
-                return embedPug();
+        switch (node.type) {
+            case 'Script':
+                return embedScript(true);
+            case 'Style':
+                return embedStyle(true);
+            case 'Element': {
+                if (node.name === 'script') {
+                    return embedScript(false);
+                } else if (node.name === 'style') {
+                    return embedStyle(false);
+                } else if (isPugTemplate(node)) {
+                    return embedPug();
+                }
             }
         }
-    }
 
-    return null;
+        return;
+    }
 }
 
 function forceIntoExpression(statement: string) {

@@ -1,9 +1,9 @@
-import { Doc, doc, FastPath, ParserOptions } from 'prettier';
+import { Doc, doc, FastPath } from 'prettier';
 import { formattableAttributes, selfClosingTags } from '../lib/elements';
 import { extractAttributes } from '../lib/extractAttributes';
 import { getText } from '../lib/getText';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
-import { isBracketSameLine, parseSortOrder, SortOrderPart } from '../options';
+import { isBracketSameLine, ParserOptions, parseSortOrder, SortOrderPart } from '../options';
 import { isEmptyDoc, isLine, trim, trimRight } from './doc-helpers';
 import {
     flatten,
@@ -100,7 +100,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     const [open, close] = options.svelteStrictMode ? ['"{', '}"'] : ['{', '}'];
     const printJsExpression = () => [
         open,
-        printJS(path, print, options.svelteStrictMode, false, false, 'expression'),
+        printJS(path, print, options.svelteStrictMode ?? false, false, false, 'expression'),
         close,
     ];
     const node = n as Node;
@@ -220,7 +220,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                                     printJS(
                                         path,
                                         print,
-                                        options.svelteStrictMode,
+                                        options.svelteStrictMode ?? false,
                                         false,
                                         false,
                                         'tag',
@@ -420,7 +420,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     return [node.name];
                 }
 
-                const quotes = !isLoneMustacheTag(node.value) || options.svelteStrictMode;
+                const quotes = !isLoneMustacheTag(node.value) || (options.svelteStrictMode ?? false);
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
                     return [node.name, '=', '"', attrNodeValue, '"'];
@@ -631,7 +631,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     return [...prefix, '={', node.name, '}'];
                 }
             } else {
-                const quotes = !isLoneMustacheTag(node.value) || options.svelteStrictMode;
+                const quotes = !isLoneMustacheTag(node.value) || (options.svelteStrictMode ?? false);
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
                     return [...prefix, '=', '"', attrNodeValue, '"'];
