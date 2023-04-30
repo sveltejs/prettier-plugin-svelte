@@ -212,11 +212,11 @@ function isTextNode(node: Node): node is TextNode {
 }
 
 function getAttributeValue(attributeName: string, node: Node) {
-    const attributes = (node as ElementNode)['attributes'] as AttributeNode[];
+    const attributes = ((node as ElementNode).attributes ?? []) as AttributeNode[];
 
     const langAttribute = attributes.find(
         (attribute) => attribute.name === attributeName,
-    ) as AttributeNode | null;
+    );
 
     return langAttribute && langAttribute.value;
 }
