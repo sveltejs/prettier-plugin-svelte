@@ -18,7 +18,6 @@ function makeChoice(choice: string) {
 
 export const options: Record<keyof PluginOptions, SupportOption> = {
     svelteSortOrder: {
-        since: '0.6.0',
         category: 'Svelte',
         type: 'choice',
         default: 'options-scripts-markup-styles',
@@ -59,21 +58,18 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
         ],
     },
     svelteStrictMode: {
-        since: '0.7.0',
         category: 'Svelte',
         type: 'boolean',
         default: false,
         description: 'More strict HTML syntax: self-closed tags, quotes in attributes',
     },
     svelteBracketNewLine: {
-        since: '0.6.0',
         category: 'Svelte',
         type: 'boolean',
         description: 'Put the `>` of a multiline element on a new line',
         deprecated: '2.5.0',
     },
     svelteAllowShorthand: {
-        since: '1.0.0',
         category: 'Svelte',
         type: 'boolean',
         default: true,
@@ -81,7 +77,6 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
             'Option to enable/disable component attribute shorthand if attribute name and expressions are same',
     },
     svelteIndentScriptAndStyle: {
-        since: '1.2.0',
         category: 'Svelte',
         type: 'boolean',
         default: true,
