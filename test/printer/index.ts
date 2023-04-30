@@ -20,8 +20,8 @@ for (const file of files) {
         `test/printer/samples/${file.replace(`.${ending}`, '.options.json')}`,
     );
 
-    test(`printer: ${file.slice(0, file.length - `.${ending}`.length)}`, (t) => {
-        const actualOutput = format(input, {
+    test(`printer: ${file.slice(0, file.length - `.${ending}`.length)}`, async (t) => {
+        const actualOutput = await format(input, {
             parser: (ending === 'html' ? 'svelte' : 'markdown') as any,
             plugins: [require.resolve('../../src')],
             tabWidth: 4,

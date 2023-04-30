@@ -25,10 +25,10 @@ export function embed(
     path: FastPath,
     _options: Options,
     ) {
-    return (
-        textToDoc: (text: string, options: Options) => Doc,
+    return async (
+        textToDoc: (text: string, options: Options) => Promise<Doc>,
         print: PrintFn,
-    ): Doc | undefined => {
+    ): Promise<Doc | undefined> => {
         const node: Node = path.getNode();
         const options = _options as ParserOptions
         if (!options.locStart || !options.locEnd || !options.originalText) {
@@ -42,7 +42,7 @@ export function embed(
                     singleQuote: node.forceSingleQuote ? true : undefined
                 };
 
-                let docs = textToDoc(
+                let docs = await textToDoc(
                     forceIntoExpression(
                         // If we have snipped content, it was done wrongly and we need to unsnip it.
                         // This happens for example for {@html `<script>{foo}</script>`}
@@ -141,14 +141,14 @@ function getSnippedContent(node: Node) {
     }
 }
 
-function formatBodyContent(
+async function formatBodyContent(
     content: string,
     parser: 'typescript' | 'babel-ts' | 'css' | 'pug',
-    textToDoc: (text: string, options: object) => Doc,
+    textToDoc: (text: string, options: object) => Promise<Doc>,
     options: ParserOptions & { pugTabWidth?: number },
 ) {
     try {
-        const body = textToDoc(content, { parser });
+        const body = await textToDoc(content, { parser });
 
         if (parser === 'pug' && typeof body === 'string') {
             // Pug returns no docs but a final string.
@@ -186,11 +186,11 @@ function formatBodyContent(
     }
 }
 
-function embedTag(
+async function embedTag(
     tag: 'script' | 'style' | 'template',
     text: string,
     path: FastPath,
-    formatBodyContent: (content: string) => Doc,
+    formatBodyContent: (content: string) => Promise<Doc>,
     print: PrintFn,
     isTopLevel: boolean,
     options: ParserOptions,
@@ -209,7 +209,7 @@ function embedTag(
             ));
     const body: Doc = canFormat
         ? content.trim() !== ''
-            ? formatBodyContent(content)
+            ? await formatBodyContent(content)
             : content === ''
             ? ''
             : hardline
