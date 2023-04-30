@@ -25,13 +25,13 @@ for (const dir of dirs) {
     test(`formatting: ${dir}`, async (t) => {
         let onTestCompleted;
 
-        if ((options as any).expectSyntaxErrors) {
+        if (options.expectSyntaxErrors) {
             onTestCompleted = doNotLogSyntaxErrors();
         }
 
         try {
             const actualOutput = await format(input, {
-                parser: 'svelte' as any,
+                parser: 'svelte',
                 plugins: [require.resolve('../../src')],
                 tabWidth: 4,
                 ...options,
@@ -45,7 +45,7 @@ for (const dir of dirs) {
 
             // Reprint to check that another format outputs the same code
             const actualOutput2 = await format(actualOutput, {
-                parser: 'svelte' as any,
+                parser: 'svelte',
                 plugins: [require.resolve('../../src')],
                 tabWidth: 4,
                 ...options,

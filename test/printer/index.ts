@@ -22,11 +22,11 @@ for (const file of files) {
 
     test(`printer: ${file.slice(0, file.length - `.${ending}`.length)}`, async (t) => {
         const actualOutput = await format(input, {
-            parser: (ending === 'html' ? 'svelte' : 'markdown') as any,
+            parser: (ending === 'html' ? 'svelte' : 'markdown'),
             plugins: [require.resolve('../../src')],
             tabWidth: 4,
             ...options,
-        } as any);
+        });
 
         t.is(input, actualOutput, `Expected:\n${input}\n\nActual:\n${actualOutput}`);
     });
