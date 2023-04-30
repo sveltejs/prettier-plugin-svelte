@@ -1,6 +1,7 @@
 import test from 'ava';
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { format } from 'prettier';
+import * as SveltePlugin from '../../src'
 
 let dirs = readdirSync('test/formatting/samples');
 const endsWithOnly = (f: string): boolean => f.endsWith('.only');
@@ -32,7 +33,7 @@ for (const dir of dirs) {
         try {
             const actualOutput = await format(input, {
                 parser: 'svelte',
-                plugins: [require.resolve('../../src')],
+                plugins: [SveltePlugin],
                 tabWidth: 4,
                 ...options,
             });
@@ -46,7 +47,7 @@ for (const dir of dirs) {
             // Reprint to check that another format outputs the same code
             const actualOutput2 = await format(actualOutput, {
                 parser: 'svelte',
-                plugins: [require.resolve('../../src')],
+                plugins: [SveltePlugin],
                 tabWidth: 4,
                 ...options,
             });

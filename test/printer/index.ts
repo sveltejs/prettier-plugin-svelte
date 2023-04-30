@@ -1,6 +1,7 @@
 import test from 'ava';
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { format } from 'prettier';
+import * as SveltePlugin from '../../src'
 
 let files = readdirSync('test/printer/samples').filter(
     (name) => name.endsWith('.html') || name.endsWith('.md'),
@@ -23,7 +24,7 @@ for (const file of files) {
     test(`printer: ${file.slice(0, file.length - `.${ending}`.length)}`, async (t) => {
         const actualOutput = await format(input, {
             parser: (ending === 'html' ? 'svelte' : 'markdown'),
-            plugins: [require.resolve('../../src')],
+            plugins: [SveltePlugin],
             tabWidth: 4,
             ...options,
         });
