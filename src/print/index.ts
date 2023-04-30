@@ -482,7 +482,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 ];
 
                 if (ifNode.else) {
-                    def.push(path.map((ifPath) => ifPath.call(print, 'else'), 'children')[0]);
+                    def.push(path.map((ifPath: FastPath<any>) => ifPath.call(print, 'else'), 'children')[0]);
                 }
                 return def;
             }
