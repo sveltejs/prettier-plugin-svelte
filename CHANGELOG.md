@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 2.10.1
+
+-   (chore) mark as compatible with Svelte 4
+
 ## 2.10.0
 
 -   (feat) support `requirePragma` and `insertPragma` options ([#350](https://github.com/sveltejs/prettier-plugin-svelte/issues/350))
