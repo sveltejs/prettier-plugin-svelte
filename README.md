@@ -173,6 +173,16 @@ There is a [Tailwind Prettier Plugin](https://github.com/tailwindlabs/prettier-p
 
 More info: https://github.com/tailwindlabs/prettier-plugin-tailwindcss#compatibility-with-other-prettier-plugins
 
+Since we are using configuration overrides to handle svelte files, you might also have to configure the [prettier.documentselectors](https://github.com/prettier/prettier-vscode#prettierdocumentselectors) in your VS Code `settings.json`, to tell Prettier extension to handle svelte files, file like this:
+
+```json5
+// settings.json
+{
+  // ..
+  "prettier.documentSelectors": ["**/*.svelte"],
+}
+```
+
 ## FAQ
 
 ### Why is the closing or opening tag (`>` or `<`) hugging the inner tag or text?
