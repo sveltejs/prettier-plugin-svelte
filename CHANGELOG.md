@@ -4,6 +4,8 @@
 
 -   (breaking) requires `prettier` version 3
 -   (breaking) requires node version 14 or higher
+-   (breaking) add `svelteSelfCloseComponents` and `svelteSelfCloseElements` to specify whether or not empty elements/components should self-close. `svelteStrictMode` no longer has any effect on this behavior
+-   (breaking) `svelteAllowShorthand` now takes precedence over `svelteStrictMode`, which no longer has any effect on that behavior
 
 ## 2.10.1
 

@@ -30,11 +30,13 @@ Install `prettier` and `prettier-plugin-svelte` as dev dependencies in your proj
 Then format your code using Prettier CLI. You may need to add `--plugin-search-dir=.`
 
 As a one-time run:
+
 ```
 npx prettier --write --plugin-search-dir=. ./**/*.html
 ```
 
 As part of your scripts in `package.json`:
+
 ```
 "format": "prettier --write --plugin-search-dir=. ./**/*.html"
 ```
@@ -43,7 +45,7 @@ If you want to customize some formatting behavior, see section "Options" below.
 
 ## Options
 
-``Configurations are optional``
+`Configurations are optional`
 
 Make a `.prettierrc` file in your project directory and add your preferred [options](https://prettier.io/docs/en/options.html) to [configure Prettier](https://prettier.io/docs/en/configuration.html). When using Prettier through the CLI, you can also pass options through CLI flags, but a `.prettierrc` file is recommended.
 
@@ -61,10 +63,15 @@ Format: join the keywords `options`, `scripts`, `markup`, `styles` with a `-` in
 
 ### Svelte Strict Mode
 
-More strict HTML syntax: less self-closed tags, quotes in attributes, no attribute shorthand (overrules `svelteAllowShorthand`).
+> Deprecated since 3.0.0. This option may be removed entirely in the future as quotes around mustache tags might be seen as coercing the value into a string in a future version of Svelte.
+
+More strict HTML syntax: Quotes in attributes.
+
+> In version 2 this overruled `svelteAllowShorthand`, which is no longer the case
 
 Example:
 
+<!-- prettier-ignore -->
 ```html
 <!-- svelteStrictMode: true -->
 <div foo="{bar}"></div>
@@ -83,6 +90,7 @@ Option to enable/disable component attribute shorthand if attribute name and exp
 
 Example:
 
+<!-- prettier-ignore -->
 ```html
 <!-- allowShorthand: true -->
 <input type="text" {value} />
@@ -95,6 +103,44 @@ Example:
 | ------- | --------------------------------- | ------------------------------ |
 | `true`  | `--svelte-allow-shorthand <bool>` | `svelteAllowShorthand: <bool>` |
 
+### Svelte Self Closing Elements
+
+Whether or not empty elements (such as `div`s) should be self-closed or not.
+
+Example:
+
+<!-- prettier-ignore -->
+```html
+<!-- svelteSelfCloseElements: "always" -->
+<div />
+
+<!-- svelteSelfCloseElements: "never" -->
+<div></div>
+```
+
+| Default   | CLI Override                         | API Override                       |
+| --------- | ------------------------------------ | ---------------------------------- | -------- |
+| `"never"` | `--svelte-self-close-elements <str>` | `svelteSelfCloseElements: "always" | "never"` |
+
+### Svelte Self Closing Components
+
+Whether or not empty components should be self-closed or not.
+
+Example:
+
+<!-- prettier-ignore -->
+```html
+<!-- svelteSelfCloseComponents: "always" -->
+<Component />
+
+<!-- svelteSelfCloseComponents: "never" -->
+<Component></Component>
+```
+
+| Default    | CLI Override                           | API Override                         |
+| ---------- | -------------------------------------- | ------------------------------------ | -------- |
+| `"always"` | `--svelte-self-close-components <str>` | `svelteSelfCloseComponents: "always" | "never"` |
+
 ### Svelte Bracket New Line
 
 > Deprecated since 2.5.0. Use Prettier 2.4.0 and [bracketSameLine](https://prettier.io/docs/en/options.html#bracket-line) instead.
@@ -103,6 +149,7 @@ Put the `>` of a multiline element on a new line. Roughly the Svelte equivalent 
 
 Example:
 
+<!-- prettier-ignore -->
 ```html
 <!-- before formatting -->
 <span><div>foo</div><span>bar</span></span>
@@ -147,11 +194,11 @@ Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte
 
 ```json
 {
-  "svelteSortOrder" : "options-styles-scripts-markup",
-  "svelteStrictMode": true,
-  "svelteBracketNewLine": false,
-  "svelteAllowShorthand": false,
-  "svelteIndentScriptAndStyle": false
+    "svelteSortOrder": "options-styles-scripts-markup",
+    "svelteStrictMode": true,
+    "svelteBracketNewLine": false,
+    "svelteAllowShorthand": false,
+    "svelteIndentScriptAndStyle": false
 }
 ```
 
@@ -162,12 +209,12 @@ There is a [Tailwind Prettier Plugin](https://github.com/tailwindlabs/prettier-p
 ```json5
 // .prettierrc
 {
-  // ..
-  "plugins": [
-    "prettier-plugin-svelte",
-    "prettier-plugin-tailwindcss" // MUST come last
-  ],
-  "pluginSearchDirs": false
+    // ..
+    plugins: [
+        'prettier-plugin-svelte',
+        'prettier-plugin-tailwindcss', // MUST come last
+    ],
+    pluginSearchDirs: false,
 }
 ```
 
@@ -178,8 +225,8 @@ Since we are using configuration overrides to handle svelte files, you might als
 ```json5
 // settings.json
 {
-  // ..
-  "prettier.documentSelectors": ["**/*.svelte"],
+    // ..
+    'prettier.documentSelectors': ['**/*.svelte'],
 }
 ```
 
@@ -189,12 +236,14 @@ Since we are using configuration overrides to handle svelte files, you might als
 
 If you are wondering why this code
 
+<!-- prettier-ignore -->
 ```html
 <span><span>assume very long text</span></span>
 ```
 
 becomes this
 
+<!-- prettier-ignore -->
 ```html
 <span
       ><span>assume very long text</span

@@ -212,8 +212,15 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             const isSelfClosingTag =
                 isEmpty &&
-                (!options.svelteStrictMode ||
-                    node.type !== 'Element' ||
+                ((node.type === 'InlineComponent' &&
+                    options.svelteSelfCloseComponents === 'always') ||
+                    ((node.type === 'Element' ||
+                        node.type === 'Head' ||
+                        node.type === 'SlotTemplate' ||
+                        node.type === 'Title') &&
+                        options.svelteSelfCloseElements === 'always') ||
+                    node.type === 'Slot' ||
+                    node.type === 'Window' ||
                     selfClosingTags.indexOf(node.name) !== -1 ||
                     isDoctypeTag);
 
@@ -290,7 +297,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     group([
                         possibleThisBinding,
                         ...attributes,
-                        hugStart
+                        hugStart && !isEmpty
                             ? ''
                             : !bracketSameLine && !isPreTagContent(path)
                             ? dedent(softline)
@@ -430,10 +437,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         }
         case 'Attribute': {
             if (isOrCanBeConvertedToShorthand(node)) {
-                if (options.svelteStrictMode) {
-                    return [node.name, '="{', node.name, '}"'];
-                } else if (options.svelteAllowShorthand) {
+                if (options.svelteAllowShorthand) {
                     return ['{', node.name, '}'];
+                } else if (options.svelteStrictMode) {
+                    return [node.name, '="{', node.name, '}"'];
                 } else {
                     return [node.name, '={', node.name, '}'];
                 }
@@ -613,8 +620,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 node.expression.type === 'Identifier' &&
                 node.expression.name === node.name &&
-                options.svelteAllowShorthand &&
-                !options.svelteStrictMode
+                options.svelteAllowShorthand
                     ? ''
                     : ['=', ...printJsExpression()],
             ];
@@ -624,8 +630,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 node.name,
                 node.expression.type === 'Identifier' &&
                 node.expression.name === node.name &&
-                options.svelteAllowShorthand &&
-                !options.svelteStrictMode
+                options.svelteAllowShorthand
                     ? ''
                     : ['=', ...printJsExpression()],
             ];
@@ -637,10 +642,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             ];
 
             if (isOrCanBeConvertedToShorthand(node) || node.value === true) {
-                if (options.svelteStrictMode) {
-                    return [...prefix, '="{', node.name, '}"'];
-                } else if (options.svelteAllowShorthand) {
+                if (options.svelteAllowShorthand) {
                     return [...prefix];
+                } else if (options.svelteStrictMode) {
+                    return [...prefix, '="{', node.name, '}"'];
                 } else {
                     return [...prefix, '={', node.name, '}'];
                 }

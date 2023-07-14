@@ -1,7 +1,6 @@
 import { ParserOptions as PrettierParserOptions, SupportOption } from 'prettier';
 
-export interface ParserOptions<T = any> extends PrettierParserOptions<T>, Partial<PluginOptions> {
-}
+export interface ParserOptions<T = any> extends PrettierParserOptions<T>, Partial<PluginOptions> {}
 
 export interface PluginOptions {
     svelteSortOrder: SortOrder;
@@ -9,6 +8,8 @@ export interface PluginOptions {
     svelteBracketNewLine: boolean;
     svelteAllowShorthand: boolean;
     svelteIndentScriptAndStyle: boolean;
+    svelteSelfCloseElements: SelfClose;
+    svelteSelfCloseComponents: SelfClose;
 }
 
 function makeChoice(choice: string) {
@@ -56,11 +57,32 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
             makeChoice('styles-scripts-markup'),
         ],
     },
+    svelteSelfCloseElements: {
+        category: 'Svelte',
+        type: 'choice',
+        default: 'never',
+        description: 'Whether or not to self-close empty elements',
+        choices: [
+            { value: 'always', description: 'Always self-close empty elements' },
+            { value: 'never', description: 'Never self-close elements' },
+        ],
+    },
+    svelteSelfCloseComponents: {
+        category: 'Svelte',
+        type: 'choice',
+        default: 'always',
+        description: 'Whether or not to self-close empty components',
+        choices: [
+            { value: 'always', description: 'Always self-close empty components' },
+            { value: 'never', description: 'Never self-close components' },
+        ],
+    },
     svelteStrictMode: {
         category: 'Svelte',
         type: 'boolean',
         default: false,
-        description: 'More strict HTML syntax: self-closed tags, quotes in attributes',
+        description: 'More strict HTML syntax: Quotes in attributes',
+        deprecated: '3.0.0',
     },
     svelteBracketNewLine: {
         category: 'Svelte',
@@ -83,6 +105,8 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
             'Whether or not to indent the code inside <script> and <style> tags in Svelte files',
     },
 };
+
+export type SelfClose = 'auto' | 'always' | 'never';
 
 export type SortOrder =
     | 'options-scripts-markup-styles'
@@ -124,7 +148,9 @@ export type SortOrderPart = 'scripts' | 'markup' | 'styles' | 'options';
 
 const sortOrderSeparator = '-';
 
-export function parseSortOrder(sortOrder: SortOrder = 'options-scripts-markup-styles'): SortOrderPart[] {
+export function parseSortOrder(
+    sortOrder: SortOrder = 'options-scripts-markup-styles',
+): SortOrderPart[] {
     if (sortOrder === 'none') {
         return [];
     }
