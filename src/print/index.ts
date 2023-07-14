@@ -48,6 +48,7 @@ import {
 import {
     ASTNode,
     AttributeNode,
+    CommentInfo,
     CommentNode,
     IfBlockNode,
     Node,
@@ -56,18 +57,8 @@ import {
     TextNode,
 } from './nodes';
 
-const {
-    join,
-    line,
-    group,
-    indent,
-    dedent,
-    softline,
-    hardline,
-    fill,
-    breakParent,
-    literalline,
-} = doc.builders;
+const { join, line, group, indent, dedent, softline, hardline, fill, breakParent, literalline } =
+    doc.builders;
 
 export type PrintFn = (path: FastPath) => Doc;
 
@@ -79,6 +70,10 @@ declare module 'prettier' {
             }
         }
     }
+}
+
+export function hasPragma(text: string) {
+    return /^\s*<!--\s*@(format|prettier)\W/.test(text);
 }
 
 let ignoreNext = false;
@@ -94,6 +89,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     }
 
     if (isASTNode(n)) {
+        assignCommentsToNodes(n);
         return printTopLevelParts(n, options, path, print);
     }
 
@@ -172,10 +168,38 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                  */
                 return fill(splitTextToDocs(node));
             } else {
-                const rawText = getUnencodedText(node);
-                if (path.getParentNode().type === 'Attribute') {
+                let rawText = getUnencodedText(node);
+                const parent = path.getParentNode();
+                if (parent.type === 'Attribute') {
                     // Direct child of attribute value -> add literallines at end of lines
                     // so that other things don't break in unexpected places
+                    if (parent.name === 'class' && path.getParentNode(1).type === 'Element') {
+                        // Special treatment for class attribute on html elements. Prettier
+                        // will force everything into one line, we deviate from that and preserve lines.
+                        rawText = rawText.replace(
+                            /([^ \t\n])(([ \t]+$)|([ \t]+(\r?\n))|[ \t]+)/g,
+                            // Remove trailing whitespace in lines with non-whitespace characters
+                            // except at the end of the string
+                            (
+                                match,
+                                characterBeforeWhitespace,
+                                _,
+                                isEndOfString,
+                                isEndOfLine,
+                                endOfLine,
+                            ) =>
+                                isEndOfString
+                                    ? match
+                                    : characterBeforeWhitespace + (isEndOfLine ? endOfLine : ' '),
+                        );
+                        // Shrink trailing whitespace in case it's followed by a mustache tag
+                        // and remove it completely if it's at the end of the string, but not
+                        // if it's on its own line
+                        rawText = rawText.replace(
+                            /([^ \t\n])[ \t]+$/,
+                            parent.value.indexOf(node) === parent.value.length - 1 ? '$1' : '$1 ',
+                        );
+                    }
                     return replaceEndOfLineWith(rawText, literalline);
                 }
                 return rawText;
@@ -401,6 +425,21 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 ),
                 ...[bracketSameLine ? ' ' : '', '/>'],
             ]);
+        case 'Document':
+            return group([
+                '<',
+                node.name,
+                indent(
+                    group([
+                        ...path.map(
+                            printWithPrependedAttributeLine(node, options, print),
+                            'attributes',
+                        ),
+                        bracketSameLine ? '' : dedent(line),
+                    ]),
+                ),
+                ...[bracketSameLine ? ' ' : '', '/>'],
+            ]);
         case 'Identifier':
             return node.name;
         case 'AttributeShorthand': {
@@ -420,7 +459,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     return [node.name];
                 }
 
-                const quotes = !isLoneMustacheTag(node.value) || (options.svelteStrictMode ?? false);
+                const quotes =
+                    !isLoneMustacheTag(node.value) || (options.svelteStrictMode ?? false);
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
                     return [node.name, '=', '"', attrNodeValue, '"'];
@@ -482,7 +522,12 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 ];
 
                 if (ifNode.else) {
-                    def.push(path.map((ifPath: FastPath<any>) => ifPath.call(print, 'else'), 'children')[0]);
+                    def.push(
+                        path.map(
+                            (ifPath: FastPath<any>) => ifPath.call(print, 'else'),
+                            'children',
+                        )[0],
+                    );
                 }
                 return def;
             }
@@ -631,7 +676,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     return [...prefix, '={', node.name, '}'];
                 }
             } else {
-                const quotes = !isLoneMustacheTag(node.value) || (options.svelteStrictMode ?? false);
+                const quotes =
+                    !isLoneMustacheTag(node.value) || (options.svelteStrictMode ?? false);
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
                     return [...prefix, '=', '"', attrNodeValue, '"'];
@@ -708,6 +754,70 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     throw new Error('unknown node type: ' + node.type);
 }
 
+function assignCommentsToNodes(ast: ASTNode) {
+    if (ast.module) {
+        ast.module.comments = removeAndGetLeadingComments(ast, ast.module);
+    }
+    if (ast.instance) {
+        ast.instance.comments = removeAndGetLeadingComments(ast, ast.instance);
+    }
+    if (ast.css) {
+        ast.css.comments = removeAndGetLeadingComments(ast, ast.css);
+    }
+}
+
+/**
+ * Returns the comments that are above the current node and deletes them from the html ast.
+ */
+function removeAndGetLeadingComments(ast: ASTNode, current: Node): CommentInfo[] {
+    const siblings = getChildren(ast.html);
+    const comments: CommentNode[] = [];
+    const newlines: TextNode[] = [];
+
+    if (!siblings.length) {
+        return [];
+    }
+
+    let node: Node = current;
+    let prev: Node | undefined = siblings.find((child) => child.end === node.start);
+    while (prev) {
+        if (
+            prev.type === 'Comment' &&
+            !isIgnoreStartDirective(prev) &&
+            !isIgnoreEndDirective(prev)
+        ) {
+            comments.push(prev);
+            if (comments.length !== newlines.length) {
+                newlines.push({ type: 'Text', data: '', raw: '', start: -1, end: -1 });
+            }
+        } else if (isEmptyTextNode(prev)) {
+            newlines.push(prev);
+        } else {
+            break;
+        }
+
+        node = prev;
+        prev = siblings.find((child) => child.end === node.start);
+    }
+
+    newlines.length = comments.length; // could be one more if first comment is preceeded by empty text node
+
+    for (const comment of comments) {
+        siblings.splice(siblings.indexOf(comment), 1);
+    }
+
+    for (const text of newlines) {
+        siblings.splice(siblings.indexOf(text), 1);
+    }
+
+    return comments
+        .map((comment, i) => ({
+            comment,
+            emptyLineAfter: getUnencodedText(newlines[i]).split('\n').length > 2,
+        }))
+        .reverse();
+}
+
 function printTopLevelParts(
     n: ASTNode,
     options: ParserOptions,
@@ -741,7 +851,13 @@ function printTopLevelParts(
                 delete topLevelPartsByEnd[node.start];
             }
         }
-        return path.call(print, 'html');
+
+        const result = path.call(print, 'html');
+        if (options.insertPragma && !hasPragma(options.originalText)) {
+            return [`<!-- @format -->`, hardline, result];
+        } else {
+            return result;
+        }
     }
 
     const parts: Record<SortOrderPart, Doc[]> = {
@@ -795,7 +911,11 @@ function printTopLevelParts(
         trimRight([lastDoc], isLine);
     }
 
-    return group([join(hardline, docs)]);
+    if (options.insertPragma && !hasPragma(options.originalText)) {
+        return [`<!-- @format -->`, hardline, group(docs)];
+    } else {
+        return group([join(hardline, docs)]);
+    }
 }
 
 function printAttributeNodeValue(

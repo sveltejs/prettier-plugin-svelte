@@ -12,34 +12,31 @@ import {
     isNodeSupportedLanguage,
     isPugTemplate,
     isTypeScript,
-    printRaw
+    printRaw,
 } from './print/node-helpers';
-import { ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
+import { CommentNode, ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
 
 const {
     builders: { group, hardline, softline, indent, dedent, literalline },
     utils: { removeLines },
 } = doc;
 
-export function embed(
-    path: FastPath,
-    _options: Options,
-    ) {
+export function embed(path: FastPath, _options: Options) {
     return async (
         textToDoc: (text: string, options: Options) => Promise<Doc>,
         print: PrintFn,
     ): Promise<Doc | undefined> => {
         const node: Node = path.getNode();
-        const options = _options as ParserOptions
+        const options = _options as ParserOptions;
         if (!options.locStart || !options.locEnd || !options.originalText) {
-            throw new Error(`Missing required options`)
+            throw new Error(`Missing required options`);
         }
 
         if (node.isJS) {
             try {
                 const embeddedOptions = {
                     parser: expressionParser,
-                    singleQuote: node.forceSingleQuote ? true : undefined
+                    singleQuote: node.forceSingleQuote ? true : undefined,
                 };
 
                 let docs = await textToDoc(
@@ -107,7 +104,7 @@ export function embed(
         }
 
         return;
-    }
+    };
 }
 
 function forceIntoExpression(statement: string) {
@@ -198,11 +195,16 @@ async function embedTag(
     const node: ScriptNode | StyleNode | ElementNode = path.getNode();
     const content =
         tag === 'template' ? printRaw(node as ElementNode, text) : getSnippedContent(node);
-    const previousComment = getLeadingComment(path);
+    const previousComments =
+        node.type === 'Script' || node.type === 'Style'
+            ? node.comments
+            : [getLeadingComment(path)]
+                  .filter(Boolean)
+                  .map((comment) => ({ comment: comment as CommentNode, emptyLineAfter: false }));
 
     const canFormat =
         isNodeSupportedLanguage(node) &&
-        !isIgnoreDirective(previousComment) &&
+        !isIgnoreDirective(previousComments[previousComments.length - 1]?.comment) &&
         (tag !== 'template' ||
             options.plugins.some(
                 (plugin) => typeof plugin !== 'string' && plugin.parsers && plugin.parsers.pug,
@@ -228,16 +230,21 @@ async function embedTag(
     ]);
     let result: Doc = group([openingTag, body, '</', tag, '>']);
 
+    const comments = [];
+    for (const comment of previousComments) {
+        comments.push('<!--', comment.comment.data, '-->');
+        comments.push(hardline);
+        if (comment.emptyLineAfter) {
+            comments.push(hardline);
+        }
+    }
+
     if (isTopLevel && options.svelteSortOrder !== 'none') {
         // top level embedded nodes have been moved from their normal position in the
         // node tree. if there is a comment referring to it, it must be recreated at
         // the new position.
-        if (previousComment) {
-            result = ['<!--', previousComment.data, '-->', hardline, result, hardline];
-        } else {
-            result = [result, hardline];
-        }
+        return [...comments, result, hardline];
+    } else {
+        return comments.length ? [...comments, result] : result;
     }
-
-    return result;
 }
