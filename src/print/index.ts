@@ -1,7 +1,5 @@
 import { Doc, doc, FastPath } from 'prettier';
 import { formattableAttributes, selfClosingTags } from '../lib/elements';
-import { extractAttributes } from '../lib/extractAttributes';
-import { getText } from '../lib/getText';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
 import { isBracketSameLine, ParserOptions, parseSortOrder, SortOrderPart } from '../options';
 import { isEmptyDoc, isLine, trim, trimRight } from './doc-helpers';
@@ -48,7 +46,6 @@ import {
 import {
     ASTNode,
     AttributeNode,
-    CommentInfo,
     CommentNode,
     IfBlockNode,
     Node,
@@ -89,7 +86,6 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     }
 
     if (isASTNode(n)) {
-        assignCommentsToNodes(n);
         return printTopLevelParts(n, options, path, print);
     }
 
@@ -754,70 +750,6 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
     throw new Error('unknown node type: ' + node.type);
 }
 
-function assignCommentsToNodes(ast: ASTNode) {
-    if (ast.module) {
-        ast.module.comments = removeAndGetLeadingComments(ast, ast.module);
-    }
-    if (ast.instance) {
-        ast.instance.comments = removeAndGetLeadingComments(ast, ast.instance);
-    }
-    if (ast.css) {
-        ast.css.comments = removeAndGetLeadingComments(ast, ast.css);
-    }
-}
-
-/**
- * Returns the comments that are above the current node and deletes them from the html ast.
- */
-function removeAndGetLeadingComments(ast: ASTNode, current: Node): CommentInfo[] {
-    const siblings = getChildren(ast.html);
-    const comments: CommentNode[] = [];
-    const newlines: TextNode[] = [];
-
-    if (!siblings.length) {
-        return [];
-    }
-
-    let node: Node = current;
-    let prev: Node | undefined = siblings.find((child) => child.end === node.start);
-    while (prev) {
-        if (
-            prev.type === 'Comment' &&
-            !isIgnoreStartDirective(prev) &&
-            !isIgnoreEndDirective(prev)
-        ) {
-            comments.push(prev);
-            if (comments.length !== newlines.length) {
-                newlines.push({ type: 'Text', data: '', raw: '', start: -1, end: -1 });
-            }
-        } else if (isEmptyTextNode(prev)) {
-            newlines.push(prev);
-        } else {
-            break;
-        }
-
-        node = prev;
-        prev = siblings.find((child) => child.end === node.start);
-    }
-
-    newlines.length = comments.length; // could be one more if first comment is preceeded by empty text node
-
-    for (const comment of comments) {
-        siblings.splice(siblings.indexOf(comment), 1);
-    }
-
-    for (const text of newlines) {
-        siblings.splice(siblings.indexOf(text), 1);
-    }
-
-    return comments
-        .map((comment, i) => ({
-            comment,
-            emptyLineAfter: getUnencodedText(newlines[i]).split('\n').length > 2,
-        }))
-        .reverse();
-}
-
 function printTopLevelParts(
     n: ASTNode,
     options: ParserOptions,
@@ -828,18 +760,12 @@ function printTopLevelParts(
         const topLevelPartsByEnd: Record<number, any> = {};
 
         if (n.module) {
-            n.module.type = 'Script';
-            n.module.attributes = extractAttributes(getText(n.module, options));
             topLevelPartsByEnd[n.module.end] = n.module;
         }
         if (n.instance) {
-            n.instance.type = 'Script';
-            n.instance.attributes = extractAttributes(getText(n.instance, options));
             topLevelPartsByEnd[n.instance.end] = n.instance;
         }
         if (n.css) {
-            n.css.type = 'Style';
-            n.css.content.type = 'StyleProgram';
             topLevelPartsByEnd[n.css.end] = n.css;
         }
 
@@ -869,20 +795,14 @@ function printTopLevelParts(
 
     // scripts
     if (n.module) {
-        n.module.type = 'Script';
-        n.module.attributes = extractAttributes(getText(n.module, options));
         parts.scripts.push(path.call(print, 'module'));
     }
     if (n.instance) {
-        n.instance.type = 'Script';
-        n.instance.attributes = extractAttributes(getText(n.instance, options));
         parts.scripts.push(path.call(print, 'instance'));
     }
 
     // styles
     if (n.css) {
-        n.css.type = 'Style';
-        n.css.content.type = 'StyleProgram';
         parts.styles.push(path.call(print, 'css'));
     }
 
@@ -1256,7 +1176,7 @@ function splitTextToDocs(node: TextNode): Doc[] {
     const text = getUnencodedText(node);
     const lines = text.split(/[\t\n\f\r ]+/);
 
-    let docs = join(line, lines).filter((doc) => !isEmptyDoc(doc));
+    let docs = join(line, lines).filter((doc) => doc !== '');
 
     if (startsWithLinebreak(text)) {
         docs[0] = hardline;
@@ -1287,10 +1207,10 @@ function printJS(
     removeParentheses: boolean,
     name: string,
 ) {
-    path.getValue()[name].isJS = true;
-    path.getValue()[name].forceSingleQuote = forceSingleQuote;
-    path.getValue()[name].forceSingleLine = forceSingleLine;
-    path.getValue()[name].removeParentheses = removeParentheses;
+    // path.getValue()[name].isJS = true;
+    // path.getValue()[name].forceSingleQuote = forceSingleQuote;
+    // path.getValue()[name].forceSingleLine = forceSingleLine;
+    // path.getValue()[name].removeParentheses = removeParentheses;
     return path.call(print, name);
 }
 
