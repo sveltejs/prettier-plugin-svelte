@@ -1,7 +1,6 @@
 import { ParserOptions as PrettierParserOptions, SupportOption } from 'prettier';
 
-export interface ParserOptions<T = any> extends PrettierParserOptions<T>, Partial<PluginOptions> {
-}
+export interface ParserOptions<T = any> extends PrettierParserOptions<T>, Partial<PluginOptions> {}
 
 export interface PluginOptions {
     svelteSortOrder: SortOrder;
@@ -60,7 +59,7 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
         category: 'Svelte',
         type: 'boolean',
         default: false,
-        description: 'More strict HTML syntax: self-closed tags, quotes in attributes',
+        description: 'More strict HTML syntax: Quotes in attributes',
     },
     svelteBracketNewLine: {
         category: 'Svelte',
@@ -124,7 +123,9 @@ export type SortOrderPart = 'scripts' | 'markup' | 'styles' | 'options';
 
 const sortOrderSeparator = '-';
 
-export function parseSortOrder(sortOrder: SortOrder = 'options-scripts-markup-styles'): SortOrderPart[] {
+export function parseSortOrder(
+    sortOrder: SortOrder = 'options-scripts-markup-styles',
+): SortOrderPart[] {
     if (sortOrder === 'none') {
         return [];
     }

@@ -1,7 +1,7 @@
 import test from 'ava';
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { format } from 'prettier';
-import * as SveltePlugin from '../../src'
+import * as SveltePlugin from '../../src';
 
 let dirs = readdirSync('test/formatting/samples');
 const endsWithOnly = (f: string): boolean => f.endsWith('.only');
