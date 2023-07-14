@@ -46,6 +46,7 @@ import {
 import {
     ASTNode,
     AttributeNode,
+    CommentInfo,
     CommentNode,
     IfBlockNode,
     Node,
@@ -392,6 +393,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             }
         // else fall through to Body
         case 'Body':
+        case 'Document':
             return group([
                 '<',
                 node.name,
