@@ -1,77 +1,158 @@
-import { Doc, doc, FastPath, ParserOptions } from 'prettier';
+import { Doc, doc, FastPath, Options } from 'prettier';
 import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
-import { isBracketSameLine } from './options';
+import { isBracketSameLine, ParserOptions } from './options';
 import { PrintFn } from './print';
 import { isLine, removeParentheses, trimRight } from './print/doc-helpers';
-import { printWithPrependedAttributeLine } from './print/helpers';
+import { isASTNode, printWithPrependedAttributeLine } from './print/helpers';
 import {
+    assignCommentsToNodes,
     getAttributeTextValue,
     getLeadingComment,
     isIgnoreDirective,
+    isInsideQuotedAttribute,
     isNodeSupportedLanguage,
     isPugTemplate,
     isTypeScript,
-    printRaw
+    printRaw,
 } from './print/node-helpers';
-import { ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
+import { CommentNode, ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
+import { extractAttributes } from './lib/extractAttributes';
 
 const {
     builders: { group, hardline, softline, indent, dedent, literalline },
     utils: { removeLines },
 } = doc;
 
-export function embed(
-    path: FastPath,
-    print: PrintFn,
-    textToDoc: (text: string, options: object) => Doc,
-    options: ParserOptions,
-): Doc | null {
+// Embed works like this in Prettier v3:
+// - do depth first traversal of all node properties
+// - deepest property is calling embed first
+// - if embed returns a function, it will be called after the traversal in a second pass, in the same order (deepest first)
+// For performance reasons we try to only return functions when we're sure we need to transform something.
+export function embed(path: FastPath, _options: Options) {
     const node: Node = path.getNode();
+    const options = _options as ParserOptions;
+    if (!options.locStart || !options.locEnd || !options.originalText) {
+        throw new Error('Missing required options');
+    }
+
+    if (isASTNode(node)) {
+        assignCommentsToNodes(node);
+        if (node.module) {
+            node.module.type = 'Script';
+            node.module.attributes = extractAttributes(getText(node.module, options));
+        }
+        if (node.instance) {
+            node.instance.type = 'Script';
+            node.instance.attributes = extractAttributes(getText(node.instance, options));
+        }
+        if (node.css) {
+            node.css.type = 'Style';
+            node.css.content.type = 'StyleProgram';
+        }
+        return null;
+    }
+
+    // embed does depth first traversal with deepest node called first, therefore we need to
+    // check the parent to see if we are inside an expression that should be embedded.
+    const parent = path.getParentNode();
+    const printJsExpression = () =>
+        (parent as any).expression
+            ? printJS(parent, options.svelteStrictMode ?? false, false, false, 'expression')
+            : undefined;
+    const printSvelteBlockJS = (name: string) => printJS(parent, false, true, false, name);
+
+    switch (parent.type) {
+        case 'IfBlock':
+        case 'ElseBlock':
+        case 'AwaitBlock':
+        case 'KeyBlock':
+            printSvelteBlockJS('expression');
+            break;
+        case 'EachBlock':
+            printSvelteBlockJS('expression');
+            printSvelteBlockJS('key');
+            break;
+        case 'Element':
+            printJS(parent, options.svelteStrictMode ?? false, false, false, 'tag');
+            break;
+        case 'MustacheTag':
+            printJS(parent, isInsideQuotedAttribute(path, options), false, false, 'expression');
+            break;
+        case 'RawMustacheTag':
+            printJS(parent, false, false, false, 'expression');
+            break;
+        case 'Spread':
+            printJS(parent, false, false, false, 'expression');
+            break;
+        case 'ConstTag':
+            printJS(parent, false, false, true, 'expression');
+            break;
+        case 'EventHandler':
+        case 'Binding':
+        case 'Class':
+        case 'Let':
+        case 'Transition':
+        case 'Action':
+        case 'Animation':
+        case 'InlineComponent':
+            printJsExpression();
+            break;
+    }
 
     if (node.isJS) {
-        try {
-            const embeddedOptions: any = {
-                parser: expressionParser,
-            };
-            if (node.forceSingleQuote) {
-                embeddedOptions.singleQuote = true;
-            }
+        return async (
+            textToDoc: (text: string, options: Options) => Promise<Doc>,
+        ): Promise<Doc> => {
+            try {
+                const embeddedOptions = {
+                    // Prettier only allows string references as parsers from v3 onwards,
+                    // so we need to have another public parser and defer to that
+                    parser: 'svelteExpressionParser',
+                    singleQuote: node.forceSingleQuote ? true : options.singleQuote,
+                };
 
-            let docs = textToDoc(
-                forceIntoExpression(
-                    // If we have snipped content, it was done wrongly and we need to unsnip it.
-                    // This happens for example for {@html `<script>{foo}</script>`}
-                    getText(node, options, true),
-                ),
-                embeddedOptions,
-            );
-            if (node.forceSingleLine) {
-                docs = removeLines(docs);
+                let docs = await textToDoc(
+                    forceIntoExpression(
+                        // If we have snipped content, it was done wrongly and we need to unsnip it.
+                        // This happens for example for {@html `<script>{foo}</script>`}
+                        getText(node, options, true),
+                    ),
+                    embeddedOptions,
+                );
+                if (node.forceSingleLine) {
+                    docs = removeLines(docs);
+                }
+                if (node.removeParentheses) {
+                    docs = removeParentheses(docs);
+                }
+                return docs;
+            } catch (e) {
+                return getText(node, options, true);
             }
-            if (node.removeParentheses) {
-                docs = removeParentheses(docs);
-            }
-            return docs;
-        } catch (e) {
-            return getText(node, options, true);
-        }
+        };
     }
 
     const embedType = (
         tag: 'script' | 'style' | 'template',
         parser: 'typescript' | 'babel-ts' | 'css' | 'pug',
         isTopLevel: boolean,
-    ) =>
-        embedTag(
-            tag,
-            options.originalText,
-            path,
-            (content) => formatBodyContent(content, parser, textToDoc, options),
-            print,
-            isTopLevel,
-            options,
-        );
+    ) => {
+        return async (
+            textToDoc: (text: string, options: Options) => Promise<Doc>,
+            print: PrintFn,
+        ): Promise<Doc> => {
+            return embedTag(
+                tag,
+                options.originalText,
+                path,
+                (content) => formatBodyContent(content, parser, textToDoc, options),
+                print,
+                isTopLevel,
+                options,
+            );
+        };
+    };
 
     const embedScript = (isTopLevel: boolean) =>
         embedType(
@@ -111,13 +192,11 @@ function forceIntoExpression(statement: string) {
     return `(${statement}\n)`;
 }
 
-function expressionParser(text: string, parsers: any, options: any) {
-    const ast = parsers.babel(text, parsers, options);
-
-    return { ...ast, program: ast.program.body[0].expression };
-}
-
 function preformattedBody(str: string): Doc {
+    if (!str) {
+        return '';
+    }
+
     const firstNewline = /^[\t\f\r ]*\n/;
     const lastNewline = /\n[\t\f\r ]*$/;
 
@@ -136,14 +215,14 @@ function getSnippedContent(node: Node) {
     }
 }
 
-function formatBodyContent(
+async function formatBodyContent(
     content: string,
     parser: 'typescript' | 'babel-ts' | 'css' | 'pug',
-    textToDoc: (text: string, options: object) => Doc,
+    textToDoc: (text: string, options: object) => Promise<Doc>,
     options: ParserOptions & { pugTabWidth?: number },
 ) {
     try {
-        const body = textToDoc(content, { parser });
+        const body = await textToDoc(content, { parser });
 
         if (parser === 'pug' && typeof body === 'string') {
             // Pug returns no docs but a final string.
@@ -181,11 +260,11 @@ function formatBodyContent(
     }
 }
 
-function embedTag(
+async function embedTag(
     tag: 'script' | 'style' | 'template',
     text: string,
     path: FastPath,
-    formatBodyContent: (content: string) => Doc,
+    formatBodyContent: (content: string) => Promise<Doc>,
     print: PrintFn,
     isTopLevel: boolean,
     options: ParserOptions,
@@ -193,18 +272,23 @@ function embedTag(
     const node: ScriptNode | StyleNode | ElementNode = path.getNode();
     const content =
         tag === 'template' ? printRaw(node as ElementNode, text) : getSnippedContent(node);
-    const previousComment = getLeadingComment(path);
+    const previousComments =
+        node.type === 'Script' || node.type === 'Style'
+            ? node.comments
+            : [getLeadingComment(path)]
+                  .filter(Boolean)
+                  .map((comment) => ({ comment: comment as CommentNode, emptyLineAfter: false }));
 
     const canFormat =
         isNodeSupportedLanguage(node) &&
-        !isIgnoreDirective(previousComment) &&
+        !isIgnoreDirective(previousComments[previousComments.length - 1]?.comment) &&
         (tag !== 'template' ||
             options.plugins.some(
                 (plugin) => typeof plugin !== 'string' && plugin.parsers && plugin.parsers.pug,
             ));
     const body: Doc = canFormat
         ? content.trim() !== ''
-            ? formatBodyContent(content)
+            ? await formatBodyContent(content)
             : content === ''
             ? ''
             : hardline
@@ -223,16 +307,37 @@ function embedTag(
     ]);
     let result: Doc = group([openingTag, body, '</', tag, '>']);
 
+    const comments = [];
+    for (const comment of previousComments) {
+        comments.push('<!--', comment.comment.data, '-->');
+        comments.push(hardline);
+        if (comment.emptyLineAfter) {
+            comments.push(hardline);
+        }
+    }
+
     if (isTopLevel && options.svelteSortOrder !== 'none') {
         // top level embedded nodes have been moved from their normal position in the
         // node tree. if there is a comment referring to it, it must be recreated at
         // the new position.
-        if (previousComment) {
-            result = ['<!--', previousComment.data, '-->', hardline, result, hardline];
-        } else {
-            result = [result, hardline];
-        }
+        return [...comments, result, hardline];
+    } else {
+        return comments.length ? [...comments, result] : result;
     }
+}
 
-    return result;
+function printJS(
+    node: any,
+    forceSingleQuote: boolean,
+    forceSingleLine: boolean,
+    removeParentheses: boolean,
+    name: string,
+) {
+    if (!node[name]) {
+        return;
+    }
+    node[name].isJS = true;
+    node[name].forceSingleQuote = forceSingleQuote;
+    node[name].forceSingleLine = forceSingleLine;
+    node[name].removeParentheses = removeParentheses;
 }

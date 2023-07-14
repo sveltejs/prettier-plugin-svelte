@@ -1,4 +1,4 @@
-import { Doc, doc, FastPath, ParserOptions } from 'prettier';
+import { Doc, doc, FastPath } from 'prettier';
 import { PrintFn } from '.';
 import { formattableAttributes } from '../lib/elements';
 import { snippedTagContentAttribute } from '../lib/snipTagContent';
@@ -6,6 +6,7 @@ import {
     ASTNode,
     AttributeNode,
     BodyNode,
+    DocumentNode,
     ElementNode,
     HeadNode,
     InlineComponentNode,
@@ -18,6 +19,7 @@ import {
     TitleNode,
     WindowNode
 } from './nodes';
+import { ParserOptions } from '../options';
 
 /**
  * Determines whether or not given node
@@ -77,6 +79,7 @@ export function getAttributeLine(
         | StyleNode
         | ScriptNode
         | BodyNode
+        | DocumentNode
         | OptionsNode
         | SlotTemplateNode,
     options: ParserOptions,
@@ -106,6 +109,7 @@ export function printWithPrependedAttributeLine(
         | StyleNode
         | ScriptNode
         | BodyNode
+        | DocumentNode
         | OptionsNode
         | SlotTemplateNode,
     options: ParserOptions,

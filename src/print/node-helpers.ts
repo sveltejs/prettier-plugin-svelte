@@ -21,11 +21,13 @@ import {
     CommentNode,
     SlotTemplateNode,
     StyleDirectiveNode,
+    ASTNode,
+    CommentInfo,
 } from './nodes';
 import { blockElements, TagName } from '../lib/elements';
-import { FastPath, ParserOptions } from 'prettier';
+import { FastPath } from 'prettier';
 import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
-import { isBracketSameLine } from '../options';
+import { ParserOptions, isBracketSameLine } from '../options';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
 
@@ -212,11 +214,11 @@ function isTextNode(node: Node): node is TextNode {
 }
 
 function getAttributeValue(attributeName: string, node: Node) {
-    const attributes = (node as ElementNode)['attributes'] as AttributeNode[];
+    const attributes = ((node as ElementNode).attributes ?? []) as AttributeNode[];
 
     const langAttribute = attributes.find(
         (attribute) => attribute.name === attributeName,
-    ) as AttributeNode | null;
+    );
 
     return langAttribute && langAttribute.value;
 }
@@ -557,4 +559,68 @@ function isLastChildWithinParentBlockElement(path: FastPath, options: ParserOpti
     const children = getChildren(parent);
     const lastChild = children[children.length - 1];
     return lastChild === path.getNode();
+}
+
+export function assignCommentsToNodes(ast: ASTNode) {
+    if (ast.module) {
+        ast.module.comments = removeAndGetLeadingComments(ast, ast.module);
+    }
+    if (ast.instance) {
+        ast.instance.comments = removeAndGetLeadingComments(ast, ast.instance);
+    }
+    if (ast.css) {
+        ast.css.comments = removeAndGetLeadingComments(ast, ast.css);
+    }
+}
+
+/**
+ * Returns the comments that are above the current node and deletes them from the html ast.
+ */
+function removeAndGetLeadingComments(ast: ASTNode, current: Node): CommentInfo[] {
+    const siblings = getChildren(ast.html);
+    const comments: CommentNode[] = [];
+    const newlines: TextNode[] = [];
+
+    if (!siblings.length) {
+        return [];
+    }
+
+    let node: Node = current;
+    let prev: Node | undefined = siblings.find((child) => child.end === node.start);
+    while (prev) {
+        if (
+            prev.type === 'Comment' &&
+            !isIgnoreStartDirective(prev) &&
+            !isIgnoreEndDirective(prev)
+        ) {
+            comments.push(prev);
+            if (comments.length !== newlines.length) {
+                newlines.push({ type: 'Text', data: '', raw: '', start: -1, end: -1 });
+            }
+        } else if (isEmptyTextNode(prev)) {
+            newlines.push(prev);
+        } else {
+            break;
+        }
+
+        node = prev;
+        prev = siblings.find((child) => child.end === node.start);
+    }
+
+    newlines.length = comments.length; // could be one more if first comment is preceeded by empty text node
+
+    for (const comment of comments) {
+        siblings.splice(siblings.indexOf(comment), 1);
+    }
+
+    for (const text of newlines) {
+        siblings.splice(siblings.indexOf(text), 1);
+    }
+
+    return comments
+        .map((comment, i) => ({
+            comment,
+            emptyLineAfter: getUnencodedText(newlines[i]).split('\n').length > 2,
+        }))
+        .reverse();
 }

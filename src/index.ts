@@ -1,8 +1,11 @@
 import { SupportLanguage, Parser, Printer } from 'prettier';
-import { print } from './print';
+import * as prettierPluginBabel from 'prettier/plugins/babel';
+import { hasPragma, print } from './print';
 import { ASTNode } from './print/nodes';
 import { embed } from './embed';
 import { snipScriptAndStyleTagContent } from './lib/snipTagContent';
+
+const babelParser = prettierPluginBabel.parsers.babel;
 
 function locStart(node: any) {
     return node.start;
@@ -23,6 +26,7 @@ export const languages: Partial<SupportLanguage>[] = [
 
 export const parsers: Record<string, Parser> = {
     svelte: {
+        hasPragma,
         parse: (text) => {
             try {
                 return <ASTNode>{ ...require(`svelte/compiler`).parse(text), __isRoot: true };
@@ -54,6 +58,14 @@ export const parsers: Record<string, Parser> = {
         locEnd,
         astFormat: 'svelte-ast',
     },
+    svelteExpressionParser: {
+        ...babelParser,
+        parse: (text: string, options: any) => {
+            const ast = babelParser.parse(text, options);
+        
+            return { ...ast, program: ast.program.body[0].expression };
+        }
+    }
 };
 
 export const printers: Record<string, Printer> = {

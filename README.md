@@ -29,8 +29,14 @@ Install `prettier` and `prettier-plugin-svelte` as dev dependencies in your proj
 
 Then format your code using Prettier CLI. You may need to add `--plugin-search-dir=.`
 
+As a one-time run:
 ```
-prettier --write --plugin-search-dir=. ./**/*.html
+npx prettier --write --plugin-search-dir=. ./**/*.html
+```
+
+As part of your scripts in `package.json`:
+```
+"format": "prettier --write --plugin-search-dir=. ./**/*.html"
 ```
 
 If you want to customize some formatting behavior, see section "Options" below.
@@ -166,6 +172,16 @@ There is a [Tailwind Prettier Plugin](https://github.com/tailwindlabs/prettier-p
 ```
 
 More info: https://github.com/tailwindlabs/prettier-plugin-tailwindcss#compatibility-with-other-prettier-plugins
+
+Since we are using configuration overrides to handle svelte files, you might also have to configure the [prettier.documentselectors](https://github.com/prettier/prettier-vscode#prettierdocumentselectors) in your VS Code `settings.json`, to tell Prettier extension to handle svelte files, file like this:
+
+```json5
+// settings.json
+{
+  // ..
+  "prettier.documentSelectors": ["**/*.svelte"],
+}
+```
 
 ## FAQ
 

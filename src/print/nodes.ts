@@ -207,17 +207,20 @@ export interface StyleNode extends BaseNode {
     attributes: Node[];
     children: Node[];
     content: StyleProgramNode;
+    comments: CommentInfo[]; // doesn't exist on original node but we use it to store comments
 }
 
 export interface ScriptNode extends BaseNode {
     type: 'Script';
     attributes: Node[];
     content: Node;
+    comments: CommentInfo[]; // doesn't exist on original node but we use it to store comments
 }
 
 export interface StyleProgramNode extends BaseNode {
     type: 'StyleProgram';
     styles: string;
+    comments: CommentInfo[]; // doesn't exist on original node but we use it to store comments
 }
 
 export interface ProgramNode extends BaseNode {
@@ -259,6 +262,12 @@ export interface BodyNode extends BaseNode {
     attributes: Node[];
 }
 
+export interface DocumentNode extends BaseNode {
+    type: 'Document';
+    name: string;
+    attributes: Node[];
+}
+
 export interface OptionsNode extends BaseNode {
     type: 'Options';
     name: string;
@@ -275,6 +284,11 @@ export interface SlotTemplateNode extends BaseNode {
 export interface ConstTagNode extends BaseNode {
     type: 'ConstTag';
     expression: Node;
+}
+
+export interface CommentInfo {
+    comment: CommentNode;
+    emptyLineAfter: boolean;
 }
 
 export type Node =
@@ -318,6 +332,7 @@ export type Node =
     | InstanceScriptNode
     | ModuleScriptNode
     | BodyNode
+    | DocumentNode
     | OptionsNode
     | SlotTemplateNode
     | ConstTagNode;
@@ -327,13 +342,7 @@ export type Node =
  */
 export interface ASTNode {
     html: Node;
-    css?: Node & {
-        attributes: Node[];
-        children: Node[];
-        content: Node & {
-            styles: string;
-        };
-    };
+    css?: StyleNode;
     js?: ScriptNode;
     instance?: ScriptNode;
     module?: ScriptNode;
