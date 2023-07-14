@@ -24,6 +24,11 @@ const {
     utils: { removeLines },
 } = doc;
 
+// Embed works like this in Prettier v3:
+// - do depth first traversal of all node properties
+// - deepest property is calling embed first
+// - if embed returns a function, it will be called after the traversal in a second pass, in the same order (deepest first)
+// For performance reasons we try to only return functions when we're sure we need to transform something.
 export function embed(path: FastPath, _options: Options) {
     const node: Node = path.getNode();
     const options = _options as ParserOptions;
@@ -45,7 +50,7 @@ export function embed(path: FastPath, _options: Options) {
             node.css.type = 'Style';
             node.css.content.type = 'StyleProgram';
         }
-        return;
+        return null;
     }
 
     // embed does depth first traversal with deepest node called first, therefore we need to
@@ -98,7 +103,7 @@ export function embed(path: FastPath, _options: Options) {
     if (node.isJS) {
         return async (
             textToDoc: (text: string, options: Options) => Promise<Doc>,
-        ): Promise<Doc | undefined> => {
+        ): Promise<Doc> => {
             try {
                 const embeddedOptions = {
                     // Prettier only allows string references as parsers from v3 onwards,
@@ -136,7 +141,7 @@ export function embed(path: FastPath, _options: Options) {
         return async (
             textToDoc: (text: string, options: Options) => Promise<Doc>,
             print: PrintFn,
-        ): Promise<Doc | undefined> => {
+        ): Promise<Doc> => {
             return embedTag(
                 tag,
                 options.originalText,
@@ -177,6 +182,8 @@ export function embed(path: FastPath, _options: Options) {
             }
         }
     }
+
+    return null;
 }
 
 function forceIntoExpression(statement: string) {
