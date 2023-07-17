@@ -59,7 +59,7 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
         category: 'Svelte',
         type: 'boolean',
         default: false,
-        description: 'More strict HTML syntax: Quotes in attributes',
+        description: 'More strict HTML syntax: Quotes in attributes, no self-closing DOM tags',
     },
     svelteBracketNewLine: {
         category: 'Svelte',

@@ -213,7 +213,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             const isSelfClosingTag =
                 isEmpty &&
-                (((node.type === 'Element' ||
+                ((((node.type === 'Element' && !options.svelteStrictMode) ||
                     node.type === 'Head' ||
                     node.type === 'InlineComponent' ||
                     node.type === 'SlotTemplate' ||

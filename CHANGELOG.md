@@ -4,8 +4,8 @@
 
 -   (breaking) requires `prettier` version 3
 -   (breaking) requires node version 14 or higher
--   (breaking) Whether or not empty elements/components should self-close is now left to the user - in other words, if you write `<div />` or `<Component />` that stays as is, and so does `<div></div>`/`<Component></Component>`. `svelteStrictMode` no longer has any effect on this behavior
--   (breaking) `svelteAllowShorthand` now takes precedence over `svelteStrictMode`, which no longer has any effect on that behavior
+-   (breaking) Whether or not empty elements/components should self-close is now left to the user - in other words, if you write `<div />` or `<Component />` that stays as is, and so does `<div></div>`/`<Component></Component>`. If `svelteStrictMode` is turned on, it will still only allow `<div></div>` notation for elements (but it will leave your components alone)
+-   (breaking) `svelteAllowShorthand` now takes precedence over `svelteStrictMode`, which no longer has any effect on that behavior. Set `svelteAllowShorthand` to `false` to get back the v2 behavior
 
 ## 2.10.1
 

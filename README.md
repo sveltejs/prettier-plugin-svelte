@@ -63,9 +63,9 @@ Format: join the keywords `options`, `scripts`, `markup`, `styles` with a `-` in
 
 ### Svelte Strict Mode
 
-More strict HTML syntax: Quotes in attributes.
+More strict HTML syntax: Quotes in attributes and no self-closing DOM elements (except void elements).
 
-> In version 2 this overruled `svelteAllowShorthand`, which is no longer the case. It also affected the self-closing behavior of elements.
+> In version 2 this overruled `svelteAllowShorthand`, which is no longer the case.
 
 Example:
 
