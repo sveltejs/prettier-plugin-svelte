@@ -1,4 +1,4 @@
-import { ParserOptions } from 'prettier';
+import { ParserOptions } from '../options';
 import { Node } from '../print/nodes';
 import { hasSnippedContent, unsnipContent } from './snipTagContent';
 

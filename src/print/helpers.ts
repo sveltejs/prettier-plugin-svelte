@@ -1,3 +1,7 @@
+import { Doc, doc, FastPath } from 'prettier';
+import { PrintFn } from '.';
+import { formattableAttributes } from '../lib/elements';
+import { snippedTagContentAttribute } from '../lib/snipTagContent';
 import {
     ASTNode,
     AttributeNode,
@@ -13,12 +17,9 @@ import {
     SlotTemplateNode,
     StyleNode,
     TitleNode,
-    WindowNode,
+    WindowNode
 } from './nodes';
-import { Doc, doc, FastPath, ParserOptions } from 'prettier';
-import { formattableAttributes } from '../lib/elements';
-import { PrintFn } from '.';
-import { snippedTagContentAttribute } from '../lib/snipTagContent';
+import { ParserOptions } from '../options';
 
 /**
  * Determines whether or not given node
@@ -65,11 +66,6 @@ export function replaceEndOfLineWith(text: string, replacement: Doc) {
         }
     }
     return parts;
-}
-
-export function groupConcat(contents: doc.builders.Doc[]): doc.builders.Doc {
-    const { concat, group } = doc.builders;
-    return group(concat(contents));
 }
 
 export function getAttributeLine(
@@ -121,6 +117,6 @@ export function printWithPrependedAttributeLine(
 ): PrintFn {
     return (path) =>
         path.getNode().name !== snippedTagContentAttribute
-            ? doc.builders.concat([getAttributeLine(node, options), path.call(print)])
+            ? [getAttributeLine(node, options), path.call(print)]
             : '';
 }

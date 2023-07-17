@@ -1,5 +1,10 @@
 # prettier-plugin-svelte changelog
 
+## 3.0.0 (Unreleased)
+
+-   (breaking) requires `prettier` version 3
+-   (breaking) requires node version 14 or higher
+
 ## 2.10.1
 
 -   (chore) mark as compatible with Svelte 4

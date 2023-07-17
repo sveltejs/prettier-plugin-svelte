@@ -1,6 +1,7 @@
 import test from 'ava';
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { format } from 'prettier';
+import * as SveltePlugin from '../../src'
 
 let dirs = readdirSync('test/formatting/samples');
 const endsWithOnly = (f: string): boolean => f.endsWith('.only');
@@ -22,17 +23,17 @@ for (const dir of dirs) {
     ).replace(/\r?\n/g, '\n');
     const options = readOptions(`test/formatting/samples/${dir}/options.json`);
 
-    test(`formatting: ${dir}`, (t) => {
+    test(`formatting: ${dir}`, async (t) => {
         let onTestCompleted;
 
-        if ((options as any).expectSyntaxErrors) {
+        if (options.expectSyntaxErrors) {
             onTestCompleted = doNotLogSyntaxErrors();
         }
 
         try {
-            const actualOutput = format(input, {
-                parser: 'svelte' as any,
-                plugins: [require.resolve('../../src')],
+            const actualOutput = await format(input, {
+                parser: 'svelte',
+                plugins: [SveltePlugin],
                 tabWidth: 4,
                 ...options,
             });
@@ -44,9 +45,9 @@ for (const dir of dirs) {
             );
 
             // Reprint to check that another format outputs the same code
-            const actualOutput2 = format(actualOutput, {
-                parser: 'svelte' as any,
-                plugins: [require.resolve('../../src')],
+            const actualOutput2 = await format(actualOutput, {
+                parser: 'svelte',
+                plugins: [SveltePlugin],
                 tabWidth: 4,
                 ...options,
             });
