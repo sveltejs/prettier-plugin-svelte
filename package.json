@@ -5,8 +5,16 @@
     "main": "plugin.js",
     "files": [
         "plugin.js",
-        "plugin.js.map"
+        "plugin.js.map",
+        "index.d.ts"
     ],
+    "types": "./index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./index.d.ts",
+            "default": "./plugin.js"
+        }
+    },
     "scripts": {
         "build": "rollup -c",
         "test": "ava",
