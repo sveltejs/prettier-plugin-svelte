@@ -2,7 +2,7 @@ import { SupportLanguage, Parser, Printer } from 'prettier';
 import * as prettierPluginBabel from 'prettier/plugins/babel';
 import { hasPragma, print } from './print';
 import { ASTNode } from './print/nodes';
-import { embed } from './embed';
+import { embed, getVisitorKeys } from './embed';
 import { snipScriptAndStyleTagContent } from './lib/snipTagContent';
 
 const babelParser = prettierPluginBabel.parsers.babel;
@@ -62,16 +62,18 @@ export const parsers: Record<string, Parser> = {
         ...babelParser,
         parse: (text: string, options: any) => {
             const ast = babelParser.parse(text, options);
-        
+
             return { ...ast, program: ast.program.body[0].expression };
-        }
-    }
+        },
+    },
 };
 
 export const printers: Record<string, Printer> = {
     'svelte-ast': {
         print,
         embed,
+        // @ts-expect-error Prettier's type definitions are wrong
+        getVisitorKeys,
     },
 };
 

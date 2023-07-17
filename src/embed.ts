@@ -24,6 +24,22 @@ const {
     utils: { removeLines },
 } = doc;
 
+const leaveAlone = new Set([
+    'Script',
+    'Style',
+    'Identifier',
+    'MemberExpression',
+    'CallExpression',
+    'ArrowFunctionExpression',
+]);
+const dontTraverse = new Set(['start', 'end', 'type']);
+
+export function getVisitorKeys(node: any, nonTraversableKeys: Set<string>): string[] {
+    return Object.keys(node).filter((key) => {
+        return !nonTraversableKeys.has(key) && !leaveAlone.has(node.type) && !dontTraverse.has(key);
+    });
+}
+
 // Embed works like this in Prettier v3:
 // - do depth first traversal of all node properties
 // - deepest property is calling embed first
