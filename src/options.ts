@@ -1,20 +1,13 @@
 import { ParserOptions as PrettierParserOptions, SupportOption } from 'prettier';
+import { SortOrder, PluginConfig } from '..';
 
-export interface ParserOptions<T = any> extends PrettierParserOptions<T>, Partial<PluginOptions> {}
-
-export interface PluginOptions {
-    svelteSortOrder: SortOrder;
-    svelteStrictMode: boolean;
-    svelteBracketNewLine: boolean;
-    svelteAllowShorthand: boolean;
-    svelteIndentScriptAndStyle: boolean;
-}
+export interface ParserOptions<T = any> extends PrettierParserOptions<T>, Partial<PluginConfig> {}
 
 function makeChoice(choice: string) {
     return { value: choice, description: choice };
 }
 
-export const options: Record<keyof PluginOptions, SupportOption> = {
+export const options: Record<keyof PluginConfig, SupportOption> = {
     svelteSortOrder: {
         category: 'Svelte',
         type: 'choice',
@@ -75,33 +68,6 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
             'Whether or not to indent the code inside <script> and <style> tags in Svelte files',
     },
 };
-
-export type SortOrder =
-    | 'options-scripts-markup-styles'
-    | 'options-scripts-styles-markup'
-    | 'options-markup-styles-scripts'
-    | 'options-markup-scripts-styles'
-    | 'options-styles-markup-scripts'
-    | 'options-styles-scripts-markup'
-    | 'scripts-options-markup-styles'
-    | 'scripts-options-styles-markup'
-    | 'markup-options-styles-scripts'
-    | 'markup-options-scripts-styles'
-    | 'styles-options-markup-scripts'
-    | 'styles-options-scripts-markup'
-    | 'scripts-markup-options-styles'
-    | 'scripts-styles-options-markup'
-    | 'markup-styles-options-scripts'
-    | 'markup-scripts-options-styles'
-    | 'styles-markup-options-scripts'
-    | 'styles-scripts-options-markup'
-    | 'scripts-markup-styles-options'
-    | 'scripts-styles-markup-options'
-    | 'markup-styles-scripts-options'
-    | 'markup-scripts-styles-options'
-    | 'styles-markup-scripts-options'
-    | 'styles-scripts-markup-options'
-    | 'none';
 
 export type SortOrderPart = 'scripts' | 'markup' | 'styles' | 'options';
 
