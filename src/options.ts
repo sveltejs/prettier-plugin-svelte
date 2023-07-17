@@ -46,13 +46,6 @@ export const options: Record<keyof PluginOptions, SupportOption> = {
             makeChoice('styles-markup-scripts-options'),
             makeChoice('styles-scripts-markup-options'),
             makeChoice('none'),
-            // Deprecated, keep in 2.x for backwards-compatibility. svelte:options will be moved to the top
-            makeChoice('scripts-markup-styles'),
-            makeChoice('scripts-styles-markup'),
-            makeChoice('markup-styles-scripts'),
-            makeChoice('markup-scripts-styles'),
-            makeChoice('styles-markup-scripts'),
-            makeChoice('styles-scripts-markup'),
         ],
     },
     svelteStrictMode: {
@@ -108,16 +101,7 @@ export type SortOrder =
     | 'markup-scripts-styles-options'
     | 'styles-markup-scripts-options'
     | 'styles-scripts-markup-options'
-    | 'none'
-    | DeprecatedSortOrder;
-
-export type DeprecatedSortOrder =
-    | 'scripts-markup-styles'
-    | 'scripts-styles-markup'
-    | 'markup-styles-scripts'
-    | 'markup-scripts-styles'
-    | 'styles-markup-scripts'
-    | 'styles-scripts-markup';
+    | 'none';
 
 export type SortOrderPart = 'scripts' | 'markup' | 'styles' | 'options';
 
@@ -133,10 +117,7 @@ export function parseSortOrder(
     const order = sortOrder.split(sortOrderSeparator) as SortOrderPart[];
     // For backwards compatibility: Add options to beginning if not present
     if (!order.includes('options')) {
-        console.warn(
-            'svelteSortOrder is missing option `options`. This will be an error in prettier-plugin-svelte version 3.',
-        );
-        order.unshift('options');
+        throw new Error('svelteSortOrder is missing option `options`');
     }
     return order;
 }
