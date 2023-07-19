@@ -149,7 +149,7 @@ Example:
 <div></div>
 ```
 
-| Default   | CLI Override                         | API Override                       |
+| Default   | CLI Override                         | API Override                       |          |
 | --------- | ------------------------------------ | ---------------------------------- | -------- |
 | `"never"` | `--svelte-self-close-elements <str>` | `svelteSelfCloseElements: "always" | "never"` |
 
@@ -168,7 +168,7 @@ Example:
 <Component></Component>
 ```
 
-| Default    | CLI Override                           | API Override                         |
+| Default    | CLI Override                           | API Override                         |          |
 | ---------- | -------------------------------------- | ------------------------------------ | -------- |
 | `"always"` | `--svelte-self-close-components <str>` | `svelteSelfCloseComponents: "always" | "never"` |
 
