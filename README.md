@@ -9,37 +9,68 @@ Format your Svelte components using Prettier.
 -   Format the JavaScript expressions embedded in the Svelte syntax
     -   e.g. expressions inside of `{}`, event bindings `on:click=""`, and more
 
-## How to use in VS Code and Atom
+## How to use in your IDE
 
-This plugin comes with [Svelte for VS Code](https://github.com/sveltejs/language-tools) and [Svelte for Atom](https://github.com/UnwrittenFun/svelte-atom) so just install the extension for your favorite editor and enjoy.
+This plugin comes bundled with the [Svelte for VS Code](https://github.com/sveltejs/language-tools). If you only format through the editor, you therefore don't need to do anything in addition.
 
-If you want to customize some formatting behavior, see section "Options" below.
+If you want to
+
+-   customize some formatting behavior
+-   use the official VS Code Prettier extension to format Svelte files instead
+-   use a different editor
+-   also want to use the command line to format
+
+then you need to install the plugin and setup a Prettier configuration file as described in the next section.
 
 Some of the extensions let you define options through extension-specific configuration. These settings are ignored however if there's any configuration file (`.prettierrc` for example) present.
 
 ## How to install manually
 
+First install Prettier and the plugin as a dev depenendency:
+
 ```bash
 npm i --save-dev prettier-plugin-svelte prettier
 ```
 
+Then create a `.prettierrc` file to tell Prettier about the plugin:
+
+```json
+{
+    "plugins": ["prettier-plugin-svelte"]
+}
+```
+
+If you're using `pnpm` and have problems getting it to work, you may need to use a `.prettierrc.cjs` file instead to point Prettier to the exact location of the plugin using `require.resolve`:
+
+```js
+module.exports = {
+    pluginSearchDirs: false, // you can omit this when using Prettier version 3
+    plugins: [require('prettier-plugin-svelte')],
+    overrides: [{ files: '*.svelte', options: { parser: 'svelte' } }],
+
+    // Other prettier options here
+};
+```
+
+If you want to customize some formatting behavior, see section "Options" below.
+
 ## How to use (CLI)
 
-Install `prettier` and `prettier-plugin-svelte` as dev dependencies in your project.
-
-Then format your code using Prettier CLI. You may need to add `--plugin-search-dir=.`
+Format your code using Prettier CLI.
 
 As a one-time run:
 
 ```
-npx prettier --write --plugin-search-dir=. ./**/*.html
+npx prettier --write --plugin prettier-plugin-svelte .
 ```
 
 As part of your scripts in `package.json`:
 
 ```
-"format": "prettier --write --plugin-search-dir=. ./**/*.html"
+"format": "prettier --write  --plugin prettier-plugin-svelte ."
 ```
+
+You can omit the `--plugin prettier-plugin-svelte` part if you created a `.prettierrc` configuration file and told Prettier about the plugin in there.
 
 If you want to customize some formatting behavior, see section "Options" below.
 
@@ -212,7 +243,7 @@ There is a [Tailwind Prettier Plugin](https://github.com/tailwindlabs/prettier-p
         'prettier-plugin-svelte',
         'prettier-plugin-tailwindcss', // MUST come last
     ],
-    pluginSearchDirs: false,
+    pluginSearchDirs: false, // you can omit this when using Prettier version 3
 }
 ```
 
@@ -250,3 +281,8 @@ becomes this
 ```
 
 it's because of whitespsace sensitivity. For inline elements (`span`, `a`, etc) it makes a difference when rendered if there's a space (or newline) between them. Since we don't know if your slot inside your Svelte component is surrounded by inline elements, Svelte components are treated as such, too. You can adjust this whitespace sensitivity through [this setting](https://prettier.io/docs/en/options.html#html-whitespace-sensitivity). You can read more about HTML whitespace sensitivity [here](https://prettier.io/blog/2018/11/07/1.15.0.html#whitespace-sensitive-formatting).
+
+### Which versions are compatibly with which Prettier version?
+
+`prettier-plugin-svelte` v2 is compatible with Prettier v2 and incompatible with Prettier v3.
+`prettier-plugin-svelte` v3 is compatible with Prettier v3 and incompatible with lower Prettier versions.
