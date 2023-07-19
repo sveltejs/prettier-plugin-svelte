@@ -40,7 +40,7 @@ Then create a `.prettierrc` file to tell Prettier about the plugin:
 }
 ```
 
-If you're using `pnpm` and have problems getting it to work, you may need to use a `.prettierrc.cjs` file instead to point Prettier to the exact location of the plugin using `require.resolve`:
+If you're using `prettier-plugin-svelte` version 2 with `pnpm` and have problems getting it to work, you may need to use a `.prettierrc.cjs` file instead to point Prettier to the exact location of the plugin using `require.resolve`:
 
 ```js
 module.exports = {
@@ -51,6 +51,8 @@ module.exports = {
     // Other prettier options here
 };
 ```
+
+> Do NOT use the above with version 3 of the plugin
 
 If you want to customize some formatting behavior, see section "Options" below.
 
@@ -70,7 +72,7 @@ As part of your scripts in `package.json`:
 "format": "prettier --write  --plugin prettier-plugin-svelte ."
 ```
 
-You can omit the `--plugin prettier-plugin-svelte` part if you created a `.prettierrc` configuration file and told Prettier about the plugin in there.
+> There's currently [an issue with Prettier 3](https://github.com/prettier/prettier/issues/15079) which requires the seemingly redundant `--plugin` setting
 
 If you want to customize some formatting behavior, see section "Options" below.
 
