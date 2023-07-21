@@ -1,4 +1,4 @@
-# Prettier for Svelte 3 components
+# Prettier for Svelte components
 
 Format your Svelte components using Prettier.
 
