@@ -11,8 +11,10 @@ import {
     getLeadingComment,
     isIgnoreDirective,
     isInsideQuotedAttribute,
+    isLess,
     isNodeSupportedLanguage,
     isPugTemplate,
+    isScss,
     isTypeScript,
     printRaw,
 } from './print/node-helpers';
@@ -151,7 +153,7 @@ export function embed(path: FastPath, _options: Options) {
 
     const embedType = (
         tag: 'script' | 'style' | 'template',
-        parser: 'typescript' | 'babel-ts' | 'css' | 'pug',
+        parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug',
         isTopLevel: boolean,
     ) => {
         return async (
@@ -180,7 +182,8 @@ export function embed(path: FastPath, _options: Options) {
             isTypeScript(node) ? 'typescript' : 'babel-ts',
             isTopLevel,
         );
-    const embedStyle = (isTopLevel: boolean) => embedType('style', 'css', isTopLevel);
+    const embedStyle = (isTopLevel: boolean) =>
+        embedType('style', isLess(node) ? 'less' : isScss(node) ? 'scss' : 'css', isTopLevel);
     const embedPug = () => embedType('template', 'pug', false);
 
     switch (node.type) {
@@ -233,7 +236,7 @@ function getSnippedContent(node: Node) {
 
 async function formatBodyContent(
     content: string,
-    parser: 'typescript' | 'babel-ts' | 'css' | 'pug',
+    parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug',
     textToDoc: (text: string, options: object) => Promise<Doc>,
     options: ParserOptions & { pugTabWidth?: number },
 ) {

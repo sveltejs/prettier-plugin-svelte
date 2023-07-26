@@ -1,6 +1,10 @@
 # prettier-plugin-svelte changelog
 
-## 3.0.0 (Unreleased)
+## 3.0.1
+
+-   (fix) support less/scss in style tags
+
+## 3.0.0
 
 -   (breaking) requires `prettier` version 3. This may require adjustments to your configuration file, see [the migration guide for more info](https://github.com/sveltejs/prettier-plugin-svelte#how-to-migrate-from-version-2-to-3)
 -   (breaking) requires node version 14 or higher

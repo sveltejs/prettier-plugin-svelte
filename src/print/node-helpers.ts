@@ -216,9 +216,7 @@ function isTextNode(node: Node): node is TextNode {
 function getAttributeValue(attributeName: string, node: Node) {
     const attributes = ((node as ElementNode).attributes ?? []) as AttributeNode[];
 
-    const langAttribute = attributes.find(
-        (attribute) => attribute.name === attributeName,
-    );
+    const langAttribute = attributes.find((attribute) => attribute.name === attributeName);
 
     return langAttribute && langAttribute.value;
 }
@@ -267,6 +265,16 @@ export function isNodeSupportedLanguage(node: Node) {
 export function isTypeScript(node: Node) {
     const lang = getLangAttribute(node) || '';
     return ['typescript', 'ts'].includes(lang);
+}
+
+export function isLess(node: Node) {
+    const lang = getLangAttribute(node) || '';
+    return ['less'].includes(lang);
+}
+
+export function isScss(node: Node) {
+    const lang = getLangAttribute(node) || '';
+    return ['sass', 'scss'].includes(lang);
 }
 
 export function isPugTemplate(node: Node): boolean {
