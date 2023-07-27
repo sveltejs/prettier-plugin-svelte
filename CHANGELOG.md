@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.0.2
+
+-   (fix) add `package.json` to exports map
+
 ## 3.0.1
 
 -   (fix) support less/scss in style tags
