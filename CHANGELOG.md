@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.0.3
+
+-   (fix) handle static `tag` attributes on `<svelte:element>`
+
 ## 3.0.2
 
 -   (fix) add `package.json` to exports map

@@ -352,7 +352,7 @@ function printJS(
     removeParentheses: boolean,
     name: string,
 ) {
-    if (!node[name]) {
+    if (!node[name] || typeof node[name] !== 'object') {
         return;
     }
     node[name].isJS = true;
