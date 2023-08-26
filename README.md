@@ -26,7 +26,7 @@ Some of the extensions let you define options through extension-specific configu
 
 ## How to install manually
 
-First install Prettier and the plugin as a dev depenendency:
+First install Prettier and the plugin as a dev dependency:
 
 ```bash
 npm i --save-dev prettier-plugin-svelte prettier
