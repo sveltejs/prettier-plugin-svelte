@@ -261,5 +261,5 @@ Version 3 contains the following breaking changes:
 
 Version 3 of this plugin requires Prettier version 3, it won't work with lower versions. Prettier version 3 contains some changes to how it loads plugins which may require you to adjust your configuration file:
 
--   Prettier no longer searches for plugins in the directory automatically, you need to tell Prettier specifically which plugins to use. This means you need to add `"plugins": ["prettier-plugin-svelte"]` to your config if you haven't already. Also remove the deprecated option `pluginSearchDirs`. When invoking Prettier from the command line, you currently need to pass `--plugin prettier-plugin-svelte` in order to format Svelte files [due to a bug in Prettier](https://github.com/prettier/prettier/issues/15079)
+-   Prettier no longer searches for plugins in the directory automatically, you need to tell Prettier specifically which plugins to use. This means you need to add `"plugins": ["prettier-plugin-svelte"]` to your config if you haven't already. Also remove the deprecated option `pluginSearchDirs`.
 -   Prettier loads plugins from the plugin array differently. If you have used `require.resolve("prettier-plugin-svelte")` in your `.prettierrc.cjs` to tell Prettier where to find the plugin, you may need to remove that and just write `"prettier-plugin-svelte"` instead
