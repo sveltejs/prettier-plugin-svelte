@@ -91,6 +91,18 @@ export function embed(path: FastPath, _options: Options) {
             printSvelteBlockJS('expression');
             printSvelteBlockJS('key');
             break;
+        case 'SnippetBlock':
+            // We merge the two parts into one expression, which future-proofs this for template TS support
+            if (node === parent.expression) {
+                parent.expression.end =
+                    options.originalText.indexOf(
+                        ')',
+                        parent.context?.end ?? parent.expression.end,
+                    ) + 1;
+                parent.context = null;
+                printSvelteBlockJS('expression');
+            }
+            break;
         case 'Element':
             printJS(parent, options.svelteStrictMode ?? false, false, false, 'tag');
             break;
@@ -105,6 +117,18 @@ export function embed(path: FastPath, _options: Options) {
             break;
         case 'ConstTag':
             printJS(parent, false, false, true, 'expression');
+            break;
+        case 'RenderTag':
+            // We merge the two parts into one expression, which future-proofs this for template TS support
+            if (node === parent.expression) {
+                parent.expression.end =
+                    options.originalText.indexOf(
+                        ')',
+                        parent.argument?.end ?? parent.expression.end,
+                    ) + 1;
+                parent.argument = null;
+                printJS(parent, false, false, false, 'expression');
+            }
             break;
         case 'EventHandler':
         case 'Binding':

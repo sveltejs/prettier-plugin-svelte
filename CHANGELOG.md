@@ -1,5 +1,10 @@
 # prettier-plugin-svelte changelog
 
+## 3.1.0
+
+-   (feat) add experimental support for Svelte 5
+-   (feat) support `#snippet` and `@render`
+
 ## 3.0.3
 
 -   (fix) handle static `tag` attributes on `<svelte:element>`

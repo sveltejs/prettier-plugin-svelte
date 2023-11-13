@@ -60,6 +60,7 @@ export function isSvelteBlock(
     | ThenBlockNode {
     return [
         'IfBlock',
+        'SnippetBlock',
         'AwaitBlock',
         'CatchBlock',
         'EachBlock',

@@ -291,6 +291,19 @@ export interface CommentInfo {
     emptyLineAfter: boolean;
 }
 
+export interface SnippetBlock extends BaseNode {
+    type: 'SnippetBlock';
+    expression: IdentifierNode;
+    context: null | any;
+    children: Node[];
+}
+
+export interface RenderTag extends BaseNode {
+    type: 'RenderTag';
+    expression: IdentifierNode;
+    argument: null | any;
+}
+
 export type Node =
     | FragmentNode
     | ElementNode
@@ -335,7 +348,9 @@ export type Node =
     | DocumentNode
     | OptionsNode
     | SlotTemplateNode
-    | ConstTagNode;
+    | ConstTagNode
+    | RenderTag
+    | SnippetBlock;
 
 /**
  * The Svelte AST root node

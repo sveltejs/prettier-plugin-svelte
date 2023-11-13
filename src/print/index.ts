@@ -607,6 +607,12 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'PendingBlock':
         case 'CatchBlock':
             return printSvelteBlockChildren(path, print, options);
+        // Svelte 5 only
+        case 'SnippetBlock': {
+            const snippet = ['{#snippet ', printJS(path, print, 'expression')];
+            snippet.push('}', printSvelteBlockChildren(path, print, options), '{/snippet}');
+            return snippet;
+        }
         case 'EventHandler':
             return [
                 'on:',
@@ -718,6 +724,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return ['animate:', node.name, node.expression ? ['=', ...printJsExpression()] : ''];
         case 'RawMustacheTag':
             return ['{@html ', printJS(path, print, 'expression'), '}'];
+        // Svelte 5 only
+        case 'RenderTag': {
+            const render = ['{@render ', printJS(path, print, 'expression'), '}'];
+            return render;
+        }
         case 'Spread':
             return ['{...', printJS(path, print, 'expression'), '}'];
         case 'ConstTag':
