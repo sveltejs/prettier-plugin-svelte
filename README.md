@@ -239,6 +239,7 @@ Since we are using configuration overrides to handle svelte files, you might als
 ```diff
 # .prettierrc
 - "pluginSearchDirs": ["."],
++ "plugins": ["prettier-plugin-svelte"]
 ```
 
 Version 3 contains the following breaking changes:
