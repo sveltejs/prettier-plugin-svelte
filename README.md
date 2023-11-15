@@ -9,72 +9,71 @@ Format your Svelte components using Prettier.
 -   Format the JavaScript expressions embedded in the Svelte syntax
     -   e.g. expressions inside of `{}`, event bindings `on:click=""`, and more
 
-## How to use in your IDE
+## VS Code Extension
 
-This plugin comes bundled with the [Svelte for VS Code](https://github.com/sveltejs/language-tools). If you only format through the editor, you therefore don't need to do anything in addition.
+This plugin is bundled in the [Svelte for VS Code](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode) extension. If you only format through the editor, you therefore don't need to do anything in addition.
 
-If you want to
+The extension lets you define options through extension-specific configuration. These settings are ignored however if there's any configuration file (`.prettierrc` for example) present.
 
--   customize some formatting behavior
--   use the official VS Code Prettier extension to format Svelte files instead
--   use a different editor
--   also want to use the command line to format
+## Prettier Plugin
 
-then you need to install the plugin and setup a Prettier configuration file as described in the next section.
+Installing the plugin as a package allows:
 
-Some of the extensions let you define options through extension-specific configuration. These settings are ignored however if there's any configuration file (`.prettierrc` for example) present.
+-   customizing the formatting behavior
+-   using the command line to format
+-   using a different IDE
+-   using the official VS Code [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) extension to format Svelte files
 
-## How to install manually
+### Compatibility
 
-First install Prettier and the plugin as a dev dependency:
+-   `prettier-plugin-svelte@3` only works with `prettier@3`
+-   `prettier-plugin-svelte@2` only works with `prettier@2`
+
+### Setup
+
+Install Prettier and the plugin as a dev dependency:
 
 ```bash
 npm i --save-dev prettier-plugin-svelte prettier
 ```
 
-Then create a `.prettierrc` file to tell Prettier about the plugin:
+Then create a `.prettierrc` [configuration file](https://prettier.io/docs/en/configuration.html):
 
-```json
+```jsonc
+// .prettierrc
 {
-    "plugins": ["prettier-plugin-svelte"]
+    // ..
+    "plugins": ["prettier-plugin-svelte"],
+    "pluginSearchDirs": ["."], // should be removed in v3
+    "overrides": [{ "files": "*.svelte", "options": { "parser": "svelte" } }]
 }
 ```
 
-If you're using `prettier-plugin-svelte` version 2 with `pnpm` and have problems getting it to work, you may need to use a `.prettierrc.cjs` file instead to point Prettier to the exact location of the plugin using `require.resolve`:
+If you want to customize some formatting behavior, see section [Options](#options).
 
-```js
-module.exports = {
-    pluginSearchDirs: false, // you can omit this when using Prettier version 3
-    plugins: [require('prettier-plugin-svelte')],
-    overrides: [{ files: '*.svelte', options: { parser: 'svelte' } }],
+### CLI Usage
 
-    // Other prettier options here
-};
-```
+Format your code using the Prettier CLI.
 
-> Do NOT use the above with version 3 of the plugin
-
-If you want to customize some formatting behavior, see section "Options" below.
-
-## How to use (CLI)
-
-Format your code using Prettier CLI.
-
-As a one-time run:
-
-```
-npx prettier --write --plugin prettier-plugin-svelte .
+```bash
+npx prettier --write . # v3
+npx prettier --write --plugin prettier-plugin-svelte . # v2
 ```
 
 As part of your scripts in `package.json`:
 
-```
-"format": "prettier --write  --plugin prettier-plugin-svelte ."
+```jsonc
+// package.json
+{
+    // ..
+    "scripts": {
+        "format": "prettier --write .", // v3
+        "format": "prettier --write  --plugin prettier-plugin-svelte ." // v2
+    }
+}
 ```
 
-> There's currently [an issue with Prettier 3](https://github.com/prettier/prettier/issues/15079) which requires the seemingly redundant `--plugin` setting
-
-If you want to customize some formatting behavior, see section "Options" below.
+If you want to customize some formatting behavior, see section [Options](#options).
 
 ## Options
 
@@ -197,31 +196,61 @@ Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte
 
 ## Usage with Tailwind Prettier Plugin
 
-There is a [Tailwind Prettier Plugin](https://github.com/tailwindlabs/prettier-plugin-tailwindcss) to format classes in a certain way. This plugin must be loaded last, so if you want to use the Tailwind plugin, disable Prettier auto-loading and place `prettier-plugin-tailwindcss` in the end of the plugins array. If you are using VS Code, make sure to have the Prettier extension installed and switch the default formatter for Svelte files to it.
+-   VS Code Extension: Use it as the default formatter for Svelte files
+-   Prettier Plugin: Load the Tailwind plugin in the end - [Tailwind docs](https://github.com/tailwindlabs/prettier-plugin-tailwindcss#compatibility-with-other-prettier-plugins)
 
-```json5
+```jsonc
 // .prettierrc
 {
     // ..
-    plugins: [
-        'prettier-plugin-svelte',
-        'prettier-plugin-tailwindcss', // MUST come last
-    ],
-    pluginSearchDirs: false, // you can omit this when using Prettier version 3
+    "plugins": [
+        "prettier-plugin-svelte",
+        "prettier-plugin-tailwindcss" // MUST come last
+    ]
 }
 ```
-
-More info: https://github.com/tailwindlabs/prettier-plugin-tailwindcss#compatibility-with-other-prettier-plugins
 
 Since we are using configuration overrides to handle svelte files, you might also have to configure the [prettier.documentselectors](https://github.com/prettier/prettier-vscode#prettierdocumentselectors) in your VS Code `settings.json`, to tell Prettier extension to handle svelte files, like this:
 
-```json5
+```jsonc
 // settings.json
 {
     // ..
-    'prettier.documentSelectors': ['**/*.svelte'],
+    "prettier.documentSelectors": ["**/*.svelte"]
 }
 ```
+
+## Migration
+
+```diff
+# package.json
+- "format": "prettier --plugin-search-dir . --write ."
++ "format": "prettier --write ."
+```
+
+```diff
+# package.json
+- "prettier": "^2.8.8",
++ "prettier": "^3.1.0",
+- "prettier-plugin-svelte": "^2.10.1",
++ "prettier-plugin-svelte": "^3.1.0",
+```
+
+```diff
+# .prettierrc
+- "pluginSearchDirs": ["."],
+```
+
+Version 3 contains the following breaking changes:
+
+-   Whether or not empty elements/components should self-close is now left to the user - in other words, if you write `<div />` or `<Component />` that stays as is, and so does `<div></div>`/`<Component></Component>`. If `svelteStrictMode` is turned on, it will still only allow `<div></div>` notation for elements (but it will leave your components alone)
+-   `svelteAllowShorthand` now takes precedence over `svelteStrictMode`, which no longer has any effect on that behavior. Set `svelteAllowShorthand` to `false` to get back the v2 behavior
+-   Some deprecated `svelteSortOrder` options were removed, see the the options section above for which values are valid for that options
+
+Version 3 of this plugin only works with Prettier version 3. Prettier version 3 contains some changes to how it loads plugins which may require you to adjust your configuration file:
+
+-   Prettier no longer searches for plugins in the directory automatically, you need to tell Prettier specifically which plugins to use. This means you need to add `"plugins": ["prettier-plugin-svelte"]` to your config if you haven't already. Also remove the deprecated option `pluginSearchDirs`.
+-   Prettier loads plugins from the plugin array differently. If you have used `require.resolve("prettier-plugin-svelte")` in your `.prettierrc.cjs` to tell Prettier where to find the plugin, you may need to remove that and just write `"prettier-plugin-svelte"` instead
 
 ## FAQ
 
@@ -244,22 +273,16 @@ becomes this
 >
 ```
 
-it's because of whitespsace sensitivity. For inline elements (`span`, `a`, etc) it makes a difference when rendered if there's a space (or newline) between them. Since we don't know if your slot inside your Svelte component is surrounded by inline elements, Svelte components are treated as such, too. You can adjust this whitespace sensitivity through [this setting](https://prettier.io/docs/en/options.html#html-whitespace-sensitivity). You can read more about HTML whitespace sensitivity [here](https://prettier.io/blog/2018/11/07/1.15.0.html#whitespace-sensitive-formatting).
+it's because of whitespace sensitivity. For inline elements (`span`, `a`, etc) it makes a difference when rendered if there's a space (or newline) between them. Since we don't know if your slot inside your Svelte component is surrounded by inline elements, Svelte components are treated as such, too. You can adjust this whitespace sensitivity through [this setting](https://prettier.io/docs/en/options.html#html-whitespace-sensitivity). You can read more about HTML whitespace sensitivity [here](https://prettier.io/blog/2018/11/07/1.15.0.html#whitespace-sensitive-formatting).
 
-### Which versions are compatibly with which Prettier version?
+### Version 2 does not work in `pnpm`
 
-`prettier-plugin-svelte` v2 is compatible with Prettier v2 and incompatible with Prettier v3.
-`prettier-plugin-svelte` v3 is compatible with Prettier v3 and incompatible with lower Prettier versions.
+You may need to use a `.prettierrc.cjs` file instead to point Prettier to the exact location of the plugin using `require.resolve`:
 
-### How to migrate from version 2 to 3?
-
-Version 3 contains the following breaking changes:
-
--   Whether or not empty elements/components should self-close is now left to the user - in other words, if you write `<div />` or `<Component />` that stays as is, and so does `<div></div>`/`<Component></Component>`. If `svelteStrictMode` is turned on, it will still only allow `<div></div>` notation for elements (but it will leave your components alone)
--   `svelteAllowShorthand` now takes precedence over `svelteStrictMode`, which no longer has any effect on that behavior. Set `svelteAllowShorthand` to `false` to get back the v2 behavior
--   Some deprecated `svelteSortOrder` options were removed, see the the options section above for which values are valid for that options
-
-Version 3 of this plugin requires Prettier version 3, it won't work with lower versions. Prettier version 3 contains some changes to how it loads plugins which may require you to adjust your configuration file:
-
--   Prettier no longer searches for plugins in the directory automatically, you need to tell Prettier specifically which plugins to use. This means you need to add `"plugins": ["prettier-plugin-svelte"]` to your config if you haven't already. Also remove the deprecated option `pluginSearchDirs`. When invoking Prettier from the command line, you currently need to pass `--plugin prettier-plugin-svelte` in order to format Svelte files [due to a bug in Prettier](https://github.com/prettier/prettier/issues/15079)
--   Prettier loads plugins from the plugin array differently. If you have used `require.resolve("prettier-plugin-svelte")` in your `.prettierrc.cjs` to tell Prettier where to find the plugin, you may need to remove that and just write `"prettier-plugin-svelte"` instead
+```js
+module.exports = {
+    pluginSearchDirs: false,
+    plugins: [require('prettier-plugin-svelte')],
+    overrides: [{ files: '*.svelte', options: { parser: 'svelte' } }],
+};
+```
