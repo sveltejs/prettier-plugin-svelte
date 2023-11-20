@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.1.1
+
+-   (fix) handle types on each/await contexts
+
 ## 3.1.0
 
 -   (feat) add experimental support for Svelte 5

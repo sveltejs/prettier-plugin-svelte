@@ -515,7 +515,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 '{#each ',
                 printJS(path, print, 'expression'),
                 ' as',
-                expandNode(node.context),
+                expandNode(node.context, options.originalText),
             ];
 
             if (node.index) {
@@ -549,7 +549,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         '{#await ',
                         printJS(path, print, 'expression'),
                         ' then',
-                        expandNode(node.value),
+                        expandNode(node.value, options.originalText),
                         '}',
                     ]),
                     path.call(print, 'then'),
@@ -560,7 +560,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         '{#await ',
                         printJS(path, print, 'expression'),
                         ' catch',
-                        expandNode(node.error),
+                        expandNode(node.error, options.originalText),
                         '}',
                     ]),
                     path.call(print, 'catch'),
@@ -574,7 +574,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
                 if (hasThenBlock) {
                     block.push(
-                        group(['{:then', expandNode(node.value), '}']),
+                        group(['{:then', expandNode(node.value, options.originalText), '}']),
                         path.call(print, 'then'),
                     );
                 }
@@ -582,7 +582,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 
             if ((hasPendingBlock || hasThenBlock) && hasCatchBlock) {
                 block.push(
-                    group(['{:catch', expandNode(node.error), '}']),
+                    group(['{:catch', expandNode(node.error, options.originalText), '}']),
                     path.call(print, 'catch'),
                 );
             }
@@ -1188,7 +1188,15 @@ function printJS(path: FastPath, print: PrintFn, name: string) {
     return path.call(print, name);
 }
 
-function expandNode(node: any, parent?: any): string {
+function expandNode(node: any, original: string): string {
+    let str = _expandNode(node);
+    if (node?.typeAnnotation) {
+        str += ': ' + original.slice(node.typeAnnotation.start, node.typeAnnotation.end);
+    }
+    return str;
+}
+
+function _expandNode(node: any, parent?: any): string {
     if (node === null) {
         return '';
     }
@@ -1201,27 +1209,27 @@ function expandNode(node: any, parent?: any): string {
     switch (node.type) {
         case 'ArrayExpression':
         case 'ArrayPattern':
-            return ' [' + node.elements.map(expandNode).join(',').slice(1) + ']';
+            return ' [' + node.elements.map(_expandNode).join(',').slice(1) + ']';
         case 'AssignmentPattern':
-            return expandNode(node.left) + ' =' + expandNode(node.right);
+            return _expandNode(node.left) + ' =' + _expandNode(node.right);
         case 'Identifier':
             return ' ' + node.name;
         case 'Literal':
             return ' ' + node.raw;
         case 'ObjectExpression':
-            return ' {' + node.properties.map((p: any) => expandNode(p, node)).join(',') + ' }';
+            return ' {' + node.properties.map((p: any) => _expandNode(p, node)).join(',') + ' }';
         case 'ObjectPattern':
-            return ' {' + node.properties.map(expandNode).join(',') + ' }';
+            return ' {' + node.properties.map(_expandNode).join(',') + ' }';
         case 'Property':
             if (node.value.type === 'ObjectPattern' || node.value.type === 'ArrayPattern') {
-                return ' ' + node.key.name + ':' + expandNode(node.value);
+                return ' ' + node.key.name + ':' + _expandNode(node.value);
             } else if (
                 (node.value.type === 'Identifier' && node.key.name !== node.value.name) ||
                 (parent && parent.type === 'ObjectExpression')
             ) {
-                return expandNode(node.key) + ':' + expandNode(node.value);
+                return _expandNode(node.key) + ':' + _expandNode(node.value);
             } else {
-                return expandNode(node.value);
+                return _expandNode(node.value);
             }
         case 'RestElement':
             return ' ...' + node.argument.name;
