@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.1.2
+
+-   (fix) handle `>` tags in attributes
+
 ## 3.1.1
 
 -   (fix) handle types on each/await contexts

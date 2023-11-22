@@ -1,5 +1,10 @@
 export const snippedTagContentAttribute = '✂prettier:content✂';
 
+const scriptRegex =
+    /<!--[^]*?-->|<script((?:\s+[^=>'"\/]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/]+)*\s*)>([^]*?)<\/script>/g;
+const styleRegex =
+    /<!--[^]*?-->|<style((?:\s+[^=>'"\/]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/]+)*\s*)>([^]*?)<\/style>/g;
+
 export function snipScriptAndStyleTagContent(source: string): string {
     let scriptMatchSpans = getMatchIndexes('script');
     let styleMatchSpans = getMatchIndexes('style');
@@ -80,7 +85,7 @@ export function snipScriptAndStyleTagContent(source: string): string {
     }
 
     function getRegexp(tagName: string) {
-        return new RegExp(`<!--[^]*?-->|<${tagName}([^]*?)>([^]*?)<\/${tagName}>`, 'g');
+        return tagName === 'script' ? scriptRegex : styleRegex;
     }
 }
 
@@ -88,9 +93,9 @@ export function hasSnippedContent(text: string) {
     return text.includes(snippedTagContentAttribute);
 }
 
-export function unsnipContent(text: string): string {
-    const regex = /(<\w+.*?)\s*✂prettier:content✂="(.*?)">.*?(?=<\/)/gi;
+const regex = /(<\w+.*?)\s*✂prettier:content✂="(.*?)">.*?(?=<\/)/gi;
 
+export function unsnipContent(text: string): string {
     return text.replace(regex, (_, start, encodedContent) => {
         const content = Buffer.from(encodedContent, 'base64').toString('utf8');
         return `${start}>${content}`;

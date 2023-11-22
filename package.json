@@ -1,6 +1,6 @@
 {
     "name": "prettier-plugin-svelte",
-    "version": "3.1.1",
+    "version": "3.1.2",
     "description": "Svelte plugin for prettier",
     "main": "plugin.js",
     "files": [
@@ -44,7 +44,7 @@
         "prettier": "^3.0.0",
         "rollup": "2.36.0",
         "rollup-plugin-typescript": "1.0.1",
-        "svelte": "^3.57.0",
+        "svelte": "^4.2.7",
         "ts-node": "^10.1.1",
         "tslib": "^2.6.0",
         "typescript": "5.1.3"

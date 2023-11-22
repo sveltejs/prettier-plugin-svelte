@@ -1,9 +1,10 @@
 import { AttributeNode, TextNode } from '../print/nodes';
 
-export function extractAttributes(html: string): AttributeNode[] {
-    const extractAttributesRegex = /<[a-z]+[\s\n]*([\s\S]*?)>/im;
-    const attributeRegex = /([^\s=]+)(?:=(?:(?:("|')([\s\S]*?)\2)|(?:(\S+?)(?:\s|>|$))))?/gim;
+const extractAttributesRegex =
+    /<[a-z]+((?:\s+[^=>'"\/]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/]+)*\s*)>/im;
+const attributeRegex = /([^\s=]+)(?:=(?:(?:("|')([\s\S]*?)\2)|(?:([^>\s]+?)(?:\s|>|$))))?/gim;
 
+export function extractAttributes(html: string): AttributeNode[] {
     const [, attributesString] = html.match(extractAttributesRegex)!;
 
     const attrs: AttributeNode[] = [];
