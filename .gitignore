@@ -3,3 +3,5 @@ node_modules
 .history
 plugin.js
 plugin.js.map
+browser.js
+browser.js.map
