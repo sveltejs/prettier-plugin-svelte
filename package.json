@@ -6,6 +6,8 @@
     "files": [
         "plugin.js",
         "plugin.js.map",
+        "browser.js",
+        "browser.js.map",
         "index.d.ts"
     ],
     "types": "./index.d.ts",
