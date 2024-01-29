@@ -270,7 +270,8 @@ export function isTypeScript(node: Node) {
 
 export function isJSON(node: Node) {
     const lang = getLangAttribute(node) || '';
-    return ['application/json', 'application/ld+json'].includes(lang);
+    // https://github.com/prettier/prettier/pull/6293
+    return lang.endsWith('json') || lang.endsWith('importmap');
 }
 
 export function isLess(node: Node) {
