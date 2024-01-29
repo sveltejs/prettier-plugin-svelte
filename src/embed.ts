@@ -20,6 +20,7 @@ import {
 } from './print/node-helpers';
 import { CommentNode, ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
 import { extractAttributes } from './lib/extractAttributes';
+import { base64ToString } from './base64-string';
 
 const {
     builders: { group, hardline, softline, indent, dedent, literalline },
@@ -252,7 +253,7 @@ function getSnippedContent(node: Node) {
     const encodedContent = getAttributeTextValue(snippedTagContentAttribute, node);
 
     if (encodedContent) {
-        return Buffer.from(encodedContent, 'base64').toString('utf-8');
+        return base64ToString(encodedContent);
     } else {
         return '';
     }
