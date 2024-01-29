@@ -46,7 +46,6 @@ import {
 import {
     ASTNode,
     AttributeNode,
-    CommentInfo,
     CommentNode,
     IfBlockNode,
     Node,

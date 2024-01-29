@@ -3,6 +3,7 @@
 ## 3.2.0 (Unreleased)
 
 -   (feat) format JSON script tags
+-   (fix) don't duplicate comments of nested script/style tags
 
 ## 3.1.2
 

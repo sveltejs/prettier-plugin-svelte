@@ -366,7 +366,8 @@ async function embedTag(
         // the new position.
         return [...comments, result, hardline];
     } else {
-        return comments.length ? [...comments, result] : result;
+        // Only comments at the top level get the special "move comment" treatment.
+        return isTopLevel && comments.length ? [...comments, result] : result;
     }
 }
 
