@@ -11,6 +11,7 @@ import {
     getLeadingComment,
     isIgnoreDirective,
     isInsideQuotedAttribute,
+    isJSON,
     isLess,
     isNodeSupportedLanguage,
     isPugTemplate,
@@ -177,7 +178,7 @@ export function embed(path: FastPath, _options: Options) {
 
     const embedType = (
         tag: 'script' | 'style' | 'template',
-        parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug',
+        parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug' | 'json',
         isTopLevel: boolean,
     ) => {
         return async (
@@ -203,7 +204,7 @@ export function embed(path: FastPath, _options: Options) {
             // the user could have set the default language. babel-ts will format things a little
             // bit different though, especially preserving parentheses around dot notation which
             // fixes https://github.com/sveltejs/prettier-plugin-svelte/issues/218
-            isTypeScript(node) ? 'typescript' : 'babel-ts',
+            isTypeScript(node) ? 'typescript' : isJSON(node) ? 'json' : 'babel-ts',
             isTopLevel,
         );
     const embedStyle = (isTopLevel: boolean) =>
@@ -260,7 +261,7 @@ function getSnippedContent(node: Node) {
 
 async function formatBodyContent(
     content: string,
-    parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug',
+    parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug' | 'json',
     textToDoc: (text: string, options: object) => Promise<Doc>,
     options: ParserOptions & { pugTabWidth?: number },
 ) {

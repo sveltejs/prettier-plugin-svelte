@@ -268,6 +268,11 @@ export function isTypeScript(node: Node) {
     return ['typescript', 'ts'].includes(lang);
 }
 
+export function isJSON(node: Node) {
+    const lang = getLangAttribute(node) || '';
+    return ['application/json', 'application/ld+json'].includes(lang);
+}
+
 export function isLess(node: Node) {
     const lang = getLangAttribute(node) || '';
     return ['less'].includes(lang);
