@@ -44,7 +44,7 @@ export function snipScriptAndStyleTagContent(source: string): string {
             if (match.startsWith('<!--') || withinOtherSpan(index)) {
                 return match;
             }
-	    const encodedContent = stringToBase64(content);
+            const encodedContent = stringToBase64(content);
             const newContent = `<${tagName}${attributes} ${snippedTagContentAttribute}="${encodedContent}">${placeholder}</${tagName}>`;
 
             // Adjust the spans because the source now has a different content length
@@ -99,7 +99,7 @@ const regex = /(<\w+.*?)\s*✂prettier:content✂="(.*?)">.*?(?=<\/)/gi;
 
 export function unsnipContent(text: string): string {
     return text.replace(regex, (_, start, encodedContent) => {
-	const content = base64ToString(encodedContent);
+        const content = base64ToString(encodedContent);
         return `${start}>${content}`;
     });
 }
