@@ -98,9 +98,9 @@ export function embed(path: FastPath, _options: Options) {
             if (node === parent.expression) {
                 parent.expression.end =
                     options.originalText.indexOf(
-                        ')',
+                        '}',
                         parent.context?.end ?? parent.expression.end,
-                    ) + 1;
+                    );
                 parent.context = null;
                 printSvelteBlockJS('expression');
             }
