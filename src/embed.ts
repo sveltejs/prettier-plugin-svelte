@@ -11,6 +11,7 @@ import {
     getLeadingComment,
     isIgnoreDirective,
     isInsideQuotedAttribute,
+    isJSON,
     isLess,
     isNodeSupportedLanguage,
     isPugTemplate,
@@ -20,6 +21,7 @@ import {
 } from './print/node-helpers';
 import { CommentNode, ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
 import { extractAttributes } from './lib/extractAttributes';
+import { base64ToString } from './base64-string';
 
 const {
     builders: { group, hardline, softline, indent, dedent, literalline },
@@ -73,7 +75,7 @@ export function embed(path: FastPath, _options: Options) {
 
     // embed does depth first traversal with deepest node called first, therefore we need to
     // check the parent to see if we are inside an expression that should be embedded.
-    const parent = path.getParentNode();
+    const parent: Node = path.getParentNode();
     const printJsExpression = () =>
         (parent as any).expression
             ? printJS(parent, options.svelteStrictMode ?? false, false, false, 'expression')
@@ -97,9 +99,12 @@ export function embed(path: FastPath, _options: Options) {
                 parent.expression.end =
                     options.originalText.indexOf(
                         ')',
-                        parent.context?.end ?? parent.expression.end,
+                        parent.context?.end ?? // TODO: remove at some point, snippet API changed in .next-..
+                            parent.parameters?.[parent.parameters.length - 1]?.end ??
+                            parent.expression.end,
                     ) + 1;
                 parent.context = null;
+                parent.parameters = null;
                 printSvelteBlockJS('expression');
             }
             break;
@@ -177,7 +182,7 @@ export function embed(path: FastPath, _options: Options) {
 
     const embedType = (
         tag: 'script' | 'style' | 'template',
-        parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug',
+        parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug' | 'json',
         isTopLevel: boolean,
     ) => {
         return async (
@@ -203,7 +208,7 @@ export function embed(path: FastPath, _options: Options) {
             // the user could have set the default language. babel-ts will format things a little
             // bit different though, especially preserving parentheses around dot notation which
             // fixes https://github.com/sveltejs/prettier-plugin-svelte/issues/218
-            isTypeScript(node) ? 'typescript' : 'babel-ts',
+            isTypeScript(node) ? 'typescript' : isJSON(node) ? 'json' : 'babel-ts',
             isTopLevel,
         );
     const embedStyle = (isTopLevel: boolean) =>
@@ -252,7 +257,7 @@ function getSnippedContent(node: Node) {
     const encodedContent = getAttributeTextValue(snippedTagContentAttribute, node);
 
     if (encodedContent) {
-        return Buffer.from(encodedContent, 'base64').toString('utf-8');
+        return base64ToString(encodedContent);
     } else {
         return '';
     }
@@ -260,7 +265,7 @@ function getSnippedContent(node: Node) {
 
 async function formatBodyContent(
     content: string,
-    parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug',
+    parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug' | 'json',
     textToDoc: (text: string, options: object) => Promise<Doc>,
     options: ParserOptions & { pugTabWidth?: number },
 ) {
@@ -365,7 +370,8 @@ async function embedTag(
         // the new position.
         return [...comments, result, hardline];
     } else {
-        return comments.length ? [...comments, result] : result;
+        // Only comments at the top level get the special "move comment" treatment.
+        return isTopLevel && comments.length ? [...comments, result] : result;
     }
 }
 

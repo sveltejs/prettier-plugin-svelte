@@ -294,7 +294,8 @@ export interface CommentInfo {
 export interface SnippetBlock extends BaseNode {
     type: 'SnippetBlock';
     expression: IdentifierNode;
-    context: null | any;
+    context?: BaseNode | null; // TODO: remove at some point, snippet API changed in .next-..
+    parameters: BaseNode[] | null;
     children: Node[];
 }
 

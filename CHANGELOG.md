@@ -1,5 +1,11 @@
 # prettier-plugin-svelte changelog
 
+## 3.2.0 (Unreleased)
+
+-   (feat) format JSON script tags
+-   (fix) don't duplicate comments of nested script/style tags
+-   (fix) handle updated `Snippet` block AST shape
+
 ## 3.1.2
 
 -   (fix) handle `>` tags in attributes
