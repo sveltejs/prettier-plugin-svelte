@@ -220,6 +220,10 @@ Since we are using configuration overrides to handle svelte files, you might als
 }
 ```
 
+## Usage in the browser
+
+Usage in the browser is semi-supported. You can import the plugin from `prettier-plugin-svelte/browser` to get a version that depends on `prettier/standalone` and therefore doesn't use any node APIs. What isn't supported in a good way yet is using this without a build step - you still need a bundler like Vite to build everything together as one self-contained package in advance.
+
 ## Migration
 
 ```diff
