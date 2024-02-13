@@ -75,7 +75,7 @@ export function embed(path: FastPath, _options: Options) {
 
     // embed does depth first traversal with deepest node called first, therefore we need to
     // check the parent to see if we are inside an expression that should be embedded.
-    const parent = path.getParentNode();
+    const parent: Node = path.getParentNode();
     const printJsExpression = () =>
         (parent as any).expression
             ? printJS(parent, options.svelteStrictMode ?? false, false, false, 'expression')
@@ -99,9 +99,12 @@ export function embed(path: FastPath, _options: Options) {
                 parent.expression.end =
                     options.originalText.indexOf(
                         ')',
-                        parent.context?.end ?? parent.expression.end,
+                        parent.context?.end ?? // TODO: remove at some point, snippet API changed in .next-..
+                            parent.parameters?.[parent.parameters.length - 1]?.end ??
+                            parent.expression.end,
                     ) + 1;
                 parent.context = null;
+                parent.parameters = null;
                 printSvelteBlockJS('expression');
             }
             break;

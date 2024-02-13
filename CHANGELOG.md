@@ -4,6 +4,7 @@
 
 -   (feat) format JSON script tags
 -   (fix) don't duplicate comments of nested script/style tags
+-   (fix) handle updated `Snippet` block AST shape
 
 ## 3.1.2
 
