@@ -22,12 +22,7 @@ export default [
         input: 'src/index.ts',
         plugins: [
             alias({
-                // Replace imports from 'prettier' with 'prettier/standalone'
-                entries: [
-                    // But don't touch 'prettier/plugins/babel'
-                    { find: 'prettier/plugins/babel', replacement: 'prettier/plugins/babel' },
-                    { find: 'prettier', replacement: 'prettier/standalone' },
-                ],
+                entries: [{ find: 'prettier', replacement: 'prettier/standalone' }],
             }),
             resolve(),
             commonjs(),
@@ -37,7 +32,6 @@ export default [
         output: {
             file: 'browser.js',
             format: 'esm',
-            sourcemap: true,
         },
     },
 ];
