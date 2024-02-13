@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## 3.2.0 (Unreleased)
+## 3.2.0
 
 -   (feat) format JSON script tags
 -   (feat) introduce separate entry point using `prettier/standalone`
