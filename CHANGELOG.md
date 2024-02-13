@@ -3,6 +3,7 @@
 ## 3.2.0 (Unreleased)
 
 -   (feat) format JSON script tags
+-   (feat) introduce separate entry point using `prettier/standalone`
 -   (fix) don't duplicate comments of nested script/style tags
 -   (fix) handle updated `Snippet` block AST shape
 
