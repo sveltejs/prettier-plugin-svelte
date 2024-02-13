@@ -17,7 +17,8 @@ export default [
     },
     // Browser build
     // Supported use case: importing the plugin from a bundler like Vite or Webpack
-    // Unsupported use case: importing the plugin directly in the browser
+    // Semi-supported use case: importing the plugin directly in the browser through using import maps.
+    //                          (semi-supported because it requires a svelte/compiler.cjs import map and the .cjs ending has the wrong mime type on CDNs)
     {
         input: 'src/index.ts',
         plugins: [
