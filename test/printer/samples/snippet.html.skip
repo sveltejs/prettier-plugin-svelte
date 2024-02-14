@@ -6,5 +6,27 @@
     <p>bar</p>
 {/snippet}
 
+{#snippet baz(a, b, c = 1)}
+    <p>baz</p>
+{/snippet}
+
+<div>
+    {#snippet loooongFunction(
+        a,
+        lot,
+        _of,
+        parameters,
+        that,
+        make,
+        the,
+        lines,
+        _break,
+    )}
+        <p>baz</p>
+    {/snippet}
+</div>
+
 {@render foo()}
 {@render bar(x)}
+{@render test((() => "a")())}
+{@render test(t())}

@@ -64,7 +64,12 @@ export const parsers: Record<string, Parser> = {
         parse: (text: string, options: any) => {
             const ast = babelParser.parse(text, options);
 
-            return { ...ast, program: ast.program.body[0].expression };
+            let program = ast.program.body[0];
+            if (!options._svelte_asFunction) {
+                program = program.expression;
+            }
+
+            return { ...ast, program };
         },
     },
 };

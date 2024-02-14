@@ -19,7 +19,7 @@ import {
     isTypeScript,
     printRaw,
 } from './print/node-helpers';
-import { CommentNode, ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
+import { BaseNode, CommentNode, ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
 import { extractAttributes } from './lib/extractAttributes';
 import { base64ToString } from './base64-string';
 
@@ -105,7 +105,8 @@ export function embed(path: FastPath, _options: Options) {
                     ) + 1;
                 parent.context = null;
                 parent.parameters = null;
-                printSvelteBlockJS('expression');
+                node.isJS = true;
+                node.asFunction = true;
             }
             break;
         case 'Element':
@@ -129,7 +130,9 @@ export function embed(path: FastPath, _options: Options) {
                 parent.expression.end =
                     options.originalText.indexOf(
                         ')',
-                        parent.argument?.end ?? parent.expression.end,
+                        parent.argument?.end ?? // TODO: remove at some point, snippet API changed in .next-..
+                            parent.arguments?.[parent.arguments.length - 1]?.end ??
+                            parent.expression.end,
                     ) + 1;
                 parent.argument = null;
                 printJS(parent, false, false, false, 'expression');
@@ -157,14 +160,14 @@ export function embed(path: FastPath, _options: Options) {
                     // so we need to have another public parser and defer to that
                     parser: 'svelteExpressionParser',
                     singleQuote: node.forceSingleQuote ? true : options.singleQuote,
+                    _svelte_asFunction: node.asFunction,
                 };
 
+                // If we have snipped content, it was done wrongly and we need to unsnip it.
+                // This happens for example for {@html `<script>{foo}</script>`}
+                const text = getText(node, options, true);
                 let docs = await textToDoc(
-                    forceIntoExpression(
-                        // If we have snipped content, it was done wrongly and we need to unsnip it.
-                        // This happens for example for {@html `<script>{foo}</script>`}
-                        getText(node, options, true),
-                    ),
+                    node.asFunction ? forceIntoFunction(text) : forceIntoExpression(text),
                     embeddedOptions,
                 );
                 if (node.forceSingleLine) {
@@ -172,6 +175,14 @@ export function embed(path: FastPath, _options: Options) {
                 }
                 if (node.removeParentheses) {
                     docs = removeParentheses(docs);
+                }
+                if (node.asFunction) {
+                    if (Array.isArray(docs) && typeof docs[0] === 'string') {
+                        docs[0] = docs[0].replace('function ', '');
+                        docs.splice(-1, 1);
+                    } else {
+                        throw new Error('Prettier AST changed, asFunction logic needs to change');
+                    }
                 }
                 return docs;
             } catch (e) {
@@ -238,6 +249,10 @@ function forceIntoExpression(statement: string) {
     // note the trailing newline: if the statement ends in a // comment,
     // we can't add the closing bracket right afterwards
     return `(${statement}\n)`;
+}
+
+function forceIntoFunction(statement: string) {
+    return `function ${statement} {}`;
 }
 
 function preformattedBody(str: string): Doc {
@@ -382,11 +397,12 @@ function printJS(
     removeParentheses: boolean,
     name: string,
 ) {
-    if (!node[name] || typeof node[name] !== 'object') {
+    const part = node[name] as BaseNode | undefined;
+    if (!part || typeof part !== 'object') {
         return;
     }
-    node[name].isJS = true;
-    node[name].forceSingleQuote = forceSingleQuote;
-    node[name].forceSingleLine = forceSingleLine;
-    node[name].removeParentheses = removeParentheses;
+    part.isJS = true;
+    part.forceSingleQuote = forceSingleQuote;
+    part.forceSingleLine = forceSingleLine;
+    part.removeParentheses = removeParentheses;
 }

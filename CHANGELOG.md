@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.2.1
+
+-   (fix) handle updated `@render` tag AST shape
+
 ## 3.2.0
 
 -   (feat) format JSON script tags

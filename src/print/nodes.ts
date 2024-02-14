@@ -1,9 +1,15 @@
 export interface BaseNode {
     start: number;
     end: number;
+    /** Whether this node is JS (not HTML/Svelte stuff) */
     isJS?: boolean;
+    /** Whether or not to print this node as a function */
+    asFunction?: boolean;
+    /** Whether or not to force single quotes when printing as JS */
     forceSingleQuote?: boolean;
+    /** Whether or not to force a single line when printing as JS */
     forceSingleLine?: boolean;
+    /** Whether or not to remove outer `()` when printing as JS */
     removeParentheses?: boolean;
 }
 
@@ -302,7 +308,8 @@ export interface SnippetBlock extends BaseNode {
 export interface RenderTag extends BaseNode {
     type: 'RenderTag';
     expression: IdentifierNode;
-    argument: null | any;
+    argument?: BaseNode | null;
+    arguments: BaseNode[] | null;
 }
 
 export type Node =
