@@ -27,6 +27,9 @@
 </div>
 
 {@render foo()}
+{@render foo?.()}
 {@render bar(x)}
+{@render bar.baz[buzz](x)}
+{@render (why ? not : like ?? thiss)(x)}
 {@render test((() => "a")())}
 {@render test(t())}

@@ -125,16 +125,19 @@ export function embed(path: FastPath, _options: Options) {
             printJS(parent, false, false, true, 'expression');
             break;
         case 'RenderTag':
-            // We merge the two parts into one expression, which future-proofs this for template TS support
             if (node === parent.expression) {
-                parent.expression.end =
-                    options.originalText.indexOf(
-                        ')',
-                        parent.argument?.end ?? // TODO: remove at some point, snippet API changed in .next-..
-                            parent.arguments?.[parent.arguments.length - 1]?.end ??
-                            parent.expression.end,
-                    ) + 1;
-                parent.argument = null;
+                // TODO: remove this if block at some point, snippet API changed in .next-..
+                if ('argument' in parent || 'arguments' in parent) {
+                    parent.expression.end =
+                        options.originalText.indexOf(
+                            ')',
+                            parent.argument?.end ??
+                                parent.arguments?.[parent.arguments.length - 1]?.end ??
+                                parent.expression.end,
+                        ) + 1;
+                    parent.argument = null;
+                    parent.arguments = null;
+                }
                 printJS(parent, false, false, false, 'expression');
             }
             break;
