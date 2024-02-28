@@ -4,8 +4,11 @@ import { format } from 'prettier';
 import * as SveltePlugin from '../../src';
 
 let dirs = readdirSync('test/formatting/samples');
+const printerFilesHaveOnly = readdirSync('test/printer/samples').some(
+    (f) => f.endsWith('.only.html') || f.endsWith('.only.md'),
+);
 const endsWithOnly = (f: string): boolean => f.endsWith('.only');
-const hasOnly = dirs.some(endsWithOnly);
+const hasOnly = printerFilesHaveOnly || dirs.some(endsWithOnly);
 dirs = !hasOnly ? dirs : dirs.filter(endsWithOnly);
 
 if (process.env.CI && hasOnly) {

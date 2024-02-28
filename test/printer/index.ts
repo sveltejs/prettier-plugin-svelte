@@ -1,13 +1,16 @@
 import test from 'ava';
 import { readdirSync, readFileSync, existsSync } from 'fs';
 import { format } from 'prettier';
-import * as SveltePlugin from '../../src'
+import * as SveltePlugin from '../../src';
 
 let files = readdirSync('test/printer/samples').filter(
     (name) => name.endsWith('.html') || name.endsWith('.md'),
 );
+const formattingDirsHaveOnly = readdirSync('test/formatting/samples').some((d) =>
+    d.endsWith('.only'),
+);
 const endsWithOnly = (f: string): boolean => f.endsWith('.only.html') || f.endsWith('.only.md');
-const hasOnly = files.some(endsWithOnly);
+const hasOnly = formattingDirsHaveOnly || files.some(endsWithOnly);
 files = !hasOnly ? files : files.filter(endsWithOnly);
 
 if (process.env.CI && hasOnly) {
@@ -23,7 +26,7 @@ for (const file of files) {
 
     test(`printer: ${file.slice(0, file.length - `.${ending}`.length)}`, async (t) => {
         const actualOutput = await format(input, {
-            parser: (ending === 'html' ? 'svelte' : 'markdown'),
+            parser: ending === 'html' ? 'svelte' : 'markdown',
             plugins: [SveltePlugin],
             tabWidth: 4,
             ...options,
