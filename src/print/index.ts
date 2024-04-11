@@ -215,10 +215,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 ((((node.type === 'Element' && !options.svelteStrictMode) ||
                     node.type === 'Head' ||
                     node.type === 'InlineComponent' ||
+                    node.type === 'Slot' ||
                     node.type === 'SlotTemplate' ||
                     node.type === 'Title') &&
                     didSelfClose) ||
-                    node.type === 'Slot' ||
                     node.type === 'Window' ||
                     selfClosingTags.indexOf(node.name) !== -1 ||
                     isDoctypeTag);
