@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.2.3
+
+-   (fix) don't force-self-close `<slot>` tags
+
 ## 3.2.2
 
 -   (fix) handle updated `@render` tag AST shape
