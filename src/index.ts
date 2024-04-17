@@ -78,7 +78,6 @@ export const printers: Record<string, Printer> = {
     'svelte-ast': {
         print,
         embed,
-        // @ts-expect-error Prettier's type definitions are wrong
         getVisitorKeys,
     },
 };

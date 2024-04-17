@@ -19,6 +19,7 @@
         "./package.json": "./package.json"
     },
     "scripts": {
+        "check": "tsc --noEmit",
         "build": "rollup -c",
         "test": "ava",
         "prepare": "npm run build",
