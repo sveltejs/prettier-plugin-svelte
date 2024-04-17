@@ -25,13 +25,13 @@ import {
     CommentInfo,
 } from './nodes';
 import { blockElements, TagName } from '../lib/elements';
-import { FastPath } from 'prettier';
+import { AstPath } from 'prettier';
 import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
 import { ParserOptions, isBracketSameLine } from '../options';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
 
-export function isInlineElement(path: FastPath, options: ParserOptions, node: Node) {
+export function isInlineElement(path: AstPath, options: ParserOptions, node: Node) {
     return (
         node && node.type === 'Element' && !isBlockElement(node, options) && !isPreTagContent(path)
     );
@@ -82,7 +82,7 @@ export function getChildren(node: Node): Node[] {
 /**
  * Returns siblings, that is, the children of the parent.
  */
-export function getSiblings(path: FastPath): Node[] {
+export function getSiblings(path: AstPath): Node[] {
     let parent: Node = path.getParentNode();
 
     if (isASTNode(parent)) {
@@ -95,7 +95,7 @@ export function getSiblings(path: FastPath): Node[] {
 /**
  * Returns the previous sibling node.
  */
-export function getPreviousNode(path: FastPath): Node | undefined {
+export function getPreviousNode(path: AstPath): Node | undefined {
     const node: Node = path.getNode();
     return getSiblings(path).find((child) => child.end === node.start);
 }
@@ -103,14 +103,14 @@ export function getPreviousNode(path: FastPath): Node | undefined {
 /**
  * Returns the next sibling node.
  */
-export function getNextNode(path: FastPath, node: Node = path.getNode()): Node | undefined {
+export function getNextNode(path: AstPath, node: Node = path.getNode()): Node | undefined {
     return getSiblings(path).find((child) => child.start === node.end);
 }
 
 /**
  * Returns the comment that is above the current node.
  */
-export function getLeadingComment(path: FastPath): CommentNode | undefined {
+export function getLeadingComment(path: AstPath): CommentNode | undefined {
     const siblings = getSiblings(path);
 
     let node: Node = path.getNode();
@@ -135,7 +135,7 @@ export function getLeadingComment(path: FastPath): CommentNode | undefined {
  * Did there use to be any embedded object (that has been snipped out of the AST to be moved)
  * at the specified position?
  */
-export function doesEmbedStartAfterNode(node: Node, path: FastPath, siblings = getSiblings(path)) {
+export function doesEmbedStartAfterNode(node: Node, path: AstPath, siblings = getSiblings(path)) {
     // If node is not at the top level of html, an embed cannot start after it,
     // because embeds are only at the top level
     if (!isNodeTopLevelHTML(node, path)) {
@@ -151,7 +151,7 @@ export function doesEmbedStartAfterNode(node: Node, path: FastPath, siblings = g
     return embeds.find((n) => n && n.start >= position && (!nextNode || n.end <= nextNode.start));
 }
 
-export function isNodeTopLevelHTML(node: Node, path: FastPath): boolean {
+export function isNodeTopLevelHTML(node: Node, path: AstPath): boolean {
     const root = path.stack[0];
     return !!root.html && !!root.html.children && root.html.children.includes(node);
 }
@@ -355,7 +355,7 @@ export function trimTextNodeLeft(node: TextNode): void {
  * Remove all leading whitespace up until the first non-empty text node,
  * and all trailing whitespace from the last non-empty text node onwards.
  */
-export function trimChildren(children: Node[], path: FastPath): void {
+export function trimChildren(children: Node[], path: AstPath): void {
     let firstNonEmptyNode = children.findIndex(
         (n) => !isEmptyTextNode(n) && !doesEmbedStartAfterNode(n, path),
     );
@@ -528,7 +528,7 @@ export function checkWhitespaceAtEndOfSvelteBlock(
     return 'none';
 }
 
-export function isInsideQuotedAttribute(path: FastPath, options: ParserOptions): boolean {
+export function isInsideQuotedAttribute(path: AstPath, options: ParserOptions): boolean {
     const stack = path.stack as Node[];
 
     return stack.some(
@@ -544,7 +544,7 @@ export function isInsideQuotedAttribute(path: FastPath, options: ParserOptions):
  */
 export function canOmitSoftlineBeforeClosingTag(
     node: Node,
-    path: FastPath,
+    path: AstPath,
     options: ParserOptions,
 ): boolean {
     return (
@@ -566,7 +566,7 @@ function hugsStartOfNextNode(node: Node, options: ParserOptions): boolean {
     return !options.originalText.substring(node.end).match(/^\s/);
 }
 
-function isLastChildWithinParentBlockElement(path: FastPath, options: ParserOptions): boolean {
+function isLastChildWithinParentBlockElement(path: AstPath, options: ParserOptions): boolean {
     const parent = path.getParentNode() as Node | undefined;
     if (!parent || !isBlockElement(parent, options)) {
         return false;
