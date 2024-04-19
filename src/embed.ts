@@ -27,7 +27,6 @@ import {
     RegularElement,
     SvelteElement,
 } from './print/nodes';
-import { extractAttributes } from './lib/extractAttributes';
 import { base64ToString } from './base64-string';
 
 const {
@@ -67,13 +66,6 @@ export function embed(path: AstPath, _options: Options) {
         assignCommentsToNodes(node);
         if (node.options) {
             node.options.type = 'SvelteOptions';
-            node.options.attributes = extractAttributes(getText(node.options, options));
-        }
-        if (node.module) {
-            node.module.attributes = extractAttributes(getText(node.module, options));
-        }
-        if (node.instance) {
-            node.instance.attributes = extractAttributes(getText(node.instance, options));
         }
         if (node.css) {
             node.css.content.type = 'StyleProgram';
