@@ -3,7 +3,10 @@
         "target": "es6",
         "module": "commonjs",
         "strict": true,
-        "esModuleInterop": true
+        "esModuleInterop": true,
+        "paths": {
+            "#compiler": ["./node_modules/svelte/src/compiler/types/index.d.ts"]
+        }
     },
     "include": ["src/**/*", "index.d.ts"]
 }
