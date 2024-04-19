@@ -23,7 +23,7 @@ import {
 } from './nodes';
 import { blockElements, TagName } from '../lib/elements';
 import { AstPath } from 'prettier';
-import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
+import { findLastIndex, isPreTagContent } from './helpers';
 import { ParserOptions, isBracketSameLine } from '../options';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
@@ -76,21 +76,17 @@ export function getChildren(node: SvelteNode): SvelteNode[] {
 export function getSiblings(path: AstPath): SvelteNode[] {
     let parent: SvelteNode = path.getParentNode();
 
-    return getChildren(parent);
-}
+    if (parent.type === 'Fragment') return parent.nodes;
 
-/**
- * Returns the previous sibling node.
- */
-export function getPreviousNode(path: AstPath): SvelteNode | undefined {
-    const node: SvelteNode = path.getNode();
-    return getSiblings(path).find((child) => child.end === node.start);
+    return getChildren(parent);
 }
 
 /**
  * Returns the next sibling node.
  */
-export function getNextNode(path: AstPath, node: SvelteNode = path.getNode()): SvelteNode | undefined {
+export function getNextNode(path: AstPath): SvelteNode | undefined {
+    const node: SvelteNode = path.getNode();
+
     return getSiblings(path).find((child) => child.start === node.end);
 }
 
@@ -122,7 +118,7 @@ export function getLeadingComment(path: AstPath): Comment | undefined {
  * Did there use to be any embedded object (that has been snipped out of the AST to be moved)
  * at the specified position?
  */
-export function doesEmbedStartAfterNode(node: SvelteNode, path: AstPath, siblings = getSiblings(path)) {
+export function doesEmbedStartAfterNode(node: SvelteNode, path: AstPath) {
     // If node is not at the top level of html, an embed cannot start after it,
     // because embeds are only at the top level
     if (!isNodeTopLevelHTML(node, path)) {
@@ -132,15 +128,15 @@ export function doesEmbedStartAfterNode(node: SvelteNode, path: AstPath, sibling
     const position = node.end;
     const root = path.stack[0] as Root;
 
-    const embeds = [root.css, root.html, root.instance, root.js, root.module] as SvelteNode[];
-
+    const embeds = [root.css, root.fragment, root.instance, root.module, root.options] as SvelteNode[];
+    const siblings = getSiblings(path);
     const nextNode = siblings[siblings.indexOf(node) + 1];
     return embeds.find((n) => n && n.start >= position && (!nextNode || n.end <= nextNode.start));
 }
 
 export function isNodeTopLevelHTML(node: SvelteNode, path: AstPath): boolean {
-    const root = path.stack[0];
-    return !!root.html && !!root.html.children && root.html.children.includes(node);
+    const root = path.stack[0] as Root | undefined;
+    return !!root && root.fragment.nodes.includes(node);
 }
 
 export function isEmptyTextNode(node: SvelteNode | undefined): node is Text {

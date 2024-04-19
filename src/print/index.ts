@@ -470,7 +470,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         case 'ExpressionTag':
             return ['{', printJS(path, print, 'expression'), '}'];
         case 'IfBlock': {
-            const def: Doc[] = [
+            let def: Doc[] = [
                 node.elseif ? '{:else ' : '{#',
                 'if ',
                 printJS(path, print, 'test'),
@@ -489,11 +489,13 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 }
 
                 def.push(
-                    printSvelteBlockFragment(path, print, 'alternate', node.elseif),
+                    printSvelteBlockFragment(path, print, 'alternate'),
                 );
             }
 
-            if (!node.elseif) {
+            if (node.elseif) {
+                def = dedent(def);
+            } else {
                 def.push('{/if}');
             }
 
@@ -732,7 +734,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
 function printTopLevelParts(
     n: Root,
     options: ParserOptions,
-    path: AstPath<any>,
+    path: AstPath,
     print: PrintFn,
 ): Doc {
     if (options.svelteSortOrder === 'none') {
@@ -833,12 +835,7 @@ function printAttributeNodeValue(
     }
 }
 
-function printSvelteBlockFragment(
-    path: AstPath,
-    print: PrintFn,
-    name: string,
-    shouldIndent = true
-): Doc {
+function printSvelteBlockFragment( path: AstPath, print: PrintFn, name: string): Doc {
     const node = path.node[name] as Fragment;
 
     const children = node.nodes;
@@ -870,10 +867,7 @@ function printSvelteBlockFragment(
         trimTextNodeRight(lastChild);
     }
 
-//    return [indent([startline, group(printChildren(path, print, options))]), endline];
-    return shouldIndent
-        ? [indent([startline, group(path.call(print, name))]), endline]
-        : [startline, group(path.call(print, name)), endline];
+    return [indent([startline, group(path.call(print, name))]), endline];
 }
 
 function printPre(
@@ -893,7 +887,7 @@ function printPre(
                 result.push(line);
             });
         } else {
-            result.push(path.call(print, 'children', i));
+            result.push(path.call(print, 'fragment', 'nodes', i));
         }
     }
     return result;
