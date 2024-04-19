@@ -3,21 +3,23 @@ import { PrintFn } from '.';
 import { formattableAttributes } from '../lib/elements';
 import { snippedTagContentAttribute } from '../lib/snipTagContent';
 import {
-    ASTNode,
-    AttributeNode,
-    BodyNode,
-    DocumentNode,
-    ElementNode,
-    HeadNode,
-    InlineComponentNode,
-    Node,
-    OptionsNode,
-    ScriptNode,
-    SlotNode,
-    SlotTemplateNode,
-    StyleNode,
-    TitleNode,
-    WindowNode
+    BaseElement,
+    BaseNode,
+    Component,
+    ElementLike,
+    RegularElement,
+    Root,
+    SlotElement,
+    StyleSheet,
+    SvelteBody,
+    SvelteDocument,
+    SvelteElement,
+    SvelteFragment,
+    SvelteHead,
+    SvelteOptions,
+    SvelteSelf,
+    SvelteWindow,
+    TitleElement,
 } from './nodes';
 import { ParserOptions } from '../options';
 
@@ -25,8 +27,8 @@ import { ParserOptions } from '../options';
  * Determines whether or not given node
  * is the root of the Svelte AST.
  */
-export function isASTNode(n: any): n is ASTNode {
-    return n && n.__isRoot;
+export function isASTNode(n: any): n is Root {
+    return n && n.type === 'Root';
 }
 
 export function isPreTagContent(path: AstPath): boolean {
@@ -34,7 +36,7 @@ export function isPreTagContent(path: AstPath): boolean {
 
     return stack.some(
         (node) =>
-            (node.type === 'Element' && node.name.toLowerCase() === 'pre') ||
+            (node.type === 'RegularElement' && node.name.toLowerCase() === 'pre') ||
             (node.type === 'Attribute' && !formattableAttributes.includes(node.name)),
     );
 }
@@ -70,26 +72,26 @@ export function replaceEndOfLineWith(text: string, replacement: Doc) {
 
 export function getAttributeLine(
     node:
-        | ElementNode
-        | InlineComponentNode
-        | SlotNode
-        | WindowNode
-        | HeadNode
-        | TitleNode
-        | StyleNode
-        | ScriptNode
-        | BodyNode
-        | DocumentNode
-        | OptionsNode
-        | SlotTemplateNode,
+        | RegularElement
+        | SvelteElement
+        | SvelteSelf
+        | Component
+        | SlotElement
+        | SvelteFragment
+        | SvelteWindow
+        | SvelteHead
+        | TitleElement
+        | StyleSheet
+//        | ScriptNode
+        | SvelteBody
+        | SvelteDocument
+        | SvelteOptions,
     options: ParserOptions,
 ) {
     const { hardline, line } = doc.builders;
-    const hasThisBinding =
-        (node.type === 'InlineComponent' && !!node.expression) ||
-        (node.type === 'Element' && !!node.tag);
+    const hasThisBinding = node.type === 'SvelteComponent' || node.type === 'SvelteElement';
 
-    const attributes = (node.attributes as Array<AttributeNode>).filter(
+    const attributes = node.attributes.filter(
         (attribute) => attribute.name !== snippedTagContentAttribute,
     );
     return options.singleAttributePerLine &&
@@ -100,18 +102,20 @@ export function getAttributeLine(
 
 export function printWithPrependedAttributeLine(
     node:
-        | ElementNode
-        | InlineComponentNode
-        | SlotNode
-        | WindowNode
-        | HeadNode
-        | TitleNode
-        | StyleNode
-        | ScriptNode
-        | BodyNode
-        | DocumentNode
-        | OptionsNode
-        | SlotTemplateNode,
+        | RegularElement
+        | SvelteElement
+        | SvelteSelf
+        | Component
+        | SlotElement
+        | SvelteFragment
+        | SvelteWindow
+        | SvelteHead
+        | TitleElement
+        | StyleSheet
+    //        | ScriptNode
+        | SvelteBody
+        | SvelteDocument
+        | SvelteOptions,
     options: ParserOptions,
     print: PrintFn,
 ): PrintFn {

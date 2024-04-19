@@ -13,8 +13,8 @@ import {
 } from './helpers';
 import {
     canOmitSoftlineBeforeClosingTag,
-    checkWhitespaceAtEndOfSvelteBlock,
-    checkWhitespaceAtStartOfSvelteBlock,
+    checkWhitespaceAtEndOfFragment,
+    checkWhitespaceAtStartOfFragment,
     doesEmbedStartAfterNode,
     endsWithLinebreak,
     getChildren,
@@ -27,7 +27,7 @@ import {
     isIgnoreStartDirective,
     isInlineElement,
     isInsideQuotedAttribute,
-    isLoneMustacheTag,
+    isLoneExpressionTag,
     isNodeSupportedLanguage,
     isNodeTopLevelHTML,
     isOrCanBeConvertedToShorthand,
@@ -43,16 +43,7 @@ import {
     trimTextNodeLeft,
     trimTextNodeRight,
 } from './node-helpers';
-import {
-    ASTNode,
-    AttributeNode,
-    CommentNode,
-    IfBlockNode,
-    Node,
-    OptionsNode,
-    StyleDirectiveNode,
-    TextNode,
-} from './nodes';
+import { Fragment, Root, SvelteNode, Text } from './nodes';
 
 const { join, line, group, indent, dedent, softline, hardline, fill, breakParent, literalline } =
     doc.builders;
@@ -75,7 +66,6 @@ export function hasPragma(text: string) {
 
 let ignoreNext = false;
 let ignoreRange = false;
-let svelteOptionsDoc: Doc | undefined;
 
 export function print(path: AstPath, options: ParserOptions, print: PrintFn): Doc {
     const bracketSameLine = isBracketSameLine(options);
@@ -91,7 +81,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
 
     const [open, close] = options.svelteStrictMode ? ['"{', '}"'] : ['{', '}'];
     const printJsExpression = () => [open, printJS(path, print, 'expression'), close];
-    const node = n as Node;
+    const node = n as SvelteNode;
 
     if (
         (ignoreNext || (ignoreRange && !isIgnoreEndDirective(node))) &&
@@ -110,26 +100,35 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
 
     switch (node.type) {
         case 'Fragment':
-            const children = node.children;
+            const children = node.nodes;
 
             if (children.length === 0 || children.every(isEmptyTextNode)) {
                 return '';
             }
             if (!isPreTagContent(path)) {
-                trimChildren(node.children, path);
+                trimChildren(node.nodes, path);
+                let shouldBreakParent = false;
                 const output = trim(
                     [printChildren(path, print, options)],
-                    (n) =>
-                        isLine(n) ||
-                        (typeof n === 'string' && n.trim() === '') ||
+                    (n) => {
                         // Because printChildren may append this at the end and
                         // may hide other lines before it
-                        n === breakParent,
+                        if (n === breakParent) {
+                            shouldBreakParent = true;
+                            return true;
+                        }
+
+                        return isLine(n) || (typeof n === 'string' && n.trim() === '');
+                    },
                 );
+                if (shouldBreakParent) {
+                    output.push(breakParent);
+                }
                 if (output.every((doc) => isEmptyDoc(doc))) {
                     return '';
                 }
-                return group([...output, hardline]);
+//                return group([...output, hardline]);
+                return group(output);
             } else {
                 return group(path.map(print, 'children'));
             }
@@ -165,7 +164,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 if (parent.type === 'Attribute') {
                     // Direct child of attribute value -> add literallines at end of lines
                     // so that other things don't break in unexpected places
-                    if (parent.name === 'class' && path.getParentNode(1).type === 'Element') {
+                    if (parent.name === 'class' && path.getParentNode(1).type === 'RegularElement') {
                         // Special treatment for class attribute on html elements. Prettier
                         // will force everything into one line, we deviate from that and preserve lines.
                         rawText = rawText.replace(
@@ -184,7 +183,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                                     ? match
                                     : characterBeforeWhitespace + (isEndOfLine ? endOfLine : ' '),
                         );
-                        // Shrink trailing whitespace in case it's followed by a mustache tag
+                        // Shrink trailing whitespace in case it's followed by a expression tag
                         // and remove it completely if it's at the end of the string, but not
                         // if it's on its own line
                         rawText = rawText.replace(
@@ -196,30 +195,35 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 }
                 return rawText;
             }
-        case 'Element':
-        case 'InlineComponent':
-        case 'Slot':
-        case 'SlotTemplate':
-        case 'Window':
-        case 'Head':
-        case 'Title': {
+        case 'RegularElement':
+        case 'SvelteElement':
+        case 'SvelteSelf':
+        case 'Component':
+        case 'SvelteComponent':
+        case 'SlotElement':
+        case 'SvelteFragment':
+        case 'SvelteWindow':
+        case 'SvelteHead':
+        case 'TitleElement': {
             const isSupportedLanguage = !(
                 node.name === 'template' && !isNodeSupportedLanguage(node)
             );
-            const isEmpty = node.children.every((child) => isEmptyTextNode(child));
+            const isEmpty = node.fragment.nodes.every((child) => isEmptyTextNode(child));
             const isDoctypeTag = node.name.toUpperCase() === '!DOCTYPE';
             const didSelfClose = options.originalText[node.end - 2] === '/';
 
             const isSelfClosingTag =
                 isEmpty &&
-                ((((node.type === 'Element' && !options.svelteStrictMode) ||
-                    node.type === 'Head' ||
-                    node.type === 'InlineComponent' ||
-                    node.type === 'Slot' ||
-                    node.type === 'SlotTemplate' ||
-                    node.type === 'Title') &&
+                (((((node.type === 'RegularElement' || node.type === 'SvelteElement') && !options.svelteStrictMode) ||
+                    node.type === 'SvelteHead' ||
+                    node.type === 'SvelteSelf' ||
+                    node.type === 'SvelteComponent' ||
+                    node.type === 'Component' ||
+                    node.type === 'SlotElement' ||
+                    node.type === 'SvelteFragment' ||
+                    node.type === 'TitleElement') &&
                     didSelfClose) ||
-                    node.type === 'Window' ||
+                    node.type === 'SvelteWindow' ||
                     selfClosingTags.indexOf(node.name) !== -1 ||
                     isDoctypeTag);
 
@@ -230,14 +234,14 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             );
             const attributeLine = getAttributeLine(node, options);
             const possibleThisBinding =
-                node.type === 'InlineComponent' && node.expression
+                node.type === 'SvelteComponent'
                     ? [attributeLine, 'this=', ...printJsExpression()]
-                    : node.type === 'Element' && node.tag
+                    : node.type === 'SvelteElement'
                     ? [
                           attributeLine,
                           'this=',
-                          ...(typeof node.tag === 'string'
-                              ? [`"${node.tag}"`]
+                          ...(node.tag.type === 'Literal' && typeof node.tag.loc === 'undefined'
+                              ? [`"${node.tag.value}"`]
                               : [open, printJS(path, print, 'tag'), close]),
                       ]
                     : '';
@@ -259,10 +263,11 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 ]);
             }
 
-            const children = node.children;
+            const children = node.fragment.nodes;
             const firstChild = children[0];
             const lastChild = children[children.length - 1];
 
+            //todo
             // Is a function which is invoked later because printChildren will manipulate child nodes
             // which would wrongfully change the other checks about hugging etc done beforehand
             let body: () => Doc;
@@ -273,8 +278,8 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             if (isEmpty) {
                 body =
                     isInlineElement(path, options, node) &&
-                    node.children.length &&
-                    isTextNodeStartingWithWhitespace(node.children[0]) &&
+                    node.fragment.nodes.length &&
+                    isTextNodeStartingWithWhitespace(node.fragment.nodes[0]) &&
                     !isPreTagContent(path)
                         ? () => line
                         : () => (bracketSameLine ? softline : '');
@@ -283,9 +288,9 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             } else if (!isSupportedLanguage) {
                 body = () => printRaw(node, options.originalText, true);
             } else if (isInlineElement(path, options, node) && !isPreTagContent(path)) {
-                body = () => printChildren(path, print, options);
+                body = () => path.call(print, 'fragment');
             } else {
-                body = () => printChildren(path, print, options);
+                body = () => path.call(print, 'fragment');
             }
 
             const openingTag = [
@@ -393,28 +398,35 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 `</${node.name}>`,
             ]);
         }
-        case 'Options':
-            if (options.svelteSortOrder !== 'none') {
-                throw new Error('Options tags should have been handled by prepareChildren');
+        case 'SvelteOptions':
+            const comments = [];
+            for (const comment of node.comments) {
+                comments.push('<!--', comment.comment.data, '-->');
+                comments.push(hardline);
+                if (comment.emptyLineAfter) {
+                    comments.push(hardline);
+                }
             }
+
+            return [comments, group([
+                [
+                    '<svelte:options',
+                    indent(
+                        group([
+                            ...path.map(
+                                printWithPrependedAttributeLine(node, options, print),
+                                'attributes',
+                            ),
+                            bracketSameLine ? '' : dedent(line),
+                        ]),
+                    ),
+                    ...[bracketSameLine ? ' ' : '', '/>'],
+                ],
+//                hardline,
+            ])];
         // else fall through to Body
-        case 'Body':
-        case 'Document':
-            return group([
-                '<',
-                node.name,
-                indent(
-                    group([
-                        ...path.map(
-                            printWithPrependedAttributeLine(node, options, print),
-                            'attributes',
-                        ),
-                        bracketSameLine ? '' : dedent(line),
-                    ]),
-                ),
-                ...[bracketSameLine ? ' ' : '', '/>'],
-            ]);
-        case 'Document':
+        case 'SvelteBody':
+        case 'SvelteDocument':
             return group([
                 '<',
                 node.name,
@@ -431,9 +443,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             ]);
         case 'Identifier':
             return node.name;
-        case 'AttributeShorthand': {
-            return (node.expression as any).name;
-        }
         case 'Attribute': {
             if (isOrCanBeConvertedToShorthand(node)) {
                 if (options.svelteAllowShorthand) {
@@ -449,7 +458,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 }
 
                 const quotes =
-                    !isLoneMustacheTag(node.value) || (options.svelteStrictMode ?? false);
+                    !isLoneExpressionTag(node.value) || (options.svelteStrictMode ?? false);
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
                     return [node.name, '=', '"', attrNodeValue, '"'];
@@ -458,56 +467,37 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 }
             }
         }
-        case 'MustacheTag':
+        case 'ExpressionTag':
             return ['{', printJS(path, print, 'expression'), '}'];
         case 'IfBlock': {
             const def: Doc[] = [
-                '{#if ',
-                printJS(path, print, 'expression'),
+                node.elseif ? '{:else ' : '{#',
+                'if ',
+                printJS(path, print, 'test'),
                 '}',
-                printSvelteBlockChildren(path, print, options),
+                printSvelteBlockFragment(path, print, 'consequent'),
             ];
 
-            if (node.else) {
-                def.push(path.call(print, 'else'));
+            if (node.alternate) {
+                const alternateNodes = node.alternate.nodes;
+                if (
+                    alternateNodes.length !== 1
+                    || alternateNodes[0].type !== 'IfBlock'
+                    || !alternateNodes[0].elseif
+                    ) {
+                    def.push('{:else}');
+                }
+
+                def.push(
+                    printSvelteBlockFragment(path, print, 'alternate', node.elseif),
+                );
             }
 
-            def.push('{/if}');
+            if (!node.elseif) {
+                def.push('{/if}');
+            }
 
             return group([def, breakParent]);
-        }
-        case 'ElseBlock': {
-            // Else if
-            const parent = path.getParentNode() as Node;
-
-            if (
-                node.children.length === 1 &&
-                node.children[0].type === 'IfBlock' &&
-                parent.type !== 'EachBlock'
-            ) {
-                const ifNode = node.children[0] as IfBlockNode;
-                const def: Doc[] = [
-                    '{:else if ',
-                    path.map((ifPath) => printJS(ifPath, print, 'expression'), 'children')[0],
-                    '}',
-                    path.map(
-                        (ifPath) => printSvelteBlockChildren(ifPath, print, options),
-                        'children',
-                    )[0],
-                ];
-
-                if (ifNode.else) {
-                    def.push(
-                        path.map(
-                            (ifPath: AstPath<any>) => ifPath.call(print, 'else'),
-                            'children',
-                        )[0],
-                    );
-                }
-                return def;
-            }
-
-            return ['{:else}', printSvelteBlockChildren(path, print, options)];
         }
         case 'EachBlock': {
             const def: Doc[] = [
@@ -525,10 +515,13 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 def.push(' (', printJS(path, print, 'key'), ')');
             }
 
-            def.push('}', printSvelteBlockChildren(path, print, options));
+            def.push('}', printSvelteBlockFragment(path, print, 'body'));
 
-            if (node.else) {
-                def.push(path.call(print, 'else'));
+            if (node.fallback) {
+                def.push(
+                    '{:else}',
+                    printSvelteBlockFragment(path, print, 'fallback')
+                );
             }
 
             def.push('{/each}');
@@ -536,9 +529,9 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             return group([def, breakParent]);
         }
         case 'AwaitBlock': {
-            const hasPendingBlock = node.pending.children.some((n) => !isEmptyTextNode(n));
-            const hasThenBlock = node.then.children.some((n) => !isEmptyTextNode(n));
-            const hasCatchBlock = node.catch.children.some((n) => !isEmptyTextNode(n));
+            const hasPendingBlock = (node.pending?.nodes ?? []).some((n) => !isEmptyTextNode(n));
+            const hasThenBlock = (node.then?.nodes ?? []).some((n) => !isEmptyTextNode(n));
+            const hasCatchBlock = (node.catch?.nodes ?? []).some((n) => !isEmptyTextNode(n));
 
             let block = [];
 
@@ -551,7 +544,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                         expandNode(node.value, options.originalText),
                         '}',
                     ]),
-                    path.call(print, 'then'),
+                    printSvelteBlockFragment(path, print, 'then'),
                 );
             } else if (!hasPendingBlock && hasCatchBlock) {
                 block.push(
@@ -562,19 +555,19 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                         expandNode(node.error, options.originalText),
                         '}',
                     ]),
-                    path.call(print, 'catch'),
+                    printSvelteBlockFragment(path, print, 'catch'),
                 );
             } else {
                 block.push(group(['{#await ', printJS(path, print, 'expression'), '}']));
 
                 if (hasPendingBlock) {
-                    block.push(path.call(print, 'pending'));
+                    block.push(printSvelteBlockFragment(path, print, 'pending'));
                 }
 
                 if (hasThenBlock) {
                     block.push(
                         group(['{:then', expandNode(node.value, options.originalText), '}']),
-                        path.call(print, 'then'),
+                        printSvelteBlockFragment(path, print, 'then'),
                     );
                 }
             }
@@ -582,7 +575,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             if ((hasPendingBlock || hasThenBlock) && hasCatchBlock) {
                 block.push(
                     group(['{:catch', expandNode(node.error, options.originalText), '}']),
-                    path.call(print, 'catch'),
+                    printSvelteBlockFragment(path, print, 'catch'),
                 );
             }
 
@@ -595,31 +588,26 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 '{#key ',
                 printJS(path, print, 'expression'),
                 '}',
-                printSvelteBlockChildren(path, print, options),
+                printSvelteBlockFragment(path, print, 'fragment'),
             ];
 
             def.push('{/key}');
 
             return group([def, breakParent]);
         }
-        case 'ThenBlock':
-        case 'PendingBlock':
-        case 'CatchBlock':
-            return printSvelteBlockChildren(path, print, options);
-        // Svelte 5 only
         case 'SnippetBlock': {
             const snippet = ['{#snippet ', printJS(path, print, 'expression')];
-            snippet.push('}', printSvelteBlockChildren(path, print, options), '{/snippet}');
+            snippet.push('}', printSvelteBlockFragment(path, print, 'body'), '{/snippet}');
             return snippet;
         }
-        case 'EventHandler':
+        case 'OnDirective':
             return [
                 'on:',
                 node.name,
                 node.modifiers && node.modifiers.length ? ['|', join('|', node.modifiers)] : '',
                 node.expression ? ['=', ...printJsExpression()] : '',
             ];
-        case 'Binding':
+        case 'BindDirective':
             return [
                 'bind:',
                 node.name,
@@ -629,7 +617,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     ? ''
                     : ['=', ...printJsExpression()],
             ];
-        case 'Class':
+        case 'ClassDirective':
             return [
                 'class:',
                 node.name,
@@ -656,7 +644,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 }
             } else {
                 const quotes =
-                    !isLoneMustacheTag(node.value) || (options.svelteStrictMode ?? false);
+                    !isLoneExpressionTag(node.value) || (options.svelteStrictMode ?? false);
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
                     return [...prefix, '=', '"', attrNodeValue, '"'];
@@ -664,7 +652,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     return [...prefix, '=', attrNodeValue];
                 }
             }
-        case 'Let':
+        case 'LetDirective':
             return [
                 'let:',
                 node.name,
@@ -682,8 +670,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     : '',
                 '}',
             ];
-        case 'Ref':
-            return ['ref:', node.name];
         case 'Comment': {
             const nodeAfterComment = getNextNode(path);
 
@@ -706,9 +692,15 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 ignoreNext = true;
             }
 
-            return printComment(node);
+            let text = node.data;
+
+            if (hasSnippedContent(text)) {
+                text = unsnipContent(text);
+            }
+
+            return group(['<!--', text, '-->']);
         }
-        case 'Transition':
+        case 'TransitionDirective':
             const kind = node.intro && node.outro ? 'transition' : node.intro ? 'in' : 'out';
             return [
                 kind,
@@ -717,21 +709,20 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 node.modifiers && node.modifiers.length ? ['|', join('|', node.modifiers)] : '',
                 node.expression ? ['=', ...printJsExpression()] : '',
             ];
-        case 'Action':
+        case 'UseDirective':
             return ['use:', node.name, node.expression ? ['=', ...printJsExpression()] : ''];
-        case 'Animation':
+        case 'AnimateDirective':
             return ['animate:', node.name, node.expression ? ['=', ...printJsExpression()] : ''];
-        case 'RawMustacheTag':
+        case 'HtmlTag':
             return ['{@html ', printJS(path, print, 'expression'), '}'];
-        // Svelte 5 only
         case 'RenderTag': {
             const render = ['{@render ', printJS(path, print, 'expression'), '}'];
             return render;
         }
-        case 'Spread':
+        case 'SpreadAttribute':
             return ['{...', printJS(path, print, 'expression'), '}'];
         case 'ConstTag':
-            return ['{@const ', printJS(path, print, 'expression'), '}'];
+            return ['{@', printJS(path, print, 'declaration'), '}'];
     }
 
     console.error(JSON.stringify(node, null, 4));
@@ -739,7 +730,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
 }
 
 function printTopLevelParts(
-    n: ASTNode,
+    n: Root,
     options: ParserOptions,
     path: AstPath<any>,
     print: PrintFn,
@@ -747,6 +738,9 @@ function printTopLevelParts(
     if (options.svelteSortOrder === 'none') {
         const topLevelPartsByEnd: Record<number, any> = {};
 
+        if (n.options) {
+            topLevelPartsByEnd[n.options.end] = n.options;
+        }
         if (n.module) {
             topLevelPartsByEnd[n.module.end] = n.module;
         }
@@ -757,7 +751,7 @@ function printTopLevelParts(
             topLevelPartsByEnd[n.css.end] = n.css;
         }
 
-        const children = getChildren(n.html);
+        const children = getChildren(n);
         for (let i = 0; i < children.length; i++) {
             const node = children[i];
             if (topLevelPartsByEnd[node.start]) {
@@ -766,7 +760,7 @@ function printTopLevelParts(
             }
         }
 
-        const result = path.call(print, 'html');
+        const result = [path.call(print, 'fragment'), hardline];
         if (options.insertPragma && !hasPragma(options.originalText)) {
             return [`<!-- @format -->`, hardline, result];
         } else {
@@ -781,7 +775,11 @@ function printTopLevelParts(
         styles: [],
     };
 
-    // scripts
+    if (n.options) {
+        const svelteOptionsDoc = [path.call(print, 'options'), hardline];
+        parts.options.push(svelteOptionsDoc);
+    }
+
     if (n.module) {
         parts.scripts.push(path.call(print, 'module'));
     }
@@ -789,18 +787,13 @@ function printTopLevelParts(
         parts.scripts.push(path.call(print, 'instance'));
     }
 
-    // styles
-    if (n.css) {
-        parts.styles.push(path.call(print, 'css'));
+    const htmlDoc = path.call(print, 'fragment');
+    if (htmlDoc) {
+        parts.markup.push([htmlDoc, hardline]);
     }
 
-    // markup
-    const htmlDoc = path.call(print, 'html');
-    if (htmlDoc) {
-        parts.markup.push(htmlDoc);
-    }
-    if (svelteOptionsDoc) {
-        parts.options.push(svelteOptionsDoc);
+    if (n.css) {
+        parts.styles.push(path.call(print, 'css'));
     }
 
     const docs = flatten(parseSortOrder(options.svelteSortOrder).map((p) => parts[p]));
@@ -808,7 +801,6 @@ function printTopLevelParts(
     // Need to reset these because they are global and could affect the next formatting run
     ignoreNext = false;
     ignoreRange = false;
-    svelteOptionsDoc = undefined;
 
     // If this is invoked as an embed of markdown, remove the last hardline.
     // The markdown parser tries this, too, but fails because it does not
@@ -841,25 +833,31 @@ function printAttributeNodeValue(
     }
 }
 
-function printSvelteBlockChildren(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
-    const node = path.getValue();
-    const children = node.children;
+function printSvelteBlockFragment(
+    path: AstPath,
+    print: PrintFn,
+    name: string,
+    shouldIndent = true
+): Doc {
+    const node = path.node[name] as Fragment;
+
+    const children = node.nodes;
     if (!children || children.length === 0) {
         return '';
     }
 
-    const whitespaceAtStartOfBlock = checkWhitespaceAtStartOfSvelteBlock(node, options);
-    const whitespaceAtEndOfBlock = checkWhitespaceAtEndOfSvelteBlock(node, options);
+    const whitespaceAtStartOfFragment = checkWhitespaceAtStartOfFragment(node);
+    const whitespaceAtEndOfFragment = checkWhitespaceAtEndOfFragment(node);
     const startline =
-        whitespaceAtStartOfBlock === 'none'
+        whitespaceAtStartOfFragment === 'none'
             ? ''
-            : whitespaceAtEndOfBlock === 'line' || whitespaceAtStartOfBlock === 'line'
+            : whitespaceAtEndOfFragment === 'line' || whitespaceAtStartOfFragment === 'line'
             ? hardline
             : line;
     const endline =
-        whitespaceAtEndOfBlock === 'none'
+        whitespaceAtEndOfFragment === 'none'
             ? ''
-            : whitespaceAtEndOfBlock === 'line' || whitespaceAtStartOfBlock === 'line'
+            : whitespaceAtEndOfFragment === 'line' || whitespaceAtStartOfFragment === 'line'
             ? hardline
             : line;
 
@@ -872,7 +870,10 @@ function printSvelteBlockChildren(path: AstPath, print: PrintFn, options: Parser
         trimTextNodeRight(lastChild);
     }
 
-    return [indent([startline, group(printChildren(path, print, options))]), endline];
+//    return [indent([startline, group(printChildren(path, print, options))]), endline];
+    return shouldIndent
+        ? [indent([startline, group(path.call(print, name))]), endline]
+        : [startline, group(path.call(print, name)), endline];
 }
 
 function printPre(
@@ -882,9 +883,9 @@ function printPre(
     print: PrintFn,
 ): Doc {
     const result: Doc = [];
-    const length = node.children.length;
+    const length = node.fragment.nodes.length;
     for (let i = 0; i < length; i++) {
-        const child = node.children[i];
+        const child = node.fragment.nodes[i];
         if (child.type === 'Text') {
             const lines = originalText.substring(child.start, child.end).split(/\r?\n/);
             lines.forEach((line, j) => {
@@ -898,14 +899,13 @@ function printPre(
     return result;
 }
 
+//should get fragment
 function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
     if (isPreTagContent(path)) {
-        return path.map(print, 'children');
+        return path.map(print, 'nodes');
     }
 
-    const childNodes: Node[] = prepareChildren(path.getValue().children, path, print, options);
-    // modify original array because it's accessed later through map(print, 'children', idx)
-    path.getValue().children = childNodes;
+    const childNodes = path.getValue().nodes;
     if (childNodes.length === 0) {
         return '';
     }
@@ -937,7 +937,7 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
     return childDocs;
 
     function printChild(idx: number): Doc {
-        return path.call(print, 'children', idx);
+        return path.call(print, 'nodes', idx);
     }
 
     /**
@@ -997,7 +997,7 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
      * subsequent (inline)block element to alter its printing logic
      * to check if they need to hug or print lines themselves.
      */
-    function handleTextChild(idx: number, childNode: TextNode) {
+    function handleTextChild(idx: number, childNode: Text) {
         handleWhitespaceOfPrevTextNode = false;
 
         if (idx === 0 || idx === childNodes.length - 1) {
@@ -1046,121 +1046,12 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
 }
 
 /**
- * `svelte:options` is part of the html part but needs to be snipped out and handled
- * separately to reorder it as configured. The comment above it should be moved with it.
- * Do that here.
- */
-function prepareChildren(
-    children: Node[],
-    path: AstPath,
-    print: PrintFn,
-    options: ParserOptions,
-): Node[] {
-    let svelteOptionsComment: Doc | undefined;
-    const childrenWithoutOptions = [];
-    const bracketSameLine = isBracketSameLine(options);
-
-    for (let idx = 0; idx < children.length; idx++) {
-        const currentChild = children[idx];
-
-        if (currentChild.type === 'Text' && getUnencodedText(currentChild) === '') {
-            continue;
-        }
-
-        if (isEmptyTextNode(currentChild) && doesEmbedStartAfterNode(currentChild, path)) {
-            continue;
-        }
-
-        if (options.svelteSortOrder !== 'none') {
-            if (isCommentFollowedByOptions(currentChild, idx)) {
-                svelteOptionsComment = printComment(currentChild);
-                const nextChild = children[idx + 1];
-                idx += nextChild && isEmptyTextNode(nextChild) ? 1 : 0;
-                continue;
-            }
-
-            if (currentChild.type === 'Options') {
-                printSvelteOptions(currentChild, idx, path, print);
-                continue;
-            }
-        }
-
-        childrenWithoutOptions.push(currentChild);
-    }
-
-    const mergedChildrenWithoutOptions = [];
-
-    for (let idx = 0; idx < childrenWithoutOptions.length; idx++) {
-        const currentChild = childrenWithoutOptions[idx];
-        const nextChild = childrenWithoutOptions[idx + 1];
-
-        if (currentChild.type === 'Text' && nextChild && nextChild.type === 'Text') {
-            // A tag was snipped out (f.e. svelte:options). Join text
-            currentChild.raw += nextChild.raw;
-            currentChild.data += nextChild.data;
-            idx++;
-        }
-
-        mergedChildrenWithoutOptions.push(currentChild);
-    }
-
-    return mergedChildrenWithoutOptions;
-
-    function printSvelteOptions(
-        node: OptionsNode,
-        idx: number,
-        path: AstPath,
-        print: PrintFn,
-    ): void {
-        svelteOptionsDoc = group([
-            [
-                '<',
-                node.name,
-                indent(
-                    group([
-                        ...path.map(
-                            printWithPrependedAttributeLine(node, options, print),
-                            'children',
-                            idx,
-                            'attributes',
-                        ),
-                        bracketSameLine ? '' : dedent(line),
-                    ]),
-                ),
-                ...[bracketSameLine ? ' ' : '', '/>'],
-            ],
-            hardline,
-        ]);
-        if (svelteOptionsComment) {
-            svelteOptionsDoc = group([svelteOptionsComment, hardline, svelteOptionsDoc]);
-        }
-    }
-
-    function isCommentFollowedByOptions(node: Node, idx: number): node is CommentNode {
-        if (node.type !== 'Comment' || isIgnoreEndDirective(node) || isIgnoreStartDirective(node)) {
-            return false;
-        }
-
-        const nextChild = children[idx + 1];
-        if (nextChild) {
-            if (isEmptyTextNode(nextChild)) {
-                const afterNext = children[idx + 2];
-                return afterNext && afterNext.type === 'Options';
-            }
-            return nextChild.type === 'Options';
-        }
-
-        return false;
-    }
-}
-
-/**
  * Split the text into words separated by whitespace. Replace the whitespaces by lines,
  * collapsing multiple whitespaces into a single line.
  *
  * If the text starts or ends with multiple newlines, two of those should be kept.
  */
-function splitTextToDocs(node: TextNode): Doc[] {
+function splitTextToDocs(node: Text): Doc[] {
     const text = getUnencodedText(node);
     const lines = text.split(/[\t\n\f\r ]+/);
 
@@ -1236,14 +1127,4 @@ function _expandNode(node: any, parent?: any): string {
 
     console.error(JSON.stringify(node, null, 4));
     throw new Error('unknown node type: ' + node.type);
-}
-
-function printComment(node: CommentNode) {
-    let text = node.data;
-
-    if (hasSnippedContent(text)) {
-        text = unsnipContent(text);
-    }
-
-    return group(['<!--', text, '-->']);
 }

@@ -1,378 +1,494 @@
-export interface BaseNode {
-    start: number;
-    end: number;
-    /** Whether this node is JS (not HTML/Svelte stuff) */
-    isJS?: boolean;
-    /** Whether or not to print this node as a function */
-    asFunction?: boolean;
-    /** Whether or not to force single quotes when printing as JS */
-    forceSingleQuote?: boolean;
-    /** Whether or not to force a single line when printing as JS */
-    forceSingleLine?: boolean;
-    /** Whether or not to remove outer `()` when printing as JS */
-    removeParentheses?: boolean;
-}
+import StyleSheet from 'svelte/compiler';
+import {
+    Program,
+    Expression,
+    Pattern,
+    Identifier,
+    ArrayExpression,
+    MemberExpression,
+    ChainExpression,
+    SimpleCallExpression,
+    VariableDeclaration,
+    ObjectExpression,
+    ArrowFunctionExpression,
+    FunctionExpression,
+    FunctionDeclaration,
+    VariableDeclarator,
+    Node,
+} from 'estree';
 
-export interface FragmentNode extends BaseNode {
-    type: 'Fragment';
-    children: Node[];
-}
+//export interface SvelteNodeExtension {
+//    /** Whether this node is JS (not HTML/Svelte stuff) */
+//    isJS?: boolean;
+//    /** Whether or not to print this node as a function */
+//    asFunction?: boolean;
+//    /** Whether or not to force single quotes when printing as JS */
+//    forceSingleQuote?: boolean;
+//    /** Whether or not to force a single line when printing as JS */
+//    forceSingleLine?: boolean;
+//    /** Whether or not to remove outer `()` when printing as JS */
+//    removeParentheses?: boolean;
+//}
 
-export interface ElementNode extends BaseNode {
-    type: 'Element';
-    name: string;
-    attributes: Node[];
-    children: Node[];
+//export interface HasComments {
+//    comments: CommentInfo[];
+//}
+////export interface StyleNode extends BaseNode {
+////export interface ScriptNode extends BaseNode {
+////export interface StyleProgramNode extends BaseNode {
+//
+//export interface CommentInfo {
+//    comment: Comment;
+//    emptyLineAfter: boolean;
+//}
+	export interface BaseNode {
+		type: string;
+		start: number;
+		end: number;
+		/** This is set during parsing on elements/components/expressions/text (but not attributes etc) */
+		parent?: SvelteNode | null; //todo added ?
+    }
+
+    export interface Fragment {
+        type: 'Fragment';
+        nodes: Array<Text | Tag | ElementLike | Block | Comment>;
+        /**
+        * Fragments declare their own scopes. A transparent fragment is one whose scope
+        * is not represented by a scope in the resulting JavaScript (e.g. an element scope),
+        * and should therefore delegate to parent scopes when generating unique identifiers
+        */
+        transparent: boolean;
+    }
+
     /**
-     * only on svelte:element
-     */
-    tag?: Node;
-}
+    * - `html`    — the default, for e.g. `<div>` or `<span>`
+    * - `svg`     — for e.g. `<svg>` or `<g>`
+    * - `foreign` — for other compilation targets than the web, e.g. Svelte Native.
+    *               Disallows bindings other than bind:this, disables a11y checks, disables any special attribute handling
+    *               (also see https://github.com/sveltejs/svelte/pull/5652)
+    */
+    export type Namespace = 'html' | 'svg' | 'foreign';
 
-export interface TextNode extends BaseNode {
-    type: 'Text';
-    data: string;
-    raw: string;
-}
+    export interface Root extends BaseNode {
+        type: 'Root';
+        /**
+        * Inline options provided by `<svelte:options>` — these override options passed to `compile(...)`
+        */
+        options: SvelteOptions | null;
+        fragment: Fragment;
+        /** The parsed `<style>` element, if exists */
+        css: /*Css.*/StyleSheet | null;
+        /** The parsed `<script>` element, if exists */
+        instance: Script | null;
+        /** The parsed `<script context="module">` element, if exists */
+        module: Script | null;
+        metadata: {
+            /** Whether the component was parsed with typescript */
+            ts: boolean;
+        };
+    }
 
-export interface MustacheTagNode extends BaseNode {
-    type: 'MustacheTag';
-    expression: Node;
-}
+    export interface SvelteOptions {
+        // start/end info (needed for warnings and for our Prettier plugin)
+        start: number;
+        end: number;
+        // options
+        runes?: boolean;
+        immutable?: boolean;
+        accessors?: boolean;
+        preserveWhitespace?: boolean;
+        namespace?: Namespace;
+        customElement?: {
+            tag: string;
+            shadow?: 'open' | 'none';
+            props?: Record<
+                string,
+                {
+                    attribute?: string;
+                    reflect?: boolean;
+                    type?: 'Array' | 'Boolean' | 'Number' | 'Object' | 'String';
+                }
+            >;
+            /**
+            * Is of type
+            * ```ts
+            * (ceClass: new () => HTMLElement) => new () => HTMLElement
+            * ```
+            */
+            extend?: ArrowFunctionExpression | Identifier;
+        };
+    }
 
-export interface AttributeNode extends BaseNode {
-    type: 'Attribute';
-    name: string;
-    value: Node[] | true;
-}
+    /** Static text */
+    export interface Text extends BaseNode {
+        type: 'Text';
+        /** Text with decoded HTML entities */
+        data: string;
+        /** The original text, with undecoded HTML entities */
+        raw: string;
+    }
 
-export interface IdentifierNode extends BaseNode {
-    type: 'Identifier';
-    name: string;
-}
+    /** A (possibly reactive) template expression — `{...}` */
+    export interface ExpressionTag extends BaseNode {
+        type: 'ExpressionTag';
+        expression: Expression;
+        metadata: {
+            contains_call_expression: boolean;
+            /**
+            * Whether or not the expression contains any dynamic references —
+            * determines whether it will be updated in a render effect or not
+            */
+            dynamic: boolean;
+        };
+    }
 
-export interface AttributeShorthandNode extends BaseNode {
-    type: 'AttributeShorthand';
-    name: string;
-    expression: Node;
-}
+    /** A (possibly reactive) HTML template expression — `{@html ...}` */
+    export interface HtmlTag extends BaseNode {
+        type: 'HtmlTag';
+        expression: Expression;
+    }
 
-export interface IfBlockNode extends BaseNode {
-    type: 'IfBlock';
-    expression: Node;
-    children: Node[];
-    else?: Node;
-}
+    /** An HTML comment */
+    // TODO rename to disambiguate
+    export interface Comment extends BaseNode {
+        type: 'Comment';
+        /** the contents of the comment */
+        data: string;
+        /** any svelte-ignore directives — <!-- svelte-ignore a b c --> would result in ['a', 'b', 'c'] */
+        ignores: string[];
+    }
 
-export interface ElseBlockNode extends BaseNode {
-    type: 'ElseBlock';
-    children: Node[];
-}
+    /** A `{@const ...}` tag */
+    export interface ConstTag extends BaseNode {
+        type: 'ConstTag';
+        declaration: VariableDeclaration & {
+            declarations: [VariableDeclarator & { id: Pattern; init: Expression }];
+        };
+    }
 
-export interface EachBlockNode extends BaseNode {
-    type: 'EachBlock';
-    expression: Node;
-    children: Node[];
-    context: Node;
-    index?: string;
-    else?: Node;
-    key?: Node;
-}
+    /** A `{@debug ...}` tag */
+    export interface DebugTag extends BaseNode {
+        type: 'DebugTag';
+        identifiers: Identifier[];
+    }
 
-export interface AwaitBlockNode extends BaseNode {
-    type: 'AwaitBlock';
-    expression: Node;
-    value?: Node;
-    error?: Node;
-    pending: PendingBlockNode;
-    then: ThenBlockNode;
-    catch: CatchBlockNode;
-}
+    /** A `{@render foo(...)} tag */
+    export interface RenderTag extends BaseNode {
+        type: 'RenderTag';
+        expression: SimpleCallExpression | (ChainExpression & { expression: SimpleCallExpression });
+    }
 
-export interface KeyBlockNode extends BaseNode {
-    type: 'KeyBlock';
-    expression: Node;
-    children: Node[];
-}
+    export type Tag = ExpressionTag | HtmlTag | ConstTag | DebugTag | RenderTag;
 
-export interface ThenBlockNode extends BaseNode {
-    type: 'ThenBlock';
-    children: Node[];
-}
+    /** An `animate:` directive */
+    export interface AnimateDirective extends BaseNode {
+        type: 'AnimateDirective';
+        /** The 'x' in `animate:x` */
+        name: string;
+        /** The y in `animate:x={y}` */
+        expression: null | Expression;
+    }
 
-export interface PendingBlockNode extends BaseNode {
-    type: 'PendingBlock';
-    children: Node[];
-}
+    /** A `bind:` directive */
+    export interface BindDirective extends BaseNode {
+        type: 'BindDirective';
+        /** The 'x' in `bind:x` */
+        name: string;
+        /** The y in `bind:x={y}` */
+        expression: Identifier | MemberExpression;
+        metadata: {
+            binding_group_name: Identifier;
+            parent_each_blocks: EachBlock[];
+        };
+    }
 
-export interface CatchBlockNode extends BaseNode {
-    type: 'CatchBlock';
-    children: Node[];
-}
+    /** A `class:` directive */
+    export interface ClassDirective extends BaseNode {
+        type: 'ClassDirective';
+        /** The 'x' in `class:x` */
+        name: 'class';
+        /** The 'y' in `class:x={y}`, or the `x` in `class:x` */
+        expression: Expression;
+        metadata: {
+            dynamic: false;
+        };
+    }
 
-export interface EventHandlerNode extends BaseNode {
-    type: 'EventHandler';
-    name: string;
-    expression?: Node;
-    modifiers?: string[];
-}
+    /** A `let:` directive */
+    export interface LetDirective extends BaseNode {
+        type: 'LetDirective';
+        /** The 'x' in `let:x` */
+        name: string;
+        /** The 'y' in `let:x={y}` */
+        expression: null | Identifier | ArrayExpression | ObjectExpression;
+    }
 
-export interface BindingNode extends BaseNode {
-    type: 'Binding';
-    name: string;
-    expression: Node;
-}
+    /** An `on:` directive */
+    export interface OnDirective extends BaseNode {
+        type: 'OnDirective';
+        /** The 'x' in `on:x` */
+        name: string;
+        /** The 'y' in `on:x={y}` */
+        expression: null | Expression;
+        modifiers: string[]; // TODO specify
+    }
 
-export interface ClassNode extends BaseNode {
-    type: 'Class';
-    name: string;
-    expression: Node;
-}
+    export type DelegatedEvent =
+        | {
+                type: 'hoistable';
+                function: ArrowFunctionExpression | FunctionExpression | FunctionDeclaration;
+        }
+        | { type: 'non-hoistable' };
 
-export interface StyleDirectiveNode extends BaseNode {
-    type: 'StyleDirective';
-    name: string;
-    value: Node[] | true;
-    modifiers?: string[];
-}
+    /** A `style:` directive */
+    export interface StyleDirective extends BaseNode {
+        type: 'StyleDirective';
+        /** The 'x' in `style:x` */
+        name: string;
+        /** The 'y' in `style:x={y}` */
+        value: true | Array<ExpressionTag | Text>;
+        modifiers: Array<'important'>;
+        metadata: {
+            dynamic: boolean;
+        };
+    }
 
-export interface LetNode extends BaseNode {
-    type: 'Let';
-    name: string;
-    expression: Node;
-}
+    // TODO have separate in/out/transition directives
+    /** A `transition:`, `in:` or `out:` directive */
+    export interface TransitionDirective extends BaseNode {
+        type: 'TransitionDirective';
+        /** The 'x' in `transition:x` */
+        name: string;
+        /** The 'y' in `transition:x={y}` */
+        expression: null | Expression;
+        modifiers: Array<'local' | 'global'>;
+        /** True if this is a `transition:` or `in:` directive */
+        intro: boolean;
+        /** True if this is a `transition:` or `out:` directive */
+        outro: boolean;
+    }
 
-export interface DebugTagNode extends BaseNode {
-    type: 'DebugTag';
-    identifiers: Node[];
-}
+    /** A `use:` directive */
+    export interface UseDirective extends BaseNode {
+        type: 'UseDirective';
+        /** The 'x' in `use:x` */
+        name: string;
+        /** The 'y' in `use:x={y}` */
+        expression: null | Expression;
+    }
 
-export interface RefNode extends BaseNode {
-    type: 'Ref';
-    name: string;
-}
+    export type Directive =
+        | AnimateDirective
+        | BindDirective
+        | ClassDirective
+        | LetDirective
+        | OnDirective
+        | StyleDirective
+        | TransitionDirective
+        | UseDirective;
 
-export interface InlineComponentNode extends BaseNode {
-    type: 'InlineComponent';
-    name: string;
-    attributes: Node[];
-    children: Node[];
-    expression: Node;
-}
+    export interface BaseElement extends BaseNode {
+        name: string;
+        attributes: Array<Attribute | SpreadAttribute | Directive>;
+        fragment: Fragment;
+    }
 
-export interface CommentNode extends BaseNode {
-    type: 'Comment';
-    data: string;
-}
+    export interface Component extends BaseElement {
+        type: 'Component';
+    }
 
-export interface SlotNode extends BaseNode {
-    type: 'Slot';
-    name: string;
-    attributes: Node[];
-    children: Node[];
-}
+    export interface TitleElement extends BaseElement {
+        type: 'TitleElement';
+        name: 'title';
+    }
 
-export interface WindowNode extends BaseNode {
-    type: 'Window';
-    name: string;
-    attributes: Node[];
-    children: Node[];
-}
+    export interface SlotElement extends BaseElement {
+        type: 'SlotElement';
+        name: 'slot';
+    }
 
-export interface HeadNode extends BaseNode {
-    type: 'Head';
-    name: string;
-    attributes: Node[];
-    children: Node[];
-}
+    export interface RegularElement extends BaseElement {
+        type: 'RegularElement';
+        metadata: {
+            /** `true` if this is an svg element */
+            svg: boolean;
+            /** `true` if contains a SpreadAttribute */
+            has_spread: boolean;
+            scoped: boolean;
+        };
+    }
 
-export interface TitleNode extends BaseNode {
-    type: 'Title';
-    name: string;
-    attributes: Node[];
-    children: Node[];
-}
+    export interface SvelteBody extends BaseElement {
+        type: 'SvelteBody';
+        name: 'svelte:body';
+    }
 
-export interface TransitionNode extends BaseNode {
-    type: 'Transition';
-    name: string;
-    expression?: Node;
-    modifiers?: string[];
-    intro: boolean;
-    outro: boolean;
-}
+    export interface SvelteComponent extends BaseElement {
+        type: 'SvelteComponent';
+        name: 'svelte:component';
+        expression: Expression;
+    }
 
-export interface ActionNode extends BaseNode {
-    type: 'Action';
-    name: string;
-    expression?: Node;
-}
+    export interface SvelteDocument extends BaseElement {
+        type: 'SvelteDocument';
+        name: 'svelte:document';
+    }
 
-export interface StyleNode extends BaseNode {
-    type: 'Style';
-    attributes: Node[];
-    children: Node[];
-    content: StyleProgramNode;
-    comments: CommentInfo[]; // doesn't exist on original node but we use it to store comments
-}
+    export interface SvelteElement extends BaseElement {
+        type: 'SvelteElement';
+        name: 'svelte:element';
+        tag: Expression;
+        metadata: {
+            /**
+            * `true`/`false` if this is definitely (not) an svg element.
+            * `null` means we can't know statically.
+            */
+            svg: boolean | null;
+            scoped: boolean;
+        };
+    }
 
-export interface ScriptNode extends BaseNode {
-    type: 'Script';
-    attributes: Node[];
-    content: Node;
-    comments: CommentInfo[]; // doesn't exist on original node but we use it to store comments
-}
+    export interface SvelteFragment extends BaseElement {
+        type: 'SvelteFragment';
+        name: 'svelte:fragment';
+    }
 
-export interface StyleProgramNode extends BaseNode {
-    type: 'StyleProgram';
-    styles: string;
-    comments: CommentInfo[]; // doesn't exist on original node but we use it to store comments
-}
+    export interface SvelteHead extends BaseElement {
+        type: 'SvelteHead';
+        name: 'svelte:head';
+    }
 
-export interface ProgramNode extends BaseNode {
-    type: 'Program';
-    body: Node[];
-}
+    /** This is only an intermediate representation while parsing, it doesn't exist in the final AST */
+    export interface SvelteOptionsRaw extends BaseElement {
+        type: 'SvelteOptions';
+        name: 'svelte:options';
+    }
 
-export interface AnimationNode extends BaseNode {
-    type: 'Animation';
-    name: string;
-    expression?: Node;
-}
+    export interface SvelteSelf extends BaseElement {
+        type: 'SvelteSelf';
+        name: 'svelte:self';
+    }
 
-export interface RawMustacheTagNode extends BaseNode {
-    type: 'RawMustacheTag';
-    expression: Node;
-}
+    export interface SvelteWindow extends BaseElement {
+        type: 'SvelteWindow';
+        name: 'svelte:window';
+    }
 
-export interface SpreadNode extends BaseNode {
-    type: 'Spread';
-    expression: Node;
-}
+    export type ElementLike =
+        | Component
+        | TitleElement
+        | SlotElement
+        | RegularElement
+        | SvelteBody
+        | SvelteComponent
+        | SvelteDocument
+        | SvelteElement
+        | SvelteFragment
+        | SvelteHead
+        | SvelteOptionsRaw
+        | SvelteSelf
+        | SvelteWindow;
 
-export interface InstanceScriptNode extends BaseNode {
-    type: 'InstanceScript';
-    context: string;
-    content: Node;
-}
+    /** An `{#each ...}` block */
+    export interface EachBlock extends BaseNode {
+        type: 'EachBlock';
+        expression: Expression;
+        context: Pattern;
+        body: Fragment;
+        fallback?: Fragment;
+        index?: string;
+        key?: Expression;
+        metadata: {
+            contains_group_binding: boolean;
+            /** Set if something in the array expression is shadowed within the each block */
+            array_name: Identifier | null;
+            index: Identifier;
+            item: Identifier;
+//            declarations: Map<string, Binding>;
+            /** List of bindings that are referenced within the expression */
+//            references: Binding[];
+            /**
+            * Optimization path for each blocks: If the parent isn't a fragment and
+            * it only has a single child, then we can classify the block as being "controlled".
+            * This saves us from creating an extra comment and insertion being faster.
+            */
+            is_controlled: boolean;
+        };
+    }
 
-export interface ModuleScriptNode extends BaseNode {
-    type: 'ModuleScript';
-    context: string;
-    content: Node;
-}
+    /** An `{#if ...}` block */
+    export interface IfBlock extends BaseNode {
+        type: 'IfBlock';
+        elseif: boolean;
+        test: Expression;
+        consequent: Fragment;
+        alternate: Fragment | null;
+    }
 
-export interface BodyNode extends BaseNode {
-    type: 'Body';
-    name: string;
-    attributes: Node[];
-}
+    /** An `{#await ...}` block */
+    export interface AwaitBlock extends BaseNode {
+        type: 'AwaitBlock';
+        expression: Expression;
+        // TODO can/should we move these inside the ThenBlock and CatchBlock?
+        /** The resolved value inside the `then` block */
+        value: Pattern | null;
+        /** The rejection reason inside the `catch` block */
+        error: Pattern | null;
+        pending: Fragment | null;
+        then: Fragment | null;
+        catch: Fragment | null;
+    }
 
-export interface DocumentNode extends BaseNode {
-    type: 'Document';
-    name: string;
-    attributes: Node[];
-}
+    export interface KeyBlock extends BaseNode {
+        type: 'KeyBlock';
+        expression: Expression;
+        fragment: Fragment;
+    }
 
-export interface OptionsNode extends BaseNode {
-    type: 'Options';
-    name: string;
-    attributes: Node[];
-}
+    export interface SnippetBlock extends BaseNode {
+        type: 'SnippetBlock';
+        expression: Identifier;
+        parameters: Pattern[];
+        body: Fragment;
+    }
 
-export interface SlotTemplateNode extends BaseNode {
-    type: 'SlotTemplate';
-    name: string;
-    attributes: Node[];
-    children: Node[];
-}
+    export type Block = EachBlock | IfBlock | AwaitBlock | KeyBlock | SnippetBlock;
 
-export interface ConstTagNode extends BaseNode {
-    type: 'ConstTag';
-    expression: Node;
-}
+    export interface Attribute extends BaseNode {
+        type: 'Attribute';
+        name: string;
+        value: true | Array<Text | ExpressionTag>;
+        metadata: {
+            dynamic: boolean;
+            /** May be set if this is an event attribute */
+            delegated: null | DelegatedEvent;
+        };
+    }
 
-export interface CommentInfo {
-    comment: CommentNode;
-    emptyLineAfter: boolean;
-}
+    export interface SpreadAttribute extends BaseNode {
+        type: 'SpreadAttribute';
+        expression: Expression;
+        metadata: {
+            contains_call_expression: boolean;
+            dynamic: boolean;
+        };
+    }
 
-export interface SnippetBlock extends BaseNode {
-    type: 'SnippetBlock';
-    expression: IdentifierNode;
-    context?: BaseNode | null; // TODO: remove at some point, snippet API changed in .next-..
-    parameters: BaseNode[] | null;
-    children: Node[];
-}
+    export type TemplateNode =
+        | Root
+        | Text
+        | Tag
+        | ElementLike
+        | Attribute
+        | SpreadAttribute
+        | Directive
+        | Comment
+        | Block;
 
-export interface RenderTag extends BaseNode {
-    type: 'RenderTag';
-    expression: IdentifierNode;
-    argument?: BaseNode | null;
-    arguments: BaseNode[] | null;
-}
+    export type SvelteNode = Node | TemplateNode | Fragment;// | CssNode;
 
-export type Node =
-    | FragmentNode
-    | ElementNode
-    | TextNode
-    | MustacheTagNode
-    | AttributeNode
-    | IdentifierNode
-    | AttributeShorthandNode
-    | IfBlockNode
-    | ElseBlockNode
-    | EachBlockNode
-    | AwaitBlockNode
-    | KeyBlockNode
-    | ThenBlockNode
-    | PendingBlockNode
-    | CatchBlockNode
-    | EventHandlerNode
-    | BindingNode
-    | ClassNode
-    | StyleDirectiveNode
-    | LetNode
-    | DebugTagNode
-    | RefNode
-    | InlineComponentNode
-    | CommentNode
-    | SlotNode
-    | WindowNode
-    | HeadNode
-    | TitleNode
-    | TransitionNode
-    | ActionNode
-    | StyleNode
-    | ScriptNode
-    | StyleProgramNode
-    | ProgramNode
-    | AnimationNode
-    | RawMustacheTagNode
-    | SpreadNode
-    | InstanceScriptNode
-    | ModuleScriptNode
-    | BodyNode
-    | DocumentNode
-    | OptionsNode
-    | SlotTemplateNode
-    | ConstTagNode
-    | RenderTag
-    | SnippetBlock;
-
-/**
- * The Svelte AST root node
- */
-export interface ASTNode {
-    html: Node;
-    css?: StyleNode;
-    js?: ScriptNode;
-    instance?: ScriptNode;
-    module?: ScriptNode;
-    /**
-     * This is not actually part of the Svelte parser output,
-     * but we add it afterwards to make sure we can distinguish
-     * the root node from other nodes afterwards.
-     */
-    __isRoot: boolean;
-}
+export interface Script extends BaseNode {
+        type: 'Script';
+        context: string;
+        content: Program;
+    }

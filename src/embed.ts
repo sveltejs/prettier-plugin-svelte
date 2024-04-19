@@ -19,7 +19,14 @@ import {
     isTypeScript,
     printRaw,
 } from './print/node-helpers';
-import { BaseNode, CommentNode, ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
+import {
+    BaseNode,
+    Script,
+    Root,
+    Comment,
+    RegularElement,
+    SvelteElement,
+} from './print/nodes';
 import { extractAttributes } from './lib/extractAttributes';
 import { base64ToString } from './base64-string';
 
@@ -30,7 +37,7 @@ const {
 
 const leaveAlone = new Set([
     'Script',
-    'Style',
+    'StyleSheet',
     'Identifier',
     'MemberExpression',
     'CallExpression',
@@ -58,16 +65,17 @@ export function embed(path: AstPath, _options: Options) {
 
     if (isASTNode(node)) {
         assignCommentsToNodes(node);
+        if (node.options) {
+            node.options.type = 'SvelteOptions';
+            node.options.attributes = extractAttributes(getText(node.options, options));
+        }
         if (node.module) {
-            node.module.type = 'Script';
             node.module.attributes = extractAttributes(getText(node.module, options));
         }
         if (node.instance) {
-            node.instance.type = 'Script';
             node.instance.attributes = extractAttributes(getText(node.instance, options));
         }
         if (node.css) {
-            node.css.type = 'Style';
             node.css.content.type = 'StyleProgram';
         }
         return null;
@@ -84,6 +92,7 @@ export function embed(path: AstPath, _options: Options) {
 
     switch (parent.type) {
         case 'IfBlock':
+            printSvelteBlockJS('test')
         case 'ElseBlock':
         case 'AwaitBlock':
         case 'KeyBlock':
@@ -109,20 +118,21 @@ export function embed(path: AstPath, _options: Options) {
                 node.asFunction = true;
             }
             break;
-        case 'Element':
+        case 'RegularElement':
+        case 'SvelteElement':
             printJS(parent, options.svelteStrictMode ?? false, false, false, 'tag');
             break;
-        case 'MustacheTag':
+        case 'ExpressionTag':
             printJS(parent, isInsideQuotedAttribute(path, options), false, false, 'expression');
             break;
-        case 'RawMustacheTag':
+        case 'HtmlTag':
             printJS(parent, false, false, false, 'expression');
             break;
-        case 'Spread':
+        case 'SpreadAttribute':
             printJS(parent, false, false, false, 'expression');
             break;
         case 'ConstTag':
-            printJS(parent, false, false, true, 'expression');
+            printJS(parent, false, false, true, 'declaration');
             break;
         case 'RenderTag':
             if (node === parent.expression) {
@@ -141,14 +151,16 @@ export function embed(path: AstPath, _options: Options) {
                 printJS(parent, false, false, false, 'expression');
             }
             break;
-        case 'EventHandler':
-        case 'Binding':
-        case 'Class':
-        case 'Let':
-        case 'Transition':
-        case 'Action':
-        case 'Animation':
-        case 'InlineComponent':
+        case 'OnDirective':
+        case 'BindDirective':
+        case 'ClassDirective':
+        case 'LetDirective':
+        case 'TransitionDirective':
+        case 'UseDirective':
+        case 'AnimateDirective':
+        case 'SvelteSelf':
+        case 'SvelteComponent':
+        case 'Component':
             printJsExpression();
             break;
     }
@@ -232,9 +244,9 @@ export function embed(path: AstPath, _options: Options) {
     switch (node.type) {
         case 'Script':
             return embedScript(true);
-        case 'Style':
+        case 'StyleSheet':
             return embedStyle(true);
-        case 'Element': {
+        case 'RegularElement': {
             if (node.name === 'script') {
                 return embedScript(false);
             } else if (node.name === 'style') {
@@ -335,15 +347,15 @@ async function embedTag(
     isTopLevel: boolean,
     options: ParserOptions,
 ) {
-    const node: ScriptNode | StyleNode | ElementNode = path.getNode();
+    const node: Script | StyleSheet | RegularElement | SvelteElement = path.getNode();
     const content =
-        tag === 'template' ? printRaw(node as ElementNode, text) : getSnippedContent(node);
+        tag === 'template' ? printRaw(node as RegularElement, text) : getSnippedContent(node);
     const previousComments =
-        node.type === 'Script' || node.type === 'Style'
+        node.type === 'Script' || node.type === 'StyleSheet'
             ? node.comments
             : [getLeadingComment(path)]
                   .filter(Boolean)
-                  .map((comment) => ({ comment: comment as CommentNode, emptyLineAfter: false }));
+                  .map((comment) => ({ comment: comment as Comment, emptyLineAfter: false }));
 
     const canFormat =
         isNodeSupportedLanguage(node) &&
