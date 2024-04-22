@@ -1,23 +1,32 @@
 import {
     Attribute,
     AwaitBlock,
+    Block,
     Comment,
+    CommentInfo,
     Component,
+    Css,
     EachBlock,
+    ElementLike,
     ExpressionTag,
     Fragment,
     IfBlock,
     KeyBlock,
     RegularElement,
     Root,
+    Script,
     SlotElement,
+    SnippetBlock,
+    StyleDirective,
     SvelteComponent,
     SvelteElement,
     SvelteFragment,
     SvelteHead,
     SvelteNode,
+    SvelteOptions,
     SvelteSelf,
     SvelteWindow,
+    Tag,
     Text,
     TitleElement,
 } from './nodes';
@@ -66,7 +75,7 @@ export function isNodeWithChildren(node: SvelteNode): node is SvelteNode & { fra
 
 }
 
-export function getChildren(node: SvelteNode): SvelteNode[] {
+export function getChildren(node: SvelteNode): Array<Text | Tag | ElementLike | Block | Comment> {
     return isNodeWithChildren(node) ? node.fragment.nodes : [];
 }
 
@@ -286,7 +295,7 @@ export function isAttributeShorthand(node: true | SvelteNode[]): node is [Attrib
 /**
  * True if node is of type `{a}` or `a={a}`
  */
-export function isOrCanBeConvertedToShorthand(node: Attribute | StyleDirectiveNode): boolean {
+export function isOrCanBeConvertedToShorthand(node: Attribute | StyleDirective): boolean {
     if (isAttributeShorthand(node.value)) {
         return true;
     }
@@ -499,7 +508,7 @@ export function isInsideQuotedAttribute(path: AstPath, options: ParserOptions): 
  * Returns true if the softline between `</tagName` and `>` can be omitted.
  */
 export function canOmitSoftlineBeforeClosingTag(
-    node: SvelteNode,
+    node: ElementLike,
     path: AstPath,
     options: ParserOptions,
 ): boolean {
@@ -513,7 +522,7 @@ export function canOmitSoftlineBeforeClosingTag(
  * Return true if given node does not hug the next node, meaning there's whitespace
  * or the end of the doc afterwards.
  */
-function hugsStartOfNextNode(node: SvelteNode, options: ParserOptions): boolean {
+function hugsStartOfNextNode(node: ElementLike, options: ParserOptions): boolean {
     if (node.end === options.originalText.length) {
         // end of document
         return false;
@@ -535,15 +544,19 @@ function isLastChildWithinParentBlockElement(path: AstPath, options: ParserOptio
 
 export function assignCommentsToNodes(ast: Root) {
     if (ast.options) {
+        // @ts-expect-error
         ast.options.comments = removeAndGetLeadingComments(ast, ast.options);
     }
     if (ast.module) {
+        // @ts-expect-error
         ast.module.comments = removeAndGetLeadingComments(ast, ast.module);
     }
     if (ast.instance) {
+        // @ts-expect-error
         ast.instance.comments = removeAndGetLeadingComments(ast, ast.instance);
     }
     if (ast.css) {
+        // @ts-expect-error
         ast.css.comments = removeAndGetLeadingComments(ast, ast.css);
     }
 }
@@ -551,7 +564,10 @@ export function assignCommentsToNodes(ast: Root) {
 /**
  * Returns the comments that are above the current node and deletes them from the html ast.
  */
-function removeAndGetLeadingComments(ast: Root, current: SvelteNode): CommentInfo[] {
+function removeAndGetLeadingComments(
+    ast: Root,
+    current: SvelteOptions | Script | Css.StyleSheet
+): CommentInfo[] {
     const siblings = getChildren(ast);
     const comments: Comment[] = [];
     const newlines: Text[] = [];
@@ -560,8 +576,8 @@ function removeAndGetLeadingComments(ast: Root, current: SvelteNode): CommentInf
         return [];
     }
 
-    let node: SvelteNode = current;
-    let prev: SvelteNode | undefined = siblings.find((child) => child.end === node.start);
+    let node = current;
+    let prev = siblings.find((child) => child.end === node.start);
     while (prev) {
         if (
             prev.type === 'Comment' &&

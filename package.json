@@ -49,16 +49,13 @@
         "prettier": "^3.0.0",
         "rollup": "2.36.0",
         "rollup-plugin-typescript": "1.0.1",
-        "svelte": "file:../svelte/packages/svelte",
+        "svelte": "^5.0.0-next.111",
         "ts-node": "^10.1.1",
         "tslib": "^2.6.0",
         "typescript": "5.1.3"
     },
     "peerDependencies": {
         "prettier": "^3.0.0",
-        "svelte": "^5.0.0-next.106"
-    },
-    "dependencies": {
-        "@types/estree": "^1.0.5"
+        "svelte": "^5.0.0-next.111"
     }
 }
