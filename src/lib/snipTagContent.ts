@@ -3,9 +3,9 @@ import { base64ToString, stringToBase64 } from '../base64-string';
 export const snippedTagContentAttribute = '✂prettier:content✂';
 
 const scriptRegex =
-    /<!--[^]*?-->|<script((?:\s+[^=>'"\/]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/]+)*\s*)>([^]*?)<\/script>/g;
+    /<!--[^]*?-->|<script((?:\s+[^=>'"\/\s]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/\s]+)*\s*)>([^]*?)<\/script>/g;
 const styleRegex =
-    /<!--[^]*?-->|<style((?:\s+[^=>'"\/]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/]+)*\s*)>([^]*?)<\/style>/g;
+    /<!--[^]*?-->|<style((?:\s+[^=>'"\/\s]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/\s]+)*\s*)>([^]*?)<\/style>/g;
 
 export function snipScriptAndStyleTagContent(source: string): string {
     let scriptMatchSpans = getMatchIndexes('script');

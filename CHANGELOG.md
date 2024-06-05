@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.2.4
+
+-   (fix) speed up regex
+
 ## 3.2.3
 
 -   (fix) don't force-self-close `<slot>` tags
