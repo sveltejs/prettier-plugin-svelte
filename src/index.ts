@@ -1,7 +1,6 @@
 import { SupportLanguage, Parser, Printer } from 'prettier';
 import * as prettierPluginBabel from 'prettier/plugins/babel';
 import { hasPragma, print } from './print';
-import { ASTNode } from './print/nodes';
 import { embed, getVisitorKeys } from './embed';
 import { snipScriptAndStyleTagContent } from './lib/snipTagContent';
 import { parse } from 'svelte/compiler';
@@ -30,7 +29,7 @@ export const parsers: Record<string, Parser> = {
         hasPragma,
         parse: (text) => {
             try {
-                return <ASTNode>{ ...parse(text), __isRoot: true };
+                return parse(text, { modern: true });
             } catch (err: any) {
                 if (err.start != null && err.end != null) {
                     // Prettier expects error objects to have loc.start and loc.end fields.
@@ -78,7 +77,6 @@ export const printers: Record<string, Printer> = {
     'svelte-ast': {
         print,
         embed,
-        // @ts-expect-error Prettier's type definitions are wrong
         getVisitorKeys,
     },
 };
