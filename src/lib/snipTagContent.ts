@@ -6,17 +6,23 @@ const scriptRegex =
     /<!--[^]*?-->|<script((?:\s+[^=>'"\/\s]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/\s]+)*\s*)>([^]*?)<\/script>/g;
 const styleRegex =
     /<!--[^]*?-->|<style((?:\s+[^=>'"\/\s]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/\s]+)*\s*)>([^]*?)<\/style>/g;
+const langTsRegex = /\slang=["']?ts["']?/;
 
-export function snipScriptAndStyleTagContent(source: string): string {
+export function snipScriptAndStyleTagContent(source: string): {
+    text: string;
+    isTypescript: boolean;
+} {
     let scriptMatchSpans = getMatchIndexes('script');
     let styleMatchSpans = getMatchIndexes('style');
+    let isTypescript = false;
 
-    return snipTagContent(
+    const text = snipTagContent(
         snipTagContent(source, 'script', '{}', styleMatchSpans),
         'style',
         '',
         scriptMatchSpans,
     );
+    return { text, isTypescript };
 
     function getMatchIndexes(tagName: string) {
         const regex = getRegexp(tagName);
@@ -44,6 +50,11 @@ export function snipScriptAndStyleTagContent(source: string): string {
             if (match.startsWith('<!--') || withinOtherSpan(index)) {
                 return match;
             }
+
+            if (langTsRegex.test(attributes)) {
+                isTypescript = true;
+            }
+
             const encodedContent = stringToBase64(content);
             const newContent = `<${tagName}${attributes} ${snippedTagContentAttribute}="${encodedContent}">${placeholder}</${tagName}>`;
 

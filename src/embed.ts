@@ -161,7 +161,9 @@ export function embed(path: FastPath, _options: Options) {
                 const embeddedOptions = {
                     // Prettier only allows string references as parsers from v3 onwards,
                     // so we need to have another public parser and defer to that
-                    parser: 'svelteExpressionParser',
+                    parser: options._svelte_ts
+                        ? 'svelteTSExpressionParser'
+                        : 'svelteExpressionParser',
                     singleQuote: node.forceSingleQuote ? true : options.singleQuote,
                     _svelte_asFunction: node.asFunction,
                 };

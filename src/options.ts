@@ -1,7 +1,9 @@
 import { ParserOptions as PrettierParserOptions, SupportOption } from 'prettier';
 import { SortOrder, PluginConfig } from '..';
 
-export interface ParserOptions<T = any> extends PrettierParserOptions<T>, Partial<PluginConfig> {}
+export interface ParserOptions<T = any> extends PrettierParserOptions<T>, Partial<PluginConfig> {
+    _svelte_ts?: boolean;
+}
 
 function makeChoice(choice: string) {
     return { value: choice, description: choice };
