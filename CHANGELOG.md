@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.2.5
+
+-   (fix) Svelte 5: format TypeScript in the template
+
 ## 3.2.4
 
 -   (fix) speed up regex
