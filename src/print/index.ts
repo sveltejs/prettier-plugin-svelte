@@ -539,6 +539,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             const hasPendingBlock = node.pending.children.some((n) => !isEmptyTextNode(n));
             const hasThenBlock = node.then.children.some((n) => !isEmptyTextNode(n));
             const hasCatchBlock = node.catch.children.some((n) => !isEmptyTextNode(n));
+            const hasFinallyBlock = node.finally.children.some((n) => !isEmptyTextNode(n));
 
             let block = [];
 
@@ -564,6 +565,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     ]),
                     path.call(print, 'catch'),
                 );
+            } else if (!hasPendingBlock && hasFinallyBlock) {
+                block.push(
+                    group(['{#await ', printJS(path, print, 'expression'), ' finally}']),
+                    path.call(print, 'finally'),
+                );
             } else {
                 block.push(group(['{#await ', printJS(path, print, 'expression'), '}']));
 
@@ -576,6 +582,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                         group(['{:then', expandNode(node.value, options.originalText), '}']),
                         path.call(print, 'then'),
                     );
+                }
+
+                if (hasFinallyBlock) {
+                    block.push('{:finally}', path.call(print, 'finally'));
                 }
             }
 
@@ -605,6 +615,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'ThenBlock':
         case 'PendingBlock':
         case 'CatchBlock':
+        case 'FinallyBlock':
             return printSvelteBlockChildren(path, print, options);
         // Svelte 5 only
         case 'SnippetBlock': {

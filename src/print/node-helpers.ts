@@ -23,6 +23,7 @@ import {
     StyleDirectiveNode,
     ASTNode,
     CommentInfo,
+    FinallyBlockNode,
 } from './nodes';
 import { blockElements, TagName } from '../lib/elements';
 import { FastPath } from 'prettier';
@@ -57,7 +58,8 @@ export function isSvelteBlock(
     | ElseBlockNode
     | KeyBlockNode
     | PendingBlockNode
-    | ThenBlockNode {
+    | ThenBlockNode
+    | FinallyBlockNode {
     return [
         'IfBlock',
         'SnippetBlock',
@@ -68,6 +70,7 @@ export function isSvelteBlock(
         'KeyBlock',
         'PendingBlock',
         'ThenBlock',
+        'FinallyBlock',
     ].includes(node.type);
 }
 

@@ -87,6 +87,7 @@ export interface AwaitBlockNode extends BaseNode {
     pending: PendingBlockNode;
     then: ThenBlockNode;
     catch: CatchBlockNode;
+    finally: FinallyBlockNode;
 }
 
 export interface KeyBlockNode extends BaseNode {
@@ -107,6 +108,11 @@ export interface PendingBlockNode extends BaseNode {
 
 export interface CatchBlockNode extends BaseNode {
     type: 'CatchBlock';
+    children: Node[];
+}
+
+export interface FinallyBlockNode extends BaseNode {
+    type: 'FinallyBlock';
     children: Node[];
 }
 
@@ -328,6 +334,7 @@ export type Node =
     | ThenBlockNode
     | PendingBlockNode
     | CatchBlockNode
+    | FinallyBlockNode
     | EventHandlerNode
     | BindingNode
     | ClassNode

@@ -1,0 +1,9 @@
+{#await thePromise}
+    <p>loading...</p>
+{:finally}
+    <p>finally</p>
+{/await}
+
+{#await thePromise finally}
+    <p>finally</p>
+{/await}
