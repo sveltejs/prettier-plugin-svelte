@@ -99,12 +99,16 @@ More strict HTML syntax: Quotes in attributes and no self-closing DOM elements (
 
 > In version 2 this overruled `svelteAllowShorthand`, which is no longer the case.
 
+> In Svelte 5, attributes are never quoted, because this will mean "stringify this attribute value" in a future Svelte version
+
 Example:
 
 <!-- prettier-ignore -->
 ```html
-<!-- svelteStrictMode: true -->
+<!-- svelteStrictMode: true (Svelte 3 and 4) -->
 <div foo="{bar}"></div>
+<!-- svelteStrictMode: true (Svelte 5) -->
+<div foo={bar}></div>
 
 <!-- svelteStrictMode: false -->
 <div foo={bar} />

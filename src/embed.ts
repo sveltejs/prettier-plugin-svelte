@@ -78,7 +78,13 @@ export function embed(path: FastPath, _options: Options) {
     const parent: Node = path.getParentNode();
     const printJsExpression = () =>
         (parent as any).expression
-            ? printJS(parent, options.svelteStrictMode ?? false, false, false, 'expression')
+            ? printJS(
+                  parent,
+                  (options.svelteStrictMode && !options._svelte_is5Plus) ?? false,
+                  false,
+                  false,
+                  'expression',
+              )
             : undefined;
     const printSvelteBlockJS = (name: string) => printJS(parent, false, true, false, name);
 
@@ -110,7 +116,13 @@ export function embed(path: FastPath, _options: Options) {
             }
             break;
         case 'Element':
-            printJS(parent, options.svelteStrictMode ?? false, false, false, 'tag');
+            printJS(
+                parent,
+                (options.svelteStrictMode && !options._svelte_is5Plus) ?? false,
+                false,
+                false,
+                'tag',
+            );
             break;
         case 'MustacheTag':
             printJS(parent, isInsideQuotedAttribute(path, options), false, false, 'expression');
