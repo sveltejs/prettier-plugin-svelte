@@ -5,6 +5,7 @@ import { ASTNode } from './print/nodes';
 import { embed, getVisitorKeys } from './embed';
 import { snipScriptAndStyleTagContent } from './lib/snipTagContent';
 import { parse, VERSION } from 'svelte/compiler';
+import { ParserOptions } from './options';
 
 const babelParser = prettierPluginBabel.parsers.babel;
 const typescriptParser = prettierPluginBabel.parsers['babel-ts']; // TODO use TypeScript parser in next major?
@@ -46,7 +47,7 @@ export const parsers: Record<string, Parser> = {
                 throw err;
             }
         },
-        preprocess: (text, options) => {
+        preprocess: (text, options: ParserOptions) => {
             const result = snipScriptAndStyleTagContent(text);
             text = result.text.trim();
             // Prettier sets the preprocessed text as the originalText in case
@@ -56,7 +57,8 @@ export const parsers: Record<string, Parser> = {
             // Therefore we do it ourselves here.
             options.originalText = text;
             // Only Svelte 5 can have TS in the template
-            (options as any)._svelte_ts = isSvelte5Plus && result.isTypescript;
+            options._svelte_ts = isSvelte5Plus && result.isTypescript;
+            options._svelte_is5Plus = isSvelte5Plus;
             return text;
         },
         locStart,

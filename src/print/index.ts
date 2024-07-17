@@ -26,7 +26,6 @@ import {
     isIgnoreEndDirective,
     isIgnoreStartDirective,
     isInlineElement,
-    isInsideQuotedAttribute,
     isLoneMustacheTag,
     isNodeSupportedLanguage,
     isNodeTopLevelHTML,
@@ -89,7 +88,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         return printTopLevelParts(n, options, path, print);
     }
 
-    const [open, close] = options.svelteStrictMode ? ['"{', '}"'] : ['{', '}'];
+    const [open, close] =
+        options.svelteStrictMode && !options._svelte_is5Plus ? ['"{', '}"'] : ['{', '}'];
     const printJsExpression = () => [open, printJS(path, print, 'expression'), close];
     const node = n as Node;
 
@@ -438,10 +438,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             if (isOrCanBeConvertedToShorthand(node)) {
                 if (options.svelteAllowShorthand) {
                     return ['{', node.name, '}'];
-                } else if (options.svelteStrictMode) {
-                    return [node.name, '="{', node.name, '}"'];
                 } else {
-                    return [node.name, '={', node.name, '}'];
+                    return [node.name, `=${open}`, node.name, close];
                 }
             } else {
                 if (node.value === true) {
@@ -449,7 +447,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 }
 
                 const quotes =
-                    !isLoneMustacheTag(node.value) || (options.svelteStrictMode ?? false);
+                    !isLoneMustacheTag(node.value) ||
+                    ((options.svelteStrictMode && !options._svelte_is5Plus) ?? false);
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
                     return [node.name, '=', '"', attrNodeValue, '"'];
@@ -649,14 +648,13 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             if (isOrCanBeConvertedToShorthand(node) || node.value === true) {
                 if (options.svelteAllowShorthand) {
                     return [...prefix];
-                } else if (options.svelteStrictMode) {
-                    return [...prefix, '="{', node.name, '}"'];
                 } else {
-                    return [...prefix, '={', node.name, '}'];
+                    return [...prefix, `=${open}`, node.name, close];
                 }
             } else {
                 const quotes =
-                    !isLoneMustacheTag(node.value) || (options.svelteStrictMode ?? false);
+                    !isLoneMustacheTag(node.value) ||
+                    ((options.svelteStrictMode && !options._svelte_is5Plus) ?? false);
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
                     return [...prefix, '=', '"', attrNodeValue, '"'];
