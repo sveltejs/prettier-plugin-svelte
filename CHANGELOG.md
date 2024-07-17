@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.2.6
+
+-   (feat) Svelte 5: never quote single-expression-attributes
+
 ## 3.2.5
 
 -   (fix) Svelte 5: format TypeScript in the template
