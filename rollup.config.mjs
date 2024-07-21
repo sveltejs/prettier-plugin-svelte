@@ -1,13 +1,12 @@
 import alias from '@rollup/plugin-alias';
 import resolve from '@rollup/plugin-node-resolve';
-import commonjs from '@rollup/plugin-commonjs';
-import typescript from 'rollup-plugin-typescript';
+import typescript from '@rollup/plugin-typescript';
 
 export default [
     // CommonJS build
     {
         input: 'src/index.ts',
-        plugins: [resolve(), commonjs(), typescript()],
+        plugins: [resolve(), typescript()],
         external: ['prettier', 'svelte/compiler'],
         output: {
             file: 'plugin.js',
@@ -26,7 +25,6 @@ export default [
                 entries: [{ find: 'prettier', replacement: 'prettier/standalone' }],
             }),
             resolve(),
-            commonjs(),
             typescript(),
         ],
         external: ['prettier/standalone', 'prettier/plugins/babel', 'svelte/compiler'],
