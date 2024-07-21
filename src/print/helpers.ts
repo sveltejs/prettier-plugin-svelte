@@ -17,7 +17,7 @@ import {
     SlotTemplateNode,
     StyleNode,
     TitleNode,
-    WindowNode
+    WindowNode,
 } from './nodes';
 import { ParserOptions } from '../options';
 
