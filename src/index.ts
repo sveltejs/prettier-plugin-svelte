@@ -1,15 +1,13 @@
 import { SupportLanguage, Parser, Printer } from 'prettier';
 import * as prettierPluginBabel from 'prettier/plugins/babel';
 import { hasPragma, print } from './print';
-import { ASTNode } from './print/nodes';
 import { embed, getVisitorKeys } from './embed';
 import { snipScriptAndStyleTagContent } from './lib/snipTagContent';
-import { parse, VERSION } from 'svelte/compiler';
+import { parse } from 'svelte/compiler';
 import { ParserOptions } from './options';
 
 const babelParser = prettierPluginBabel.parsers.babel;
 const typescriptParser = prettierPluginBabel.parsers['babel-ts']; // TODO use TypeScript parser in next major?
-const isSvelte5Plus = Number(VERSION.split('.')[0]) >= 5;
 
 function locStart(node: any) {
     return node.start;
@@ -33,7 +31,7 @@ export const parsers: Record<string, Parser> = {
         hasPragma,
         parse: (text) => {
             try {
-                return <ASTNode>{ ...parse(text), __isRoot: true };
+                return parse(text, { modern: true });
             } catch (err: any) {
                 if (err.start != null && err.end != null) {
                     // Prettier expects error objects to have loc.start and loc.end fields.
@@ -57,8 +55,7 @@ export const parsers: Record<string, Parser> = {
             // Therefore we do it ourselves here.
             options.originalText = text;
             // Only Svelte 5 can have TS in the template
-            options._svelte_ts = isSvelte5Plus && result.isTypescript;
-            options._svelte_is5Plus = isSvelte5Plus;
+            options._svelte_ts = result.isTypescript;
             return text;
         },
         locStart,
