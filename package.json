@@ -22,6 +22,8 @@
         "build": "rollup -c",
         "check": "tsc --noEmit",
         "check:watch": "tsc --noEmit --watch",
+        "lint": "prettier --check .",
+        "format": "prettier --write .",
         "test": "ava",
         "prepare": "npm run build",
         "prepublishOnly": "npm test"
