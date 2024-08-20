@@ -100,16 +100,16 @@ export function embed(path: FastPath, _options: Options) {
             printSvelteBlockJS('key');
             break;
         case 'SnippetBlock':
-            // We merge the two parts into one expression, which future-proofs this for template TS support
+            // We merge the two parts into one expression to then treat it like a function
             if (node === parent.expression) {
                 parent.expression.end =
                     options.originalText.indexOf(
                         ')',
-                        parent.context?.end ?? // TODO: remove at some point, snippet API changed in .next-..
+                        (parent.parameters?.[parent.parameters.length - 1] as any)?.typeAnnotation
+                            ?.end ??
                             parent.parameters?.[parent.parameters.length - 1]?.end ??
                             parent.expression.end,
                     ) + 1;
-                parent.context = null;
                 parent.parameters = null;
                 node.isJS = true;
                 node.asFunction = true;

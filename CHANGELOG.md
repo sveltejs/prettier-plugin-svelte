@@ -3,6 +3,7 @@
 ## 3.2.7 (unreleased)
 
 -   (fix) force quote style inside style directives
+-   (fix) Svelte 5: properly determine end of snippet parameters with TS annotations
 
 ## 3.2.6
 
