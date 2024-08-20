@@ -1206,7 +1206,16 @@ function _expandNode(node: any, parent?: any): string {
     switch (node.type) {
         case 'ArrayExpression':
         case 'ArrayPattern':
-            return ' [' + node.elements.map(_expandNode).join(',').slice(1) + ']';
+            return (
+                ' [' +
+                node.elements
+                    // handle null specifically here; else it would become the empty string, but that would mean
+                    // fewer elements in the array, which would change the meaning of the array
+                    .map((el: any) => (el === null ? ' ' : _expandNode(el)))
+                    .join(',')
+                    .slice(1) +
+                ']'
+            );
         case 'AssignmentPattern':
             return _expandNode(node.left) + ' =' + _expandNode(node.right);
         case 'Identifier':
