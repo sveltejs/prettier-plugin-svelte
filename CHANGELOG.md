@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.2.7 (unreleased)
+
+-   (fix) force quote style inside style directives
+
 ## 3.2.6
 
 -   (feat) Svelte 5: never quote single-expression-attributes
