@@ -1,3 +1,5 @@
+> This documentation is for prettier-plugin-svelte version 4 which only works with Svelte 5. See [this branch](https://github.com/sveltejs/prettier-plugin-svelte/tree/version-3) for documentation of earlier versions
+
 # Prettier for Svelte components
 
 Format your Svelte components using Prettier.
