@@ -1,4 +1,4 @@
-import { Doc, doc, FastPath, Options } from 'prettier';
+import { Doc, doc, AstPath, Options } from 'prettier';
 import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { isBracketSameLine, ParserOptions } from './options';
@@ -49,7 +49,7 @@ export function getVisitorKeys(node: any, nonTraversableKeys: Set<string>): stri
 // - deepest property is calling embed first
 // - if embed returns a function, it will be called after the traversal in a second pass, in the same order (deepest first)
 // For performance reasons we try to only return functions when we're sure we need to transform something.
-export function embed(path: FastPath, _options: Options) {
+export function embed(path: AstPath, _options: Options) {
     const node: Node = path.getNode();
     const options = _options as ParserOptions;
     if (!options.locStart || !options.locEnd || !options.originalText) {
@@ -343,7 +343,7 @@ async function formatBodyContent(
 async function embedTag(
     tag: 'script' | 'style' | 'template',
     text: string,
-    path: FastPath,
+    path: AstPath,
     formatBodyContent: (content: string) => Promise<Doc>,
     print: PrintFn,
     isTopLevel: boolean,

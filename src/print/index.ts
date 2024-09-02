@@ -1,4 +1,4 @@
-import { Doc, doc, FastPath } from 'prettier';
+import { Doc, doc, AstPath } from 'prettier';
 import { formattableAttributes, selfClosingTags } from '../lib/elements';
 import { hasSnippedContent, unsnipContent } from '../lib/snipTagContent';
 import { isBracketSameLine, ParserOptions, parseSortOrder, SortOrderPart } from '../options';
@@ -56,7 +56,7 @@ import {
 const { join, line, group, indent, dedent, softline, hardline, fill, breakParent, literalline } =
     doc.builders;
 
-export type PrintFn = (path: FastPath) => Doc;
+export type PrintFn = (path: AstPath) => Doc;
 
 declare module 'prettier' {
     export namespace doc {
@@ -76,7 +76,7 @@ let ignoreNext = false;
 let ignoreRange = false;
 let svelteOptionsDoc: Doc | undefined;
 
-export function print(path: FastPath, options: ParserOptions, print: PrintFn): Doc {
+export function print(path: AstPath, options: ParserOptions, print: PrintFn): Doc {
     const bracketSameLine = isBracketSameLine(options);
 
     const n = path.getValue();
@@ -498,7 +498,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                 if (ifNode.else) {
                     def.push(
                         path.map(
-                            (ifPath: FastPath<any>) => ifPath.call(print, 'else'),
+                            (ifPath: AstPath<any>) => ifPath.call(print, 'else'),
                             'children',
                         )[0],
                     );
@@ -739,7 +739,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
 function printTopLevelParts(
     n: ASTNode,
     options: ParserOptions,
-    path: FastPath<any>,
+    path: AstPath<any>,
     print: PrintFn,
 ): Doc {
     if (options.svelteSortOrder === 'none') {
@@ -825,7 +825,7 @@ function printTopLevelParts(
 }
 
 function printAttributeNodeValue(
-    path: FastPath<any>,
+    path: AstPath<any>,
     print: PrintFn,
     quotes: boolean,
     node: AttributeNode | StyleDirectiveNode,
@@ -839,7 +839,7 @@ function printAttributeNodeValue(
     }
 }
 
-function printSvelteBlockChildren(path: FastPath, print: PrintFn, options: ParserOptions): Doc {
+function printSvelteBlockChildren(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
     const node = path.getValue();
     const children = node.children;
     if (!children || children.length === 0) {
@@ -876,7 +876,7 @@ function printSvelteBlockChildren(path: FastPath, print: PrintFn, options: Parse
 function printPre(
     node: Parameters<typeof printRaw>[0],
     originalText: string,
-    path: FastPath,
+    path: AstPath,
     print: PrintFn,
 ): Doc {
     const result: Doc = [];
@@ -896,7 +896,7 @@ function printPre(
     return result;
 }
 
-function printChildren(path: FastPath, print: PrintFn, options: ParserOptions): Doc {
+function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
     if (isPreTagContent(path)) {
         return path.map(print, 'children');
     }
@@ -1050,7 +1050,7 @@ function printChildren(path: FastPath, print: PrintFn, options: ParserOptions): 
  */
 function prepareChildren(
     children: Node[],
-    path: FastPath,
+    path: AstPath,
     print: PrintFn,
     options: ParserOptions,
 ): Node[] {
@@ -1107,7 +1107,7 @@ function prepareChildren(
     function printSvelteOptions(
         node: OptionsNode,
         idx: number,
-        path: FastPath,
+        path: AstPath,
         print: PrintFn,
     ): void {
         svelteOptionsDoc = group([
@@ -1181,7 +1181,7 @@ function splitTextToDocs(node: TextNode): Doc[] {
     return docs;
 }
 
-function printJS(path: FastPath, print: PrintFn, name: string) {
+function printJS(path: AstPath, print: PrintFn, name: string) {
     return path.call(print, name);
 }
 

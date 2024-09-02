@@ -1,4 +1,4 @@
-import { Doc, doc, FastPath } from 'prettier';
+import { Doc, doc, AstPath } from 'prettier';
 import { PrintFn } from '.';
 import { formattableAttributes } from '../lib/elements';
 import { snippedTagContentAttribute } from '../lib/snipTagContent';
@@ -29,7 +29,7 @@ export function isASTNode(n: any): n is ASTNode {
     return n && n.__isRoot;
 }
 
-export function isPreTagContent(path: FastPath): boolean {
+export function isPreTagContent(path: AstPath): boolean {
     const stack = path.stack as Node[];
 
     return stack.some(
