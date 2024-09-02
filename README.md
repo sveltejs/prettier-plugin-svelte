@@ -229,6 +229,8 @@ Usage in the browser is semi-supported. You can import the plugin from `prettier
 
 ## Migration
 
+> For migrations between majors prior to `prettier-plugin-svelte@4` [see here](https://github.com/sveltejs/prettier-plugin-svelte/tree/version-3)
+
 Upgrade to Svelte 5 before upgrading to `prettier-plugin-svelte@4`, as it doesn't support older Svelte versions.
 
 ## FAQ
