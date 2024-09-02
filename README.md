@@ -1,4 +1,4 @@
-> This documentation is for prettier-plugin-svelte version 4 which only works with Svelte 5. See [this branch](https://github.com/sveltejs/prettier-plugin-svelte/tree/version-3) for documentation of earlier versions
+> This documentation is for `prettier-plugin-svelte` version 4 which only works with Svelte 5. See [this branch](https://github.com/sveltejs/prettier-plugin-svelte/tree/version-3) for documentation of previous version.
 
 # Prettier for Svelte components
 
@@ -229,7 +229,7 @@ Usage in the browser is semi-supported. You can import the plugin from `prettier
 
 ## Migration
 
-> For migrations between majors prior to `prettier-plugin-svelte@4` [see here](https://github.com/sveltejs/prettier-plugin-svelte/tree/version-3)
+> For migration to `prettier-plugin-svelte@3` [see here](https://github.com/sveltejs/prettier-plugin-svelte/tree/version-3?tab=readme-ov-file#migration).
 
 Upgrade to Svelte 5 before upgrading to `prettier-plugin-svelte@4`, as it doesn't support older Svelte versions.
 
