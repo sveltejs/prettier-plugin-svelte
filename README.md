@@ -1,3 +1,5 @@
+> This documentation is for `prettier-plugin-svelte` version 4 which only works with Svelte 5. See [this branch](https://github.com/sveltejs/prettier-plugin-svelte/tree/version-3) for documentation of previous versions.
+
 # Prettier for Svelte components
 
 Format your Svelte components using Prettier.
@@ -26,6 +28,7 @@ Installing the plugin as a package allows:
 
 ### Compatibility
 
+-   `prettier-plugin-svelte@4` only works with `prettier@3`
 -   `prettier-plugin-svelte@3` only works with `prettier@3`
 -   `prettier-plugin-svelte@2` only works with `prettier@2`
 
@@ -56,8 +59,7 @@ If you want to customize some formatting behavior, see section [Options](#option
 Format your code using the Prettier CLI.
 
 ```bash
-npx prettier --write . # v3
-npx prettier --write --plugin prettier-plugin-svelte . # v2
+npx prettier --write .
 ```
 
 As part of your scripts in `package.json`:
@@ -67,8 +69,7 @@ As part of your scripts in `package.json`:
 {
     // ..
     "scripts": {
-        "format": "prettier --write .", // v3
-        "format": "prettier --write  --plugin prettier-plugin-svelte ." // v2
+        "format": "prettier --write ."
     }
 }
 ```
@@ -105,9 +106,7 @@ Example:
 
 <!-- prettier-ignore -->
 ```html
-<!-- svelteStrictMode: true (Svelte 3 and 4) -->
-<div foo="{bar}"></div>
-<!-- svelteStrictMode: true (Svelte 5) -->
+<!-- svelteStrictMode: true -->
 <div foo={bar}></div>
 
 <!-- svelteStrictMode: false -->
@@ -230,36 +229,9 @@ Usage in the browser is semi-supported. You can import the plugin from `prettier
 
 ## Migration
 
-```diff
-# package.json
-- "format": "prettier --plugin-search-dir . --write ."
-+ "format": "prettier --write ."
-```
+> For migration to `prettier-plugin-svelte@3` [see here](https://github.com/sveltejs/prettier-plugin-svelte/tree/version-3?tab=readme-ov-file#migration).
 
-```diff
-# package.json
-- "prettier": "^2.8.8",
-+ "prettier": "^3.1.0",
-- "prettier-plugin-svelte": "^2.10.1",
-+ "prettier-plugin-svelte": "^3.1.0",
-```
-
-```diff
-# .prettierrc
-- "pluginSearchDirs": ["."],
-+ "plugins": ["prettier-plugin-svelte"]
-```
-
-Version 3 contains the following breaking changes:
-
--   Whether or not empty elements/components should self-close is now left to the user - in other words, if you write `<div />` or `<Component />` that stays as is, and so does `<div></div>`/`<Component></Component>`. If `svelteStrictMode` is turned on, it will still only allow `<div></div>` notation for elements (but it will leave your components alone)
--   `svelteAllowShorthand` now takes precedence over `svelteStrictMode`, which no longer has any effect on that behavior. Set `svelteAllowShorthand` to `false` to get back the v2 behavior
--   Some deprecated `svelteSortOrder` options were removed, see the the options section above for which values are valid for that options
-
-Version 3 of this plugin only works with Prettier version 3. Prettier version 3 contains some changes to how it loads plugins which may require you to adjust your configuration file:
-
--   Prettier no longer searches for plugins in the directory automatically, you need to tell Prettier specifically which plugins to use. This means you need to add `"plugins": ["prettier-plugin-svelte"]` to your config if you haven't already. Also remove the deprecated option `pluginSearchDirs`.
--   Prettier loads plugins from the plugin array differently. If you have used `require.resolve("prettier-plugin-svelte")` in your `.prettierrc.cjs` to tell Prettier where to find the plugin, you may need to remove that and just write `"prettier-plugin-svelte"` instead
+Upgrade to Svelte 5 before upgrading to `prettier-plugin-svelte@4`, as it doesn't support older Svelte versions.
 
 ## FAQ
 
@@ -283,15 +255,3 @@ becomes this
 ```
 
 it's because of whitespace sensitivity. For inline elements (`span`, `a`, etc) it makes a difference when rendered if there's a space (or newline) between them. Since we don't know if your slot inside your Svelte component is surrounded by inline elements, Svelte components are treated as such, too. You can adjust this whitespace sensitivity through [this setting](https://prettier.io/docs/en/options.html#html-whitespace-sensitivity). You can read more about HTML whitespace sensitivity [here](https://prettier.io/blog/2018/11/07/1.15.0.html#whitespace-sensitive-formatting).
-
-### Version 2 does not work in `pnpm`
-
-You may need to use a `.prettierrc.cjs` file instead to point Prettier to the exact location of the plugin using `require.resolve`:
-
-```js
-module.exports = {
-    pluginSearchDirs: false,
-    plugins: [require('prettier-plugin-svelte')],
-    overrides: [{ files: '*.svelte', options: { parser: 'svelte' } }],
-};
-```

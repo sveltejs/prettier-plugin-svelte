@@ -52,12 +52,14 @@ export const options: Record<keyof PluginConfig, SupportOption> = {
             makeChoice('none'),
         ],
     },
+    // todo: remove in v4
     svelteStrictMode: {
         category: 'Svelte',
         type: 'boolean',
         default: false,
         description: 'More strict HTML syntax: Quotes in attributes, no self-closing DOM tags',
     },
+    // todo: remove in v4
     svelteBracketNewLine: {
         category: 'Svelte',
         type: 'boolean',
