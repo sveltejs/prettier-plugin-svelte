@@ -77,15 +77,7 @@ export function embed(path: AstPath, _options: Options) {
     // check the parent to see if we are inside an expression that should be embedded.
     const parent: Node = path.getParentNode();
     const printJsExpression = () =>
-        (parent as any).expression
-            ? printJS(
-                  parent,
-                  (options.svelteStrictMode && !options._svelte_is5Plus) ?? false,
-                  false,
-                  false,
-                  'expression',
-              )
-            : undefined;
+        (parent as any).expression ? printJS(parent, false, false, false, 'expression') : undefined;
     const printSvelteBlockJS = (name: string) => printJS(parent, false, true, false, name);
 
     switch (parent.type) {
@@ -116,13 +108,7 @@ export function embed(path: AstPath, _options: Options) {
             }
             break;
         case 'Element':
-            printJS(
-                parent,
-                (options.svelteStrictMode && !options._svelte_is5Plus) ?? false,
-                false,
-                false,
-                'tag',
-            );
+            printJS(parent, false, false, false, 'tag');
             break;
         case 'MustacheTag':
             printJS(parent, isInsideQuotedAttribute(path, options), false, false, 'expression');

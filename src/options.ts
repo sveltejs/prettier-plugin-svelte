@@ -4,14 +4,6 @@ import { SortOrder, PluginConfig } from '..';
 export interface ParserOptions<T = any> extends PrettierParserOptions<T>, Partial<PluginConfig> {
     _svelte_ts?: boolean;
     _svelte_asFunction?: boolean;
-    /**
-     * Used for
-     * - deciding what quote behavior to use in the printer:
-     *   A future version of Svelte treats quoted expressions as strings, so never use quotes in that case.
-     *   Since Svelte 5 does still treat them equally, it's safer to remove quotes in all cases and in a future
-     *   version of this plugin instead leave it up to the user to decide.
-     */
-    _svelte_is5Plus?: boolean;
 }
 
 function makeChoice(choice: string) {
@@ -51,13 +43,6 @@ export const options: Record<keyof PluginConfig, SupportOption> = {
             makeChoice('styles-scripts-markup-options'),
             makeChoice('none'),
         ],
-    },
-    // todo: remove in v4
-    svelteStrictMode: {
-        category: 'Svelte',
-        type: 'boolean',
-        default: false,
-        description: 'More strict HTML syntax: Quotes in attributes, no self-closing DOM tags',
     },
     // todo: remove in v4
     svelteBracketNewLine: {

@@ -9,7 +9,6 @@ import { ParserOptions } from './options';
 
 const babelParser = prettierPluginBabel.parsers.babel;
 const typescriptParser = prettierPluginBabel.parsers['babel-ts']; // TODO use TypeScript parser in next major?
-const isSvelte5Plus = Number(VERSION.split('.')[0]) >= 5;
 
 function locStart(node: any) {
     return node.start;
@@ -56,9 +55,7 @@ export const parsers: Record<string, Parser> = {
             // inside markdown), the originalText is not updated after preprocessing.
             // Therefore we do it ourselves here.
             options.originalText = text;
-            // Only Svelte 5 can have TS in the template
-            options._svelte_ts = isSvelte5Plus && result.isTypescript;
-            options._svelte_is5Plus = isSvelte5Plus;
+            options._svelte_ts = result.isTypescript;
             return text;
         },
         locStart,

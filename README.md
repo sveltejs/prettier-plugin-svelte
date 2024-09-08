@@ -94,29 +94,6 @@ Format: join the keywords `options`, `scripts`, `markup`, `styles` with a `-` in
 
 > The `options` order option only exists since version 2. If you use version 1 of `prettier-plugin-svelte`, omit that option (so for example only write `scripts-markup-styles`).
 
-### Svelte Strict Mode
-
-More strict HTML syntax: Quotes in attributes and no self-closing DOM elements (except void elements).
-
-> In version 2 this overruled `svelteAllowShorthand`, which is no longer the case.
-
-> In Svelte 5, attributes are never quoted, because this will mean "stringify this attribute value" in a future Svelte version
-
-Example:
-
-<!-- prettier-ignore -->
-```html
-<!-- svelteStrictMode: true -->
-<div foo={bar}></div>
-
-<!-- svelteStrictMode: false -->
-<div foo={bar} />
-```
-
-| Default | CLI Override                  | API Override               |
-| ------- | ----------------------------- | -------------------------- |
-| `false` | `--svelte-strict-mode <bool>` | `svelteStrictMode: <bool>` |
-
 ### Svelte Allow Shorthand
 
 Option to enable/disable component attribute shorthand if attribute name and expression are same.
@@ -190,7 +167,6 @@ Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte
 ```json
 {
     "svelteSortOrder": "options-styles-scripts-markup",
-    "svelteStrictMode": true,
     "svelteBracketNewLine": false,
     "svelteAllowShorthand": false,
     "svelteIndentScriptAndStyle": false
@@ -232,6 +208,8 @@ Usage in the browser is semi-supported. You can import the plugin from `prettier
 > For migration to `prettier-plugin-svelte@3` [see here](https://github.com/sveltejs/prettier-plugin-svelte/tree/version-3?tab=readme-ov-file#migration).
 
 Upgrade to Svelte 5 before upgrading to `prettier-plugin-svelte@4`, as it doesn't support older Svelte versions.
+
+`svelteStrictMode` option has been removed. Attributes are now never quoted, because this will mean "stringify this attribute value" in a future Svelte version.
 
 ## FAQ
 
