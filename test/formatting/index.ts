@@ -4,8 +4,6 @@ import { format } from 'prettier';
 import { VERSION } from 'svelte/compiler';
 import * as SveltePlugin from '../../src';
 
-const isSvelte5Plus = Number(VERSION.split('.')[0]) >= 5;
-
 let dirs = readdirSync('test/formatting/samples');
 const printerFilesHaveOnly = readdirSync('test/printer/samples').some(
     (f) => f.endsWith('.only.html') || f.endsWith('.only.md'),
@@ -28,9 +26,6 @@ for (const dir of dirs) {
         'utf-8',
     ).replace(/\r?\n/g, '\n');
     const options = readOptions(`test/formatting/samples/${dir}/options.json`);
-
-    // Tests attribute quoting changes, which are different in Svelte 5
-    if (dir.endsWith('strict-mode-true') && isSvelte5Plus) continue;
 
     test(`formatting: ${dir}`, async (t) => {
         let onTestCompleted;

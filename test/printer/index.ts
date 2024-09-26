@@ -4,8 +4,6 @@ import { format } from 'prettier';
 import { VERSION } from 'svelte/compiler';
 import * as SveltePlugin from '../../src';
 
-const isSvelte5Plus = Number(VERSION.split('.')[0]) >= 5;
-
 let files = readdirSync('test/printer/samples').filter(
     (name) => name.endsWith('.html') || name.endsWith('.md'),
 );
@@ -26,9 +24,6 @@ for (const file of files) {
     const options = readOptions(
         `test/printer/samples/${file.replace('.only', '').replace(`.${ending}`, '.options.json')}`,
     );
-
-    // Tests attribute quoting changes, which are different in Svelte 5
-    if (file.endsWith('attribute-quoted.html') && isSvelte5Plus) continue;
 
     test(`printer: ${file.slice(0, file.length - `.${ending}`.length)}`, async (t) => {
         const actualOutput = await format(input, {

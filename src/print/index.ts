@@ -88,8 +88,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         return printTopLevelParts(n, options, path, print);
     }
 
-    const [open, close] =
-        options.svelteStrictMode && !options._svelte_is5Plus ? ['"{', '}"'] : ['{', '}'];
+    const [open, close] = ['{', '}'];
     const printJsExpression = () => [open, printJS(path, print, 'expression'), close];
     const node = n as Node;
 
@@ -212,7 +211,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
 
             const isSelfClosingTag =
                 isEmpty &&
-                ((((node.type === 'Element' && !options.svelteStrictMode) ||
+                (((node.type === 'Element' ||
                     node.type === 'Head' ||
                     node.type === 'InlineComponent' ||
                     node.type === 'Slot' ||
@@ -446,9 +445,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     return [node.name];
                 }
 
-                const quotes =
-                    !isLoneMustacheTag(node.value) ||
-                    ((options.svelteStrictMode && !options._svelte_is5Plus) ?? false);
+                const quotes = !isLoneMustacheTag(node.value);
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
                     return [node.name, '=', '"', attrNodeValue, '"'];
@@ -605,7 +602,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         case 'PendingBlock':
         case 'CatchBlock':
             return printSvelteBlockChildren(path, print, options);
-        // Svelte 5 only
         case 'SnippetBlock': {
             const snippet = ['{#snippet ', printJS(path, print, 'expression')];
             snippet.push('}', printSvelteBlockChildren(path, print, options), '{/snippet}');
@@ -652,9 +648,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     return [...prefix, `=${open}`, node.name, close];
                 }
             } else {
-                const quotes =
-                    !isLoneMustacheTag(node.value) ||
-                    ((options.svelteStrictMode && !options._svelte_is5Plus) ?? false);
+                const quotes = !isLoneMustacheTag(node.value);
                 const attrNodeValue = printAttributeNodeValue(path, print, quotes, node);
                 if (quotes) {
                     return [...prefix, '=', '"', attrNodeValue, '"'];
@@ -721,7 +715,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             return ['animate:', node.name, node.expression ? ['=', ...printJsExpression()] : ''];
         case 'RawMustacheTag':
             return ['{@html ', printJS(path, print, 'expression'), '}'];
-        // Svelte 5 only
         case 'RenderTag': {
             const render = ['{@render ', printJS(path, print, 'expression'), '}'];
             return render;

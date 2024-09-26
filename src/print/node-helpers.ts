@@ -535,8 +535,7 @@ export function isInsideQuotedAttribute(path: AstPath, options: ParserOptions): 
     return stack.some(
         (node) =>
             (node.type === 'Attribute' || node.type === 'StyleDirective') &&
-            (!isLoneMustacheTag(node.value) ||
-                (options.svelteStrictMode && !options._svelte_is5Plus)),
+            !isLoneMustacheTag(node.value),
     );
 }
 
