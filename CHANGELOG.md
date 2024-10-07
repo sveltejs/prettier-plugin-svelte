@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## 3.2.7 (unreleased)
+## 3.2.7
 
 -   (fix) force quote style inside style directives
 -   (fix) preserve commas in array expressions
