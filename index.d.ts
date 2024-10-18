@@ -1,4 +1,4 @@
-import { Config } from 'prettier';
+import { Config, SupportOption, SupportLanguage, Parser, Printer } from 'prettier';
 
 export interface PluginConfig {
     svelteSortOrder?: SortOrder;
@@ -9,7 +9,7 @@ export interface PluginConfig {
 
 export type PrettierConfig = PluginConfig & Config;
 
-type SortOrder =
+export type SortOrder =
     | 'options-scripts-markup-styles'
     | 'options-scripts-styles-markup'
     | 'options-markup-styles-scripts'
@@ -35,3 +35,14 @@ type SortOrder =
     | 'styles-markup-scripts-options'
     | 'styles-scripts-markup-options'
     | 'none';
+
+export declare const options: Record<keyof PluginConfig, SupportOption>;
+export declare const languages: Partial<SupportLanguage>[];
+export declare const parsers: {
+    svelte: Parser;
+    svelteExpressionParser: Parser;
+    svelteTSExpressionParser: Parser;
+};
+export declare const printers: {
+    'svelte-ast': Printer;
+};
