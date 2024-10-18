@@ -413,21 +413,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 ),
                 ...[bracketSameLine ? ' ' : '', '/>'],
             ]);
-        case 'Document':
-            return group([
-                '<',
-                node.name,
-                indent(
-                    group([
-                        ...path.map(
-                            printWithPrependedAttributeLine(node, options, print),
-                            'attributes',
-                        ),
-                        bracketSameLine ? '' : dedent(line),
-                    ]),
-                ),
-                ...[bracketSameLine ? ' ' : '', '/>'],
-            ]);
         case 'Identifier':
             return node.name;
         case 'AttributeShorthand': {
