@@ -33,9 +33,19 @@ export const parsers: Record<string, Parser> = {
         hasPragma,
         parse: async (text, options: ParserOptions) => {
             try {
-                const _parse = options.svelte5CompilerPath
-                    ? (await import(options.svelte5CompilerPath)).parse
-                    : parse;
+                let _parse = parse;
+                if (options.svelte5CompilerPath) {
+                    try {
+                        _parse = (await import(options.svelte5CompilerPath)).parse;
+                    } catch (e) {
+                        console.warn(
+                            `Failed to load Svelte 5 compiler from ${options.svelte5CompilerPath}`,
+                        );
+                        console.warn(e);
+                        options.svelte5CompilerPath = undefined;
+                    }
+                }
+
                 return <ASTNode>{ ..._parse(text), __isRoot: true };
             } catch (err: any) {
                 if (err.start != null && err.end != null) {
