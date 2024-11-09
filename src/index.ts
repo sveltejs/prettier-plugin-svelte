@@ -31,9 +31,12 @@ export const languages: Partial<SupportLanguage>[] = [
 export const parsers: Record<string, Parser> = {
     svelte: {
         hasPragma,
-        parse: (text) => {
+        parse: async (text, options: ParserOptions) => {
             try {
-                return <ASTNode>{ ...parse(text), __isRoot: true };
+                const _parse = options.svelte5CompilerPath
+                    ? (await import(options.svelte5CompilerPath)).parse
+                    : parse;
+                return <ASTNode>{ ..._parse(text), __isRoot: true };
             } catch (err: any) {
                 if (err.start != null && err.end != null) {
                     // Prettier expects error objects to have loc.start and loc.end fields.
@@ -57,8 +60,9 @@ export const parsers: Record<string, Parser> = {
             // Therefore we do it ourselves here.
             options.originalText = text;
             // Only Svelte 5 can have TS in the template
-            options._svelte_ts = isSvelte5Plus && result.isTypescript;
-            options._svelte_is5Plus = isSvelte5Plus;
+            const is = !!options.svelte5CompilerPath || isSvelte5Plus;
+            options._svelte_ts = is && result.isTypescript;
+            options._svelte_is5Plus = is;
             return text;
         },
         locStart,

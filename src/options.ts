@@ -19,6 +19,12 @@ function makeChoice(choice: string) {
 }
 
 export const options: Record<keyof PluginConfig, SupportOption> = {
+    svelte5CompilerPath: {
+        category: 'Svelte',
+        type: 'string',
+        default: '',
+        description: 'Only set this when using Svelte 5! Path to the Svelte 5 compiler',
+    },
     svelteSortOrder: {
         category: 'Svelte',
         type: 'choice',
