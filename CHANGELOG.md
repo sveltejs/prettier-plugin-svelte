@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.2.8
+
+-   (chore) provide IDE tooling a way to pass Svelte compiler path
+
 ## 3.2.7
 
 -   (fix) force quote style inside style directives
