@@ -268,6 +268,19 @@ export interface BodyNode extends BaseNode {
     attributes: Node[];
 }
 
+export interface SvelteHTML extends BaseNode {
+    type: 'SvelteHTML';
+    name: string;
+    attributes: Node[];
+}
+
+export interface SvelteBoundary extends BaseNode {
+    type: 'SvelteBoundary';
+    name: string;
+    attributes: Node[];
+    children: Node[];
+}
+
 export interface DocumentNode extends BaseNode {
     type: 'Document';
     name: string;
@@ -357,6 +370,8 @@ export type Node =
     | OptionsNode
     | SlotTemplateNode
     | ConstTagNode
+    | SvelteBoundary
+    | SvelteHTML
     | RenderTag
     | SnippetBlock;
 
