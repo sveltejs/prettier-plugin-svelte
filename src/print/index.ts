@@ -202,6 +202,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'SlotTemplate':
         case 'Window':
         case 'Head':
+        // Svelte 5 only
+        case 'SvelteBoundary':
         case 'Title': {
             const isSupportedLanguage = !(
                 node.name === 'template' && !isNodeSupportedLanguage(node)
@@ -217,6 +219,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     node.type === 'InlineComponent' ||
                     node.type === 'Slot' ||
                     node.type === 'SlotTemplate' ||
+                    node.type === 'SvelteBoundary' ||
                     node.type === 'Title') &&
                     didSelfClose) ||
                     node.type === 'Window' ||
@@ -400,21 +403,8 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         // else fall through to Body
         case 'Body':
         case 'Document':
-            return group([
-                '<',
-                node.name,
-                indent(
-                    group([
-                        ...path.map(
-                            printWithPrependedAttributeLine(node, options, print),
-                            'attributes',
-                        ),
-                        bracketSameLine ? '' : dedent(line),
-                    ]),
-                ),
-                ...[bracketSameLine ? ' ' : '', '/>'],
-            ]);
-        case 'Document':
+        // Svelte 5 only
+        case 'SvelteHTML':
             return group([
                 '<',
                 node.name,

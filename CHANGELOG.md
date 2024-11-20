@@ -1,5 +1,10 @@
 # prettier-plugin-svelte changelog
 
+## 3.3.0
+
+-   (feat) Svelte 5: support upcoming `<svelte:boundary>`
+-   (feat) Svelte 5: support upcoming `<svelte:html>`
+
 ## 3.2.8
 
 -   (chore) provide IDE tooling a way to pass Svelte compiler path
