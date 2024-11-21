@@ -4,6 +4,7 @@
 
 -   (feat) Svelte 5: support upcoming `<svelte:boundary>`
 -   (feat) Svelte 5: support upcoming `<svelte:html>`
+-   (feat) Svelte 5: support upcoming `#each` without `as`
 
 ## 3.2.8
 

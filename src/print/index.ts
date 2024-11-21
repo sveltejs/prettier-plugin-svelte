@@ -499,12 +499,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
             return ['{:else}', printSvelteBlockChildren(path, print, options)];
         }
         case 'EachBlock': {
-            const def: Doc[] = [
-                '{#each ',
-                printJS(path, print, 'expression'),
-                ' as',
-                expandNode(node.context, options.originalText),
-            ];
+            const def: Doc[] = ['{#each ', printJS(path, print, 'expression')];
+
+            if (node.context) {
+                def.push(' as', expandNode(node.context, options.originalText));
+            }
 
             if (node.index) {
                 def.push(', ', node.index);
