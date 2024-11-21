@@ -1,0 +1,3 @@
+<input bind:value={() => value, (v) => (value = v)} />
+
+<input bind:value={get, set} />

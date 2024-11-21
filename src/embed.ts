@@ -128,6 +128,7 @@ export function embed(path: FastPath, _options: Options) {
             printJS(parent, 'expression', {});
             break;
         case 'ConstTag':
+        case 'Binding':
             printJS(parent, 'expression', { removeParentheses: true });
             break;
         case 'RenderTag':

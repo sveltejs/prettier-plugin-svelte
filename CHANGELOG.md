@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.3.1
+
+-   (feat) Svelte 5: support upcoming `bind:value={get, set}`
+
 ## 3.3.0
 
 -   (feat) Svelte 5: support upcoming `<svelte:boundary>`
