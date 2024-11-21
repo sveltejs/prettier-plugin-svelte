@@ -78,15 +78,11 @@ export function embed(path: FastPath, _options: Options) {
     const parent: Node = path.getParentNode();
     const printJsExpression = () =>
         (parent as any).expression
-            ? printJS(
-                  parent,
-                  (options.svelteStrictMode && !options._svelte_is5Plus) ?? false,
-                  false,
-                  false,
-                  'expression',
-              )
+            ? printJS(parent, 'expression', {
+                  forceSingleQuote: (options.svelteStrictMode && !options._svelte_is5Plus) ?? false,
+              })
             : undefined;
-    const printSvelteBlockJS = (name: string) => printJS(parent, false, true, false, name);
+    const printSvelteBlockJS = (name: string) => printJS(parent, name, { forceSingleLine: true });
 
     switch (parent.type) {
         case 'IfBlock':
@@ -116,25 +112,23 @@ export function embed(path: FastPath, _options: Options) {
             }
             break;
         case 'Element':
-            printJS(
-                parent,
-                (options.svelteStrictMode && !options._svelte_is5Plus) ?? false,
-                false,
-                false,
-                'tag',
-            );
+            printJS(parent, 'tag', {
+                forceSingleQuote: (options.svelteStrictMode && !options._svelte_is5Plus) ?? false,
+            });
             break;
         case 'MustacheTag':
-            printJS(parent, isInsideQuotedAttribute(path, options), false, false, 'expression');
+            printJS(parent, 'expression', {
+                forceSingleQuote: isInsideQuotedAttribute(path, options),
+            });
             break;
         case 'RawMustacheTag':
-            printJS(parent, false, false, false, 'expression');
+            printJS(parent, 'expression', {});
             break;
         case 'Spread':
-            printJS(parent, false, false, false, 'expression');
+            printJS(parent, 'expression', {});
             break;
         case 'ConstTag':
-            printJS(parent, false, false, true, 'expression');
+            printJS(parent, 'expression', { removeParentheses: true });
             break;
         case 'RenderTag':
             if (node === parent.expression) {
@@ -150,7 +144,7 @@ export function embed(path: FastPath, _options: Options) {
                     parent.argument = null;
                     parent.arguments = null;
                 }
-                printJS(parent, false, false, false, 'expression');
+                printJS(parent, 'expression', {});
             }
             break;
         case 'EventHandler':
@@ -409,17 +403,19 @@ async function embedTag(
 
 function printJS(
     node: any,
-    forceSingleQuote: boolean,
-    forceSingleLine: boolean,
-    removeParentheses: boolean,
     name: string,
+    options: {
+        forceSingleQuote?: boolean;
+        forceSingleLine?: boolean;
+        removeParentheses?: boolean;
+    },
 ) {
     const part = node[name] as BaseNode | undefined;
     if (!part || typeof part !== 'object') {
         return;
     }
     part.isJS = true;
-    part.forceSingleQuote = forceSingleQuote;
-    part.forceSingleLine = forceSingleLine;
-    part.removeParentheses = removeParentheses;
+    part.forceSingleQuote = options.forceSingleQuote;
+    part.forceSingleLine = options.forceSingleLine;
+    part.removeParentheses = options.removeParentheses;
 }
