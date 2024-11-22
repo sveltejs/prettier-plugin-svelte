@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.3.2
+
+-   (fix) Svelte 5: handle type annotations on Svelte control flow blocks
+
 ## 3.3.1
 
 -   (feat) Svelte 5: support upcoming `bind:value={get, set}`

@@ -1177,7 +1177,12 @@ function printJS(path: FastPath, print: PrintFn, name: string) {
 function expandNode(node: any, original: string): string {
     let str = _expandNode(node);
     if (node?.typeAnnotation) {
-        str += ': ' + original.slice(node.typeAnnotation.start, node.typeAnnotation.end);
+        str +=
+            ': ' +
+            original.slice(
+                node.typeAnnotation.typeAnnotation.start,
+                node.typeAnnotation.typeAnnotation.end,
+            );
     }
     return str;
 }
