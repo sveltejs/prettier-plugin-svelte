@@ -3,6 +3,7 @@
 ## 3.3.2
 
 -   (fix) Svelte 5: handle type annotations on Svelte control flow blocks
+-   (fix) preserve `style`/`script` tags at the end of the file when using `svelteSortOrder: "none"`
 
 ## 3.3.1
 

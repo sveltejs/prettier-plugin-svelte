@@ -733,15 +733,19 @@ function printTopLevelParts(
 ): Doc {
     if (options.svelteSortOrder === 'none') {
         const topLevelPartsByEnd: Record<number, any> = {};
+        const topLevelPartsByStart: Record<number, any> = {};
 
         if (n.module) {
             topLevelPartsByEnd[n.module.end] = n.module;
+            topLevelPartsByStart[n.module.start] = n.module;
         }
         if (n.instance) {
             topLevelPartsByEnd[n.instance.end] = n.instance;
+            topLevelPartsByStart[n.instance.start] = n.instance;
         }
         if (n.css) {
             topLevelPartsByEnd[n.css.end] = n.css;
+            topLevelPartsByStart[n.css.start] = n.css;
         }
 
         const children = getChildren(n.html);
@@ -750,6 +754,8 @@ function printTopLevelParts(
             if (topLevelPartsByEnd[node.start]) {
                 children.splice(i, 0, topLevelPartsByEnd[node.start]);
                 delete topLevelPartsByEnd[node.start];
+            } else if (i === children.length - 1 && topLevelPartsByStart[node.end]) {
+                children.push(topLevelPartsByStart[node.end]);
             }
         }
 
