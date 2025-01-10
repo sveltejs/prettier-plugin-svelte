@@ -111,7 +111,7 @@ Example:
 
 | Default | CLI Override                      | API Override                   |
 | ------- | --------------------------------- | ------------------------------ |
-| `true`  | `--svelte-allow-shorthand <bool>` | `svelteAllowShorthand: <bool>` |
+| `false`  | `--svelte-allow-shorthand <bool>` | `svelteAllowShorthand: <bool>` |
 
 ### Svelte Bracket New Line
 
