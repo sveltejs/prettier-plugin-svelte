@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.3.3 (unreleased)
+
+-   (fix) Svelte 5: ensure bind get/set is broken up correctly when too long
+
 ## 3.3.2
 
 -   (fix) Svelte 5: handle type annotations on Svelte control flow blocks
