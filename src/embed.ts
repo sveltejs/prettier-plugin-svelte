@@ -128,8 +128,10 @@ export function embed(path: FastPath, _options: Options) {
             printJS(parent, 'expression', {});
             break;
         case 'ConstTag':
-        case 'Binding':
             printJS(parent, 'expression', { removeParentheses: true });
+            break;
+        case 'Binding':
+            printJS(parent, 'expression', { removeParentheses: true, surroundWithSoftline: true });
             break;
         case 'RenderTag':
             if (node === parent.expression) {
@@ -195,6 +197,9 @@ export function embed(path: FastPath, _options: Options) {
                     } else {
                         throw new Error('Prettier AST changed, asFunction logic needs to change');
                     }
+                }
+                if (node.surroundWithSoftline) {
+                    docs = group(indent([softline, group(docs), dedent(softline)]));
                 }
                 return docs;
             } catch (e) {
@@ -409,6 +414,7 @@ function printJS(
         forceSingleQuote?: boolean;
         forceSingleLine?: boolean;
         removeParentheses?: boolean;
+        surroundWithSoftline?: boolean;
     },
 ) {
     const part = node[name] as BaseNode | undefined;
@@ -419,4 +425,5 @@ function printJS(
     part.forceSingleQuote = options.forceSingleQuote;
     part.forceSingleLine = options.forceSingleLine;
     part.removeParentheses = options.removeParentheses;
+    part.surroundWithSoftline = options.surroundWithSoftline;
 }
