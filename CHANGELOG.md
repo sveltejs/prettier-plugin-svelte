@@ -1,6 +1,6 @@
 # prettier-plugin-svelte changelog
 
-## 3.3.3 (unreleased)
+## 3.3.3
 
 -   (fix) Svelte 5: ensure bind get/set is broken up correctly when too long
 
