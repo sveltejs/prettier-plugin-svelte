@@ -293,17 +293,21 @@ async function formatBodyContent(
         if (parser === 'pug' && typeof body === 'string') {
             // Pug returns no docs but a final string.
             // Therefore prepend the line offsets
-            const whitespace = options.useTabs
-                ? '\t'
-                : ' '.repeat(
-                      options.pugTabWidth && options.pugTabWidth > 0
-                          ? options.pugTabWidth
-                          : options.tabWidth,
-                  );
-            const pugBody = body
-                .split('\n')
-                .map((line) => (line ? whitespace + line : line))
-                .join('\n');
+            let pugBody = body;
+            if(options.svelteIndentScriptAndStyle){
+              const whitespace = options.useTabs
+                  ? '\t'
+                  : ' '.repeat(
+                        options.pugTabWidth && options.pugTabWidth > 0
+                            ? options.pugTabWidth
+                            : options.tabWidth,
+                    );
+              pugBody = body
+                  .split('\n')
+                  .map((line) => (line ? whitespace + line : line))
+                  .join('\n');
+            }
+            if(!pugBody.endsWith('\n')) pugBody += '\n';
             return [hardline, pugBody];
         }
 
