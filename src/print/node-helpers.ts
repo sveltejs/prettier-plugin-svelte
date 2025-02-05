@@ -280,6 +280,11 @@ export function isLess(node: Node) {
     return ['less'].includes(lang);
 }
 
+export function isStylus(node: Node) {
+    const lang = getLangAttribute(node) || '';
+    return ['stylus'].includes(lang);
+}
+
 export function isScss(node: Node) {
     const lang = getLangAttribute(node) || '';
     return ['sass', 'scss'].includes(lang);
