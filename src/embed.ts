@@ -197,7 +197,7 @@ export function embed(path: AstPath, _options: Options) {
 
     const embedType = (
         tag: 'script' | 'style' | 'template',
-        parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'stylus | 'pug' | 'json',
+        parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'stylus' | 'pug' | 'json',
         isTopLevel: boolean,
     ) => {
         return async (
@@ -284,7 +284,7 @@ function getSnippedContent(node: Node) {
 
 async function formatBodyContent(
     content: string,
-    parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'stylus | 'pug' | 'json',
+    parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'stylus' | 'pug' | 'json',
     textToDoc: (text: string, options: object) => Promise<Doc>,
     options: ParserOptions & { pugTabWidth?: number },
 ) {
