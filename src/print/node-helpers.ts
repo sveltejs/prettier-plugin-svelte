@@ -29,7 +29,7 @@ import { AstPath } from 'prettier';
 import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
 import { ParserOptions, isBracketSameLine } from '../options';
 
-const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
+const unsupportedLanguages = ['coffee', 'coffeescript', 'sass'];
 
 export function isInlineElement(path: AstPath, options: ParserOptions, node: Node) {
     return (
@@ -278,6 +278,11 @@ export function isJSON(node: Node) {
 export function isLess(node: Node) {
     const lang = getLangAttribute(node) || '';
     return ['less'].includes(lang);
+}
+
+export function isStylus(node: Node) {
+    const lang = getLangAttribute(node) || '';
+    return ['stylus'].includes(lang);
 }
 
 export function isScss(node: Node) {
