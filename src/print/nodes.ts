@@ -186,6 +186,13 @@ export interface HeadNode extends BaseNode {
     children: Node[];
 }
 
+export interface BoundaryNode extends BaseNode {
+    type: 'SvelteBoundary';
+    name: string;
+    attributes: Node[];
+    children: Node[];
+}
+
 export interface TitleNode extends BaseNode {
     type: 'Title';
     name: string;

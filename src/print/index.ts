@@ -201,6 +201,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         case 'SlotTemplate':
         case 'Window':
         case 'Head':
+        case 'SvelteBoundary':
         case 'Title': {
             const isSupportedLanguage = !(
                 node.name === 'template' && !isNodeSupportedLanguage(node)
