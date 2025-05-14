@@ -127,6 +127,9 @@ export function embed(path: FastPath, _options: Options) {
         case 'Spread':
             printJS(parent, 'expression', {});
             break;
+        case 'AttachTag':
+            printJS(parent, 'expression', {});
+            break;
         case 'ConstTag':
             printJS(parent, 'expression', { removeParentheses: true });
             break;

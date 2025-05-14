@@ -327,6 +327,11 @@ export interface RenderTag extends BaseNode {
     arguments: BaseNode[] | null;
 }
 
+export interface AttachTag extends BaseNode {
+    type: 'AttachTag';
+    expression: IdentifierNode;
+}
+
 export type Node =
     | FragmentNode
     | ElementNode
@@ -375,6 +380,7 @@ export type Node =
     | SvelteBoundary
     | SvelteHTML
     | RenderTag
+    | AttachTag
     | SnippetBlock;
 
 /**

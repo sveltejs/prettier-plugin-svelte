@@ -19,6 +19,8 @@ if (process.env.CI && hasOnly) {
 }
 
 for (const dir of dirs) {
+    if (dir.endsWith('.skip')) continue;
+
     const input = readFileSync(`test/formatting/samples/${dir}/input.html`, 'utf-8').replace(
         /\r?\n/g,
         '\n',

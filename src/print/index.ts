@@ -711,10 +711,11 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'RawMustacheTag':
             return ['{@html ', printJS(path, print, 'expression'), '}'];
         // Svelte 5 only
-        case 'RenderTag': {
-            const render = ['{@render ', printJS(path, print, 'expression'), '}'];
-            return render;
-        }
+        case 'RenderTag':
+            return ['{@render ', printJS(path, print, 'expression'), '}'];
+        // Svelte 5 only
+        case 'AttachTag':
+            return ['{@attach ', printJS(path, print, 'expression'), '}'];
         case 'Spread':
             return ['{...', printJS(path, print, 'expression'), '}'];
         case 'ConstTag':
