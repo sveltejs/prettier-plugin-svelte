@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.4.0
+
+-   (feat) Svelte 5: support attachments (`{@attach ...}`)
+
 ## 3.3.3
 
 -   (fix) Svelte 5: ensure bind get/set is broken up correctly when too long
