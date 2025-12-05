@@ -3,7 +3,7 @@ import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { isBracketSameLine, ParserOptions } from './options';
 import { PrintFn } from './print';
-import { isLine, removeParentheses, trimRight } from './print/doc-helpers';
+import { isLine, removeParentheses, removeLeadingSemicolon, trimRight } from './print/doc-helpers';
 import { isASTNode, printWithPrependedAttributeLine } from './print/helpers';
 import {
     assignCommentsToNodes,
@@ -159,11 +159,11 @@ export function embed(path: AstPath, _options: Options) {
                 const embeddedOptions = {
                     // Prettier only allows string references as parsers from v3 onwards,
                     // so we need to have another public parser and defer to that
-                    parser: options._svelte_ts
-                        ? 'svelteTSExpressionParser'
-                        : 'svelteExpressionParser',
+                    // Use babel-ts/babel directly for Prettier 3.7.0+ compatibility
+                    parser: options._svelte_ts ? 'babel-ts' : 'babel',
                     singleQuote: node.forceSingleQuote ? true : options.singleQuote,
-                    _svelte_asFunction: node.asFunction,
+                    // Don't add semicolons
+                    semi: false,
                 };
 
                 // If we have snipped content, it was done wrongly and we need to unsnip it.
@@ -176,7 +176,9 @@ export function embed(path: AstPath, _options: Options) {
                 if (node.forceSingleLine) {
                     docs = removeLines(docs);
                 }
-                if (node.removeParentheses) {
+                // For non-function expressions, always remove the wrapping parentheses
+                // and protective semicolons added by forceIntoExpression and Prettier
+                if (!node.asFunction) {
                     docs = removeParentheses(docs);
                 }
                 if (node.asFunction) {

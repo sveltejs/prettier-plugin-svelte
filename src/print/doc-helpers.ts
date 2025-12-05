@@ -154,8 +154,84 @@ function getParts(doc: Doc): Doc[] | undefined {
 }
 
 /**
+ * Remove leading semicolons added by Prettier for ASI protection
+ */
+export function removeLeadingSemicolon(doc: Doc): Doc {
+    // Handle string docs
+    if (typeof doc === 'string') {
+        let str = doc;
+        // Remove leading semicolon (ASI protection added by Prettier)
+        while (str.startsWith(';')) {
+            str = str.slice(1);
+        }
+        return str;
+    }
+    
+    // Handle array docs
+    if (Array.isArray(doc)) {
+        const result = [...doc];
+        // Remove leading semicolons from the first element
+        while (result.length > 0 && typeof result[0] === 'string' && result[0].startsWith(';')) {
+            result[0] = result[0].slice(1);
+            if (result[0] === '') {
+                result.shift();
+            }
+        }
+        return result;
+    }
+    
+    // For other doc types, return as-is
+    return doc;
+}
+
+/**
  * `(foo = bar)` => `foo = bar`
+ * Also removes leading semicolons added by Prettier for ASI protection
  */
 export function removeParentheses(doc: Doc): Doc {
-    return trim([doc], (_doc: Doc) => _doc === '(' || _doc === ')')[0];
+    // Handle string docs that have semicolons and/or parentheses
+    if (typeof doc === 'string') {
+        let str = doc;
+        // Remove leading semicolon (ASI protection added by Prettier)
+        while (str.startsWith(';')) {
+            str = str.slice(1);
+        }
+        // For simple expressions, Prettier keeps wrapping parentheses even with semi:false
+        // e.g., ('foo') stays as ('foo'). We need to remove these for single expressions.
+        // But we need to be careful not to remove function call parentheses.
+        // The heuristic is: if the entire string is wrapped in parentheses and
+        // removing them still leaves a valid expression, remove them.
+        // This works for literals but not for function calls which have the function name outside.
+        if (str.startsWith('(') && str.endsWith(')') && !str.includes('(', 1)) {
+            // Only one set of parentheses wrapping the whole thing
+            str = str.slice(1, -1);
+        }
+        return str;
+    }
+    
+    // Handle array docs
+    if (Array.isArray(doc)) {
+        const result = [...doc];
+        // Remove leading semicolons from the first element
+        while (result.length > 0 && typeof result[0] === 'string' && result[0].startsWith(';')) {
+            result[0] = result[0].slice(1);
+            if (result[0] === '') {
+                result.shift();
+            }
+        }
+        
+        // If the result is a single string, handle it recursively
+        if (result.length === 1 && typeof result[0] === 'string') {
+            return removeParentheses(result[0]);
+        }
+        
+        // For multi-element arrays, just return after removing leading semicolons
+        // Don't try to remove parentheses as they might be part of the expression structure
+        // (e.g., function call parentheses, not wrapping from forceIntoExpression)
+        return result;
+    }
+    
+    // For other doc types (objects/groups), don't modify them
+    // as they're complex structures that shouldn't have wrapping removed
+    return doc;
 }

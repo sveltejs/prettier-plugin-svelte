@@ -67,12 +67,17 @@ export const parsers: Record<string, Parser> = {
         parse: (text: string, options: any) => {
             const ast = babelParser.parse(text, options);
 
-            let program = ast.program.body[0];
-            if (!options._svelte_asFunction) {
-                program = program.expression;
+            // For Prettier 3.7.0+ compatibility, we need to keep the AST structure intact
+            // and not replace ast.program with just the expression.
+            // The wrapping parentheses will be removed by the removeParentheses helper.
+            if (options._svelte_asFunction) {
+                // For functions, we want the full statement
+                return ast;
             }
 
-            return { ...ast, program };
+            // For expressions, we used to extract just the expression node,
+            // but that breaks with Prettier 3.7.0. Instead, keep the full AST.
+            return ast;
         },
     },
     svelteTSExpressionParser: {
@@ -80,12 +85,17 @@ export const parsers: Record<string, Parser> = {
         parse: (text: string, options: any) => {
             const ast = typescriptParser.parse(text, options);
 
-            let program = ast.program.body[0];
-            if (!options._svelte_asFunction) {
-                program = program.expression;
+            // For Prettier 3.7.0+ compatibility, we need to keep the AST structure intact
+            // and not replace ast.program with just the expression.
+            // The wrapping parentheses will be removed by the removeParentheses helper.
+            if (options._svelte_asFunction) {
+                // For functions, we want the full statement
+                return ast;
             }
 
-            return { ...ast, program };
+            // For expressions, we used to extract just the expression node,
+            // but that breaks with Prettier 3.7.0. Instead, keep the full AST.
+            return ast;
         },
     },
 };
