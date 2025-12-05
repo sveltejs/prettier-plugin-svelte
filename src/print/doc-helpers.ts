@@ -198,12 +198,13 @@ export function removeParentheses(doc: Doc): Doc {
         }
         // For simple expressions, Prettier keeps wrapping parentheses even with semi:false
         // e.g., ('foo') stays as ('foo'). We need to remove these for single expressions.
-        // We use a simple heuristic: if the string starts with '(' and ends with ')' and
-        // doesn't contain another '(' after the first one, it's likely a wrapped literal.
-        // Note: This heuristic is intentionally simple and conservative. It may not remove
-        // all unnecessary parentheses, but it avoids removing semantically important ones
-        // like in (a + b) * c. More complex cases are handled by Prettier's own rules.
-        if (str.startsWith('(') && str.endsWith(')') && !str.includes('(', 1)) {
+        // We use a very conservative heuristic: only remove if it starts with '(', ends with ')',
+        // and has no other parentheses anywhere inside. This ensures we only remove wrapping
+        // from simple literals and avoid touching expressions like function calls or grouping.
+        // Note: This is intentionally conservative to avoid removing semantically important
+        // parentheses. It means some unnecessary wrapping may remain, which is acceptable.
+        const hasNoInnerParens = str.indexOf('(', 1) === -1 && str.lastIndexOf(')', str.length - 2) === -1;
+        if (str.startsWith('(') && str.endsWith(')') && hasNoInnerParens) {
             // Only one set of parentheses wrapping the whole thing
             str = str.slice(1, -1);
         }
@@ -222,10 +223,13 @@ export function removeParentheses(doc: Doc): Doc {
         }
         
         // If the result is a single string, handle it recursively
-        // The recursive call is safe because we've already removed leading semicolons
-        // from result[0], so it's guaranteed to be different from the input
+        // Only recurse if we actually made a change (removed semicolons) to avoid infinite recursion
         if (result.length === 1 && typeof result[0] === 'string') {
-            return removeParentheses(result[0]);
+            const wasChanged = result[0] !== doc[0];
+            if (wasChanged) {
+                return removeParentheses(result[0]);
+            }
+            return result[0];
         }
         
         // For multi-element arrays, just return after removing leading semicolons
