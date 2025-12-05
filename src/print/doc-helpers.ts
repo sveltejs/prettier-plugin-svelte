@@ -198,10 +198,11 @@ export function removeParentheses(doc: Doc): Doc {
         }
         // For simple expressions, Prettier keeps wrapping parentheses even with semi:false
         // e.g., ('foo') stays as ('foo'). We need to remove these for single expressions.
-        // But we need to be careful not to remove function call parentheses.
-        // The heuristic is: if the entire string is wrapped in parentheses and
-        // removing them still leaves a valid expression, remove them.
-        // This works for literals but not for function calls which have the function name outside.
+        // We use a simple heuristic: if the string starts with '(' and ends with ')' and
+        // doesn't contain another '(' after the first one, it's likely a wrapped literal.
+        // Note: This heuristic is intentionally simple and conservative. It may not remove
+        // all unnecessary parentheses, but it avoids removing semantically important ones
+        // like in (a + b) * c. More complex cases are handled by Prettier's own rules.
         if (str.startsWith('(') && str.endsWith(')') && !str.includes('(', 1)) {
             // Only one set of parentheses wrapping the whole thing
             str = str.slice(1, -1);
@@ -221,6 +222,8 @@ export function removeParentheses(doc: Doc): Doc {
         }
         
         // If the result is a single string, handle it recursively
+        // The recursive call is safe because we've already removed leading semicolons
+        // from result[0], so it's guaranteed to be different from the input
         if (result.length === 1 && typeof result[0] === 'string') {
             return removeParentheses(result[0]);
         }
