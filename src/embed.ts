@@ -160,6 +160,8 @@ export function embed(path: AstPath, _options: Options) {
                     // Prettier only allows string references as parsers from v3 onwards,
                     // so we need to have another public parser and defer to that
                     // Use babel-ts/babel directly for Prettier 3.7.0+ compatibility
+                    // This fixes generic type parameters being stripped but may affect
+                    // parentheses formatting compared to previous versions
                     parser: options._svelte_ts ? 'babel-ts' : 'babel',
                     singleQuote: node.forceSingleQuote ? true : options.singleQuote,
                     // Don't add semicolons
