@@ -157,14 +157,15 @@ export function embed(path: AstPath, _options: Options) {
         ): Promise<Doc> => {
             try {
                 const embeddedOptions = {
-                    // Prettier only allows string references as parsers from v3 onwards,
-                    // so we need to have another public parser and defer to that
-                    // Use babel-ts/babel directly for Prettier 3.7.0+ compatibility
-                    // This fixes generic type parameters being stripped but may affect
-                    // parentheses formatting compared to previous versions
+                    // Use babel-ts/babel directly for Prettier 3.7.0+ compatibility.
+                    // This fixes generic type parameters being stripped. The custom parsers
+                    // (svelteTSExpressionParser/svelteExpressionParser) manipulate the AST
+                    // in a way that's incompatible with Prettier 3.7.0+.
+                    // Note: Using babel-ts directly may affect parentheses formatting compared
+                    // to previous versions, as Prettier removes "unnecessary" parentheses.
                     parser: options._svelte_ts ? 'babel-ts' : 'babel',
                     singleQuote: node.forceSingleQuote ? true : options.singleQuote,
-                    // Don't add semicolons
+                    // Don't add semicolons to expressions
                     semi: false,
                 };
 

@@ -203,10 +203,12 @@ export function removeParentheses(doc: Doc): Doc {
         // from simple literals and avoid touching expressions like function calls or grouping.
         // Note: This is intentionally conservative to avoid removing semantically important
         // parentheses. It means some unnecessary wrapping may remain, which is acceptable.
-        const hasNoInnerParens = str.indexOf('(', 1) === -1 && str.lastIndexOf(')', str.length - 2) === -1;
-        if (str.startsWith('(') && str.endsWith(')') && hasNoInnerParens) {
-            // Only one set of parentheses wrapping the whole thing
-            str = str.slice(1, -1);
+        if (str.startsWith('(') && str.endsWith(')')) {
+            const hasNoInnerParens = str.indexOf('(', 1) === -1 && str.indexOf(')', str.length - 2) === str.length - 1;
+            if (hasNoInnerParens) {
+                // Only one set of parentheses wrapping the whole thing
+                str = str.slice(1, -1);
+            }
         }
         return str;
     }
@@ -225,7 +227,8 @@ export function removeParentheses(doc: Doc): Doc {
         // If the result is a single string, handle it recursively
         // Only recurse if we actually made a change (removed semicolons) to avoid infinite recursion
         if (result.length === 1 && typeof result[0] === 'string') {
-            const wasChanged = result[0] !== doc[0];
+            const originalFirstElement = Array.isArray(doc) ? doc[0] : doc;
+            const wasChanged = result[0] !== originalFirstElement;
             if (wasChanged) {
                 return removeParentheses(result[0]);
             }
