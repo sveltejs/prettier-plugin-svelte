@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.4.1
+
+-   (fix) externalize all prettier imports
+
 ## 3.4.0
 
 -   (feat) Svelte 5: support attachments (`{@attach ...}`)

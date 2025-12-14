@@ -8,7 +8,7 @@ export default [
     {
         input: 'src/index.ts',
         plugins: [resolve(), commonjs(), typescript()],
-        external: ['prettier', 'svelte/compiler'],
+        external: [/^(prettier|svelte)($|\/)/],
         output: {
             file: 'plugin.js',
             format: 'cjs',
