@@ -134,7 +134,10 @@ export function embed(path: FastPath, _options: Options) {
             printJS(parent, 'expression', { removeParentheses: true });
             break;
         case 'Binding':
-            printJS(parent, 'expression', { removeParentheses: true, surroundWithSoftline: true });
+            printJS(parent, 'expression', {
+                removeParentheses: parent.expression.type === 'SequenceExpression',
+                surroundWithSoftline: true,
+            });
             break;
         case 'RenderTag':
             if (node === parent.expression) {

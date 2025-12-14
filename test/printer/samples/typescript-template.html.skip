@@ -7,6 +7,8 @@
 >
 
 <button onclick={(e: Event) => e.detail}>{bar as any}</button>
+<input bind:value={(config as Config).value} />
+<input bind:value={config[x].y} />
 
 {#await promise}
     <p>Waiting</p>

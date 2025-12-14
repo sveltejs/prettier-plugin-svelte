@@ -3,6 +3,7 @@
 ## 3.4.1
 
 -   (fix) externalize all prettier imports
+-   (fix) don't remove parantheses of `bind:`ings with `as` type casts
 
 ## 3.4.0
 

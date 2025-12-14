@@ -1,3 +1,5 @@
+import { Node as ESTreeNode } from 'estree';
+
 export interface BaseNode {
     start: number;
     end: number;
@@ -122,7 +124,7 @@ export interface EventHandlerNode extends BaseNode {
 export interface BindingNode extends BaseNode {
     type: 'Binding';
     name: string;
-    expression: Node;
+    expression: ESTreeNode;
 }
 
 export interface ClassNode extends BaseNode {
