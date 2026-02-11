@@ -53,9 +53,10 @@ export const parsers: Record<string, Parser> = {
                 // comments so Prettier doesn't try to process them itself.
                 // We then manually attach attribute comments in embed().
                 const root = _parse(text) as Record<string, any>;
+                (root as ASTNode).__isRoot = true;
+                // This only exists in Svelte 5
                 (root as ASTNode)._comments = root.comments;
                 delete root.comments;
-                (root as ASTNode).__isRoot = true;
 
                 return root;
             } catch (err: any) {
