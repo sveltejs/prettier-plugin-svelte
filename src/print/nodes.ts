@@ -1,4 +1,4 @@
-import { Node as ESTreeNode } from 'estree';
+import { Node as ESTreeNode, Comment } from 'estree';
 
 export interface BaseNode {
     start: number;
@@ -394,6 +394,8 @@ export interface ASTNode {
     js?: ScriptNode;
     instance?: ScriptNode;
     module?: ScriptNode;
+    /** JS-style comments (line and block) stashed from the Svelte parser's comments array */
+    _comments?: Comment[];
     /**
      * This is not actually part of the Svelte parser output,
      * but we add it afterwards to make sure we can distinguish

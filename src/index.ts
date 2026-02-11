@@ -46,7 +46,18 @@ export const parsers: Record<string, Parser> = {
                     }
                 }
 
-                return <ASTNode>{ ..._parse(text), __isRoot: true };
+                // Prettier does a sanity check on ast.comments after printing
+                // to verify all comments were printed. Since the comments array
+                // includes script/style comments already handled by embedded
+                // parsers, we stash the full array on _comments and remove
+                // comments so Prettier doesn't try to process them itself.
+                // We then manually attach attribute comments in embed().
+                const root = _parse(text);
+                (root as ASTNode)._comments = root.comments;
+                delete root.comments;
+                (root as ASTNode).__isRoot = true;
+
+                return root;
             } catch (err: any) {
                 if (err.start != null && err.end != null) {
                     // Prettier expects error objects to have loc.start and loc.end fields.
@@ -111,8 +122,18 @@ export const printers: Record<string, Printer> = {
     'svelte-ast': {
         print,
         embed,
-        // @ts-expect-error Prettier's type definitions are wrong
+        // @ts-expect-error Prettier's type definitions don't include getVisitorKeys
         getVisitorKeys,
+        isBlockComment(comment: any) {
+            return comment.type === 'Block';
+        },
+        printComment(commentPath: any) {
+            const comment = commentPath.getValue();
+            if (comment.type === 'Line') {
+                return '//' + comment.value.replace(/\r$/, '');
+            }
+            return '/*' + comment.value + '*/';
+        },
     },
 };
 

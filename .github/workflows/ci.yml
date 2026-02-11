@@ -4,7 +4,7 @@ on: pull_request
 
 jobs:
     test:
-        name: Test
+        name: Test (default)
         runs-on: ubuntu-latest
 
         steps:
@@ -17,6 +17,42 @@ jobs:
             - name: Install dependencies
               run: npm ci
             - name: Run tests
+              run: npm test
+
+    test-svelte-5:
+        name: Test (Svelte 5)
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+            - name: Setup Node
+              uses: actions/setup-node@v3
+              with:
+                  cache: npm
+            - name: Install dependencies
+              run: npm ci
+            - name: Override Svelte version to 5
+              run: npm install svelte@^5 --no-save
+            - name: Run tests with Svelte 5
+              run: npm test
+
+    test-prettier-latest:
+        name: Test (Prettier 3.x latest)
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+            - name: Setup Node
+              uses: actions/setup-node@v3
+              with:
+                  cache: npm
+            - name: Install dependencies
+              run: npm ci
+            - name: Override Prettier to latest 3.x
+              run: npm install prettier@^3 --no-save
+            - name: Run tests with latest Prettier 3.x
               run: npm test
 
     lint:

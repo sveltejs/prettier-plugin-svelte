@@ -7,7 +7,8 @@ import * as SveltePlugin from '../../src';
 const isSvelte5Plus = Number(VERSION.split('.')[0]) >= 5;
 
 let files = readdirSync('test/printer/samples').filter(
-    (name) => name.endsWith('.html') || name.endsWith('.md'),
+    (name) =>
+        name.endsWith('.html') || name.endsWith('.md') || (isSvelte5Plus && name.endsWith('.skip')),
 );
 const formattingDirsHaveOnly = readdirSync('test/formatting/samples').some((d) =>
     d.endsWith('.only'),

@@ -1,4 +1,4 @@
-import { Doc, doc, FastPath, Options } from 'prettier';
+import { Doc, doc, FastPath, Options, util } from 'prettier';
 import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { isBracketSameLine, ParserOptions } from './options';
@@ -8,6 +8,7 @@ import { isASTNode, printWithPrependedAttributeLine } from './print/helpers';
 import {
     assignCommentsToNodes,
     getAttributeTextValue,
+    getChildren,
     getLeadingComment,
     isIgnoreDirective,
     isInsideQuotedAttribute,
@@ -19,7 +20,15 @@ import {
     isTypeScript,
     printRaw,
 } from './print/node-helpers';
-import { BaseNode, CommentNode, ElementNode, Node, ScriptNode, StyleNode } from './print/nodes';
+import {
+    ASTNode,
+    BaseNode,
+    CommentNode,
+    ElementNode,
+    Node,
+    ScriptNode,
+    StyleNode,
+} from './print/nodes';
 import { extractAttributes } from './lib/extractAttributes';
 import { base64ToString } from './base64-string';
 
@@ -58,6 +67,7 @@ export function embed(path: FastPath, _options: Options) {
 
     if (isASTNode(node)) {
         assignCommentsToNodes(node);
+        attachAttributeComments(node);
         if (node.module) {
             node.module.type = 'Script';
             node.module.attributes = extractAttributes(getText(node.module, options));
@@ -432,4 +442,78 @@ function printJS(
     part.forceSingleLine = options.forceSingleLine;
     part.removeParentheses = options.removeParentheses;
     part.surroundWithSoftline = options.surroundWithSoftline;
+}
+
+/**
+ * Walk the AST and use `_comments` (stashed by the parser) to attach
+ * attribute-level comments to their neighbouring attribute nodes via
+ * Prettier's `util.addLeadingComment` / `util.addTrailingComment`.
+ */
+function attachAttributeComments(ast: ASTNode): void {
+    const comments: any[] | undefined = ast._comments;
+    if (!comments || comments.length === 0) return;
+
+    // Index comments by start position for fast lookup
+    const commentsByStart = new Map<number, any>();
+    for (const c of comments) {
+        commentsByStart.set(c.start, c);
+    }
+
+    walkAndAttach(ast.html, commentsByStart);
+}
+
+function walkAndAttach(node: Node, commentsByStart: Map<number, any>): void {
+    if (!node || typeof node !== 'object') return;
+
+    if ('attributes' in node && Array.isArray(node.attributes) && node.attributes.length > 0) {
+        const attrs = node.attributes;
+
+        // Check gap before first attribute (between tag name and first attr)
+        const tagNameEnd = node.start + 2;
+        attachCommentsInRange(tagNameEnd, attrs[0].start, null, attrs[0], commentsByStart);
+
+        // Check gaps between consecutive attributes
+        for (let i = 0; i < attrs.length - 1; i++) {
+            attachCommentsInRange(
+                attrs[i].end,
+                attrs[i + 1].start,
+                attrs[i],
+                attrs[i + 1],
+                commentsByStart,
+            );
+        }
+    }
+
+    // Recurse into children and block branches
+    for (const child of getChildren(node)) {
+        walkAndAttach(child, commentsByStart);
+    }
+
+    if ((node.type === 'IfBlock' || node.type === 'EachBlock') && node.else) {
+        walkAndAttach(node.else, commentsByStart);
+    }
+    if (node.type === 'AwaitBlock') {
+        if (node.pending) walkAndAttach(node.pending, commentsByStart);
+        if (node.then) walkAndAttach(node.then, commentsByStart);
+        if (node.catch) walkAndAttach(node.catch, commentsByStart);
+    }
+}
+
+function attachCommentsInRange(
+    rangeStart: number,
+    rangeEnd: number,
+    precedingAttr: any | null,
+    followingAttr: any | null,
+    commentsByStart: Map<number, any>,
+): void {
+    for (const [start, comment] of commentsByStart) {
+        if (start >= rangeStart && comment.end <= rangeEnd) {
+            if (followingAttr) {
+                util.addLeadingComment(followingAttr, comment);
+            } else if (precedingAttr) {
+                util.addTrailingComment(precedingAttr, comment);
+            }
+            commentsByStart.delete(start);
+        }
+    }
 }
