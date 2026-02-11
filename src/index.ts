@@ -52,7 +52,7 @@ export const parsers: Record<string, Parser> = {
                 // parsers, we stash the full array on _comments and remove
                 // comments so Prettier doesn't try to process them itself.
                 // We then manually attach attribute comments in embed().
-                const root = _parse(text);
+                const root = _parse(text) as Record<string, any>;
                 (root as ASTNode)._comments = root.comments;
                 delete root.comments;
                 (root as ASTNode).__isRoot = true;
