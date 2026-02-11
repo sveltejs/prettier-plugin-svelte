@@ -22,7 +22,7 @@ if (process.env.CI && hasOnly) {
 }
 
 for (const file of files) {
-    const ending = file.split('.').pop();
+    const ending = file.split('.').at(file.endsWith('.skip') ? -2 : -1);
     const input = readFileSync(`test/printer/samples/${file}`, 'utf-8').replace(/\r?\n/g, '\n');
     const options = readOptions(
         `test/printer/samples/${file.replace('.only', '').replace(`.${ending}`, '.options.json')}`,
