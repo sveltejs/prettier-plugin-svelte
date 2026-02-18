@@ -5,7 +5,7 @@ import { VERSION } from 'svelte/compiler';
 import * as SveltePlugin from '../../src';
 
 const isSvelte5Plus = Number(VERSION.split('.')[0]) >= 5;
-
+throw new Error('isSvelte5Plus: ' + isSvelte5Plus.toString() + VERSION);
 let files = readdirSync('test/printer/samples').filter(
     (name) =>
         name.endsWith('.html') || name.endsWith('.md') || (isSvelte5Plus && name.endsWith('.skip')),
