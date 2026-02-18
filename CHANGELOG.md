@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.5.0
+
+-   (feat) Svelte 5: print attribute comments
+
 ## 3.4.1
 
 -   (fix) externalize all prettier imports
