@@ -12,8 +12,6 @@
     /* world */
     another-attribute="value"
 >
-
-
     this works
     <span
         // span comment
