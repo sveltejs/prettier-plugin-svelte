@@ -46,17 +46,18 @@ export const parsers: Record<string, Parser> = {
                     }
                 }
 
+                const root = _parse(text) as Record<string, any>;
+                (root as ASTNode).__isRoot = true;
+
+                // TODO this will need to be done once we switch to the modern parser output:
                 // Prettier does a sanity check on ast.comments after printing
                 // to verify all comments were printed. Since the comments array
                 // includes script/style comments already handled by embedded
                 // parsers, we stash the full array on _comments and remove
                 // comments so Prettier doesn't try to process them itself.
                 // We then manually attach attribute comments in embed().
-                const root = _parse(text) as Record<string, any>;
-                (root as ASTNode).__isRoot = true;
-                // This only exists in Svelte 5
-                (root as ASTNode)._comments = root.comments;
-                delete root.comments;
+                // (root as ASTNode)._comments = root.comments;
+                // delete root.comments;
 
                 return root;
             } catch (err: any) {
