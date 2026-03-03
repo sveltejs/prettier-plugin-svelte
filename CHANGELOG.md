@@ -1,5 +1,41 @@
 # prettier-plugin-svelte changelog
 
+## 3.5.0
+
+-   (feat) Svelte 5: print attribute comments
+
+## 3.4.1
+
+-   (fix) externalize all prettier imports
+-   (fix) don't remove parantheses of `bind:`ings with `as` type casts
+
+## 3.4.0
+
+-   (feat) Svelte 5: support attachments (`{@attach ...}`)
+
+## 3.3.3
+
+-   (fix) Svelte 5: ensure bind get/set is broken up correctly when too long
+
+## 3.3.2
+
+-   (fix) Svelte 5: handle type annotations on Svelte control flow blocks
+-   (fix) preserve `style`/`script` tags at the end of the file when using `svelteSortOrder: "none"`
+
+## 3.3.1
+
+-   (feat) Svelte 5: support upcoming `bind:value={get, set}`
+
+## 3.3.0
+
+-   (feat) Svelte 5: support upcoming `<svelte:boundary>`
+-   (feat) Svelte 5: support upcoming `<svelte:html>`
+-   (feat) Svelte 5: support upcoming `#each` without `as`
+
+## 3.2.8
+
+-   (chore) provide IDE tooling a way to pass Svelte compiler path
+
 ## 3.2.7
 
 -   (fix) force quote style inside style directives

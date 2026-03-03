@@ -5,6 +5,7 @@ export interface PluginConfig {
     svelteBracketNewLine?: boolean;
     svelteAllowShorthand?: boolean;
     svelteIndentScriptAndStyle?: boolean;
+    svelte5CompilerPath?: string;
 }
 
 export type PrettierConfig = PluginConfig & Config;

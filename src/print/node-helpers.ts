@@ -23,6 +23,7 @@ import {
     StyleDirectiveNode,
     ASTNode,
     CommentInfo,
+    SvelteBoundary,
 } from './nodes';
 import { blockElements, TagName } from '../lib/elements';
 import { AstPath } from 'prettier';
@@ -31,7 +32,11 @@ import { ParserOptions, isBracketSameLine } from '../options';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
 
-export function isInlineElement(path: AstPath, options: ParserOptions, node: Node) {
+export function isInlineElement(
+    path: AstPath,
+    options: ParserOptions,
+    node: Node,
+): node is ElementNode {
     return (
         node && node.type === 'Element' && !isBlockElement(node, options) && !isPreTagContent(path)
     );
@@ -180,6 +185,7 @@ export function printRaw(
         | WindowNode
         | HeadNode
         | TitleNode
+        | SvelteBoundary
         | SlotTemplateNode,
     originalText: string,
     stripLeadingAndTrailingNewline: boolean = false,
@@ -401,6 +407,10 @@ export function shouldHugStart(
         return true;
     }
 
+    if (node.type === 'SvelteBoundary') {
+        return false;
+    }
+
     if (isBlockElement(node, options)) {
         return false;
     }
@@ -433,6 +443,10 @@ export function shouldHugEnd(
 ): boolean {
     if (!isSupportedLanguage) {
         return true;
+    }
+
+    if (node.type === 'SvelteBoundary') {
+        return false;
     }
 
     if (isBlockElement(node, options)) {

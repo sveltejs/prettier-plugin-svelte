@@ -1,9 +1,0 @@
-<script lang="ts"></script>
-
-<button
-    onclick={(e: Event) => {
-        e as any;
-    }}>foo</button
->
-
-<button onclick={(e: Event) => e.detail}>{bar as any}</button>

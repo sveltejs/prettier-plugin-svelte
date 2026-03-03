@@ -1,3 +1,5 @@
+import { Node as ESTreeNode, Comment } from 'estree';
+
 export interface BaseNode {
     start: number;
     end: number;
@@ -11,6 +13,8 @@ export interface BaseNode {
     forceSingleLine?: boolean;
     /** Whether or not to remove outer `()` when printing as JS */
     removeParentheses?: boolean;
+    /** Whether or not to surround the result with a group and softline so that an exceeding print with keeps the output on the same line, if possible */
+    surroundWithSoftline?: boolean;
 }
 
 export interface FragmentNode extends BaseNode {
@@ -120,7 +124,7 @@ export interface EventHandlerNode extends BaseNode {
 export interface BindingNode extends BaseNode {
     type: 'Binding';
     name: string;
-    expression: Node;
+    expression: ESTreeNode;
 }
 
 export interface ClassNode extends BaseNode {
@@ -268,6 +272,19 @@ export interface BodyNode extends BaseNode {
     attributes: Node[];
 }
 
+export interface SvelteHTML extends BaseNode {
+    type: 'SvelteHTML';
+    name: string;
+    attributes: Node[];
+}
+
+export interface SvelteBoundary extends BaseNode {
+    type: 'SvelteBoundary';
+    name: string;
+    attributes: Node[];
+    children: Node[];
+}
+
 export interface DocumentNode extends BaseNode {
     type: 'Document';
     name: string;
@@ -310,6 +327,11 @@ export interface RenderTag extends BaseNode {
     expression: IdentifierNode;
     argument?: BaseNode | null;
     arguments: BaseNode[] | null;
+}
+
+export interface AttachTag extends BaseNode {
+    type: 'AttachTag';
+    expression: IdentifierNode;
 }
 
 export type Node =
@@ -357,7 +379,10 @@ export type Node =
     | OptionsNode
     | SlotTemplateNode
     | ConstTagNode
+    | SvelteBoundary
+    | SvelteHTML
     | RenderTag
+    | AttachTag
     | SnippetBlock;
 
 /**
@@ -369,6 +394,8 @@ export interface ASTNode {
     js?: ScriptNode;
     instance?: ScriptNode;
     module?: ScriptNode;
+    /** JS-style comments (line and block) stashed from the Svelte parser's comments array */
+    _comments?: Comment[];
     /**
      * This is not actually part of the Svelte parser output,
      * but we add it afterwards to make sure we can distinguish

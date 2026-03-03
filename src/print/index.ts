@@ -201,6 +201,8 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         case 'SlotTemplate':
         case 'Window':
         case 'Head':
+        // Svelte 5 only
+        case 'SvelteBoundary':
         case 'Title': {
             const isSupportedLanguage = !(
                 node.name === 'template' && !isNodeSupportedLanguage(node)
@@ -216,6 +218,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     node.type === 'InlineComponent' ||
                     node.type === 'Slot' ||
                     node.type === 'SlotTemplate' ||
+                    node.type === 'SvelteBoundary' ||
                     node.type === 'Title') &&
                     didSelfClose) ||
                     node.type === 'Window' ||
@@ -399,21 +402,8 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         // else fall through to Body
         case 'Body':
         case 'Document':
-            return group([
-                '<',
-                node.name,
-                indent(
-                    group([
-                        ...path.map(
-                            printWithPrependedAttributeLine(node, options, print),
-                            'attributes',
-                        ),
-                        bracketSameLine ? '' : dedent(line),
-                    ]),
-                ),
-                ...[bracketSameLine ? ' ' : '', '/>'],
-            ]);
-        case 'Document':
+        // Svelte 5 only
+        case 'SvelteHTML':
             return group([
                 '<',
                 node.name,
@@ -506,12 +496,11 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             return ['{:else}', printSvelteBlockChildren(path, print, options)];
         }
         case 'EachBlock': {
-            const def: Doc[] = [
-                '{#each ',
-                printJS(path, print, 'expression'),
-                ' as',
-                expandNode(node.context, options.originalText),
-            ];
+            const def: Doc[] = ['{#each ', printJS(path, print, 'expression')];
+
+            if (node.context) {
+                def.push(' as', expandNode(node.context, options.originalText));
+            }
 
             if (node.index) {
                 def.push(', ', node.index);
@@ -715,10 +704,12 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             return ['animate:', node.name, node.expression ? ['=', ...printJsExpression()] : ''];
         case 'RawMustacheTag':
             return ['{@html ', printJS(path, print, 'expression'), '}'];
-        case 'RenderTag': {
-            const render = ['{@render ', printJS(path, print, 'expression'), '}'];
-            return render;
-        }
+        // Svelte 5 only
+        case 'RenderTag':
+            return ['{@render ', printJS(path, print, 'expression'), '}'];
+        // Svelte 5 only
+        case 'AttachTag':
+            return ['{@attach ', printJS(path, print, 'expression'), '}'];
         case 'Spread':
             return ['{...', printJS(path, print, 'expression'), '}'];
         case 'ConstTag':
@@ -737,15 +728,19 @@ function printTopLevelParts(
 ): Doc {
     if (options.svelteSortOrder === 'none') {
         const topLevelPartsByEnd: Record<number, any> = {};
+        const topLevelPartsByStart: Record<number, any> = {};
 
         if (n.module) {
             topLevelPartsByEnd[n.module.end] = n.module;
+            topLevelPartsByStart[n.module.start] = n.module;
         }
         if (n.instance) {
             topLevelPartsByEnd[n.instance.end] = n.instance;
+            topLevelPartsByStart[n.instance.start] = n.instance;
         }
         if (n.css) {
             topLevelPartsByEnd[n.css.end] = n.css;
+            topLevelPartsByStart[n.css.start] = n.css;
         }
 
         const children = getChildren(n.html);
@@ -754,6 +749,8 @@ function printTopLevelParts(
             if (topLevelPartsByEnd[node.start]) {
                 children.splice(i, 0, topLevelPartsByEnd[node.start]);
                 delete topLevelPartsByEnd[node.start];
+            } else if (i === children.length - 1 && topLevelPartsByStart[node.end]) {
+                children.push(topLevelPartsByStart[node.end]);
             }
         }
 
@@ -1181,7 +1178,12 @@ function printJS(path: AstPath, print: PrintFn, name: string) {
 function expandNode(node: any, original: string): string {
     let str = _expandNode(node);
     if (node?.typeAnnotation) {
-        str += ': ' + original.slice(node.typeAnnotation.start, node.typeAnnotation.end);
+        str +=
+            ': ' +
+            original.slice(
+                node.typeAnnotation.typeAnnotation.start,
+                node.typeAnnotation.typeAnnotation.end,
+            );
     }
     return str;
 }

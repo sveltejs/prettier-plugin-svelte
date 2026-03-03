@@ -16,6 +16,8 @@ import {
     SlotNode,
     SlotTemplateNode,
     StyleNode,
+    SvelteBoundary,
+    SvelteHTML,
     TitleNode,
     WindowNode,
 } from './nodes';
@@ -81,6 +83,8 @@ export function getAttributeLine(
         | BodyNode
         | DocumentNode
         | OptionsNode
+        | SvelteHTML
+        | SvelteBoundary
         | SlotTemplateNode,
     options: ParserOptions,
 ) {
@@ -111,6 +115,8 @@ export function printWithPrependedAttributeLine(
         | BodyNode
         | DocumentNode
         | OptionsNode
+        | SvelteHTML
+        | SvelteBoundary
         | SlotTemplateNode,
     options: ParserOptions,
     print: PrintFn,
