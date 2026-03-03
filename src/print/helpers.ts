@@ -5,21 +5,11 @@ import { snippedTagContentAttribute } from '../lib/snipTagContent';
 import {
     ASTNode,
     AttributeNode,
-    BodyNode,
-    DocumentNode,
     ElementNode,
-    HeadNode,
-    InlineComponentNode,
     Node,
     OptionsNode,
     ScriptNode,
-    SlotNode,
-    SlotTemplateNode,
     StyleNode,
-    SvelteBoundary,
-    SvelteHTML,
-    TitleNode,
-    WindowNode,
 } from './nodes';
 import { ParserOptions } from '../options';
 
@@ -36,8 +26,7 @@ export function isPreTagContent(path: AstPath): boolean {
 
     return stack.some(
         (node) =>
-            ((node.type === 'Element' || node.type === 'RegularElement') &&
-                node.name.toLowerCase() === 'pre') ||
+            (node.type === 'RegularElement' && node.name.toLowerCase() === 'pre') ||
             (node.type === 'Attribute' && !formattableAttributes.includes(node.name)),
     );
 }
@@ -72,28 +61,14 @@ export function replaceEndOfLineWith(text: string, replacement: Doc) {
 }
 
 export function getAttributeLine(
-    node:
-        | ElementNode
-        | InlineComponentNode
-        | SlotNode
-        | WindowNode
-        | HeadNode
-        | TitleNode
-        | StyleNode
-        | ScriptNode
-        | BodyNode
-        | DocumentNode
-        | OptionsNode
-        | SvelteHTML
-        | SvelteBoundary
-        | SlotTemplateNode,
+    node: ElementNode | StyleNode | ScriptNode | OptionsNode,
     options: ParserOptions,
 ) {
     const { hardline, line } = doc.builders;
     const hasThisBinding =
-        ((node.type === 'InlineComponent' || node.type === 'SvelteComponent') &&
+        ((node.type === 'Component' || node.type === 'SvelteComponent') &&
             !!(node as any).expression) ||
-        ((node.type === 'Element' || node.type === 'SvelteElement') && !!(node as any).tag);
+        (node.type === 'SvelteElement' && !!(node as any).tag);
 
     const attributes = ((node as any).attributes as Array<AttributeNode>).filter(
         (attribute) => attribute.name !== snippedTagContentAttribute,
@@ -105,21 +80,7 @@ export function getAttributeLine(
 }
 
 export function printWithPrependedAttributeLine(
-    node:
-        | ElementNode
-        | InlineComponentNode
-        | SlotNode
-        | WindowNode
-        | HeadNode
-        | TitleNode
-        | StyleNode
-        | ScriptNode
-        | BodyNode
-        | DocumentNode
-        | OptionsNode
-        | SvelteHTML
-        | SvelteBoundary
-        | SlotTemplateNode,
+    node: ElementNode | StyleNode | ScriptNode | OptionsNode,
     options: ParserOptions,
     print: PrintFn,
 ): PrintFn {

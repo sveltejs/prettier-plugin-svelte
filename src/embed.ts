@@ -103,21 +103,18 @@ export function embed(path: AstPath, _options: Options) {
                 node.asFunction = true;
             }
             break;
-        case 'Element':
+        case 'RegularElement':
         case 'SvelteElement':
             printJS(parent, 'tag', {});
             break;
-        case 'MustacheTag':
         case 'ExpressionTag':
             printJS(parent, 'expression', {
                 forceSingleQuote: isInsideQuotedAttribute(path, options),
             });
             break;
-        case 'RawMustacheTag':
         case 'HtmlTag':
             printJS(parent, 'expression', {});
             break;
-        case 'Spread':
         case 'SpreadAttribute':
             printJS(parent, 'expression', {});
             break;
@@ -129,7 +126,6 @@ export function embed(path: AstPath, _options: Options) {
                 parent.declaration?.declarations?.[0] ?? parent.declaration;
             printJS(parent, 'expression', { removeParentheses: true });
             break;
-        case 'Binding':
         case 'BindDirective':
             printJS(parent, 'expression', {
                 removeParentheses: parent.expression.type === 'SequenceExpression',
@@ -153,21 +149,13 @@ export function embed(path: AstPath, _options: Options) {
                 printJS(parent, 'expression', {});
             }
             break;
-        case 'EventHandler':
         case 'OnDirective':
-        case 'Binding':
         case 'BindDirective':
-        case 'Class':
         case 'ClassDirective':
-        case 'Let':
         case 'LetDirective':
-        case 'Transition':
         case 'TransitionDirective':
-        case 'Action':
         case 'UseDirective':
-        case 'Animation':
         case 'AnimateDirective':
-        case 'InlineComponent':
         case 'SvelteComponent':
             printJsExpression();
             break;
@@ -257,10 +245,8 @@ export function embed(path: AstPath, _options: Options) {
     switch (node.type) {
         case 'Script':
             return embedScript(true);
-        case 'Style':
         case 'StyleSheet':
             return embedStyle(true);
-        case 'Element':
         case 'RegularElement': {
             if (node.name === 'script') {
                 return embedScript(false);

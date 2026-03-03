@@ -3,23 +3,7 @@ import {
     ElementNode,
     TextNode,
     AttributeNode,
-    MustacheTagNode,
-    AttributeShorthandNode,
-    HeadNode,
-    InlineComponentNode,
-    SlotNode,
-    TitleNode,
-    WindowNode,
-    IfBlockNode,
-    AwaitBlockNode,
-    CatchBlockNode,
-    EachBlockNode,
-    ElseBlockNode,
-    KeyBlockNode,
-    PendingBlockNode,
-    ThenBlockNode,
     CommentNode,
-    SlotTemplateNode,
     StyleDirectiveNode,
     ASTNode,
     CommentInfo,
@@ -39,7 +23,7 @@ export function isInlineElement(
 ): node is ElementNode {
     return (
         node &&
-        (node.type === 'Element' || node.type === 'RegularElement') &&
+        node.type === 'RegularElement' &&
         !isBlockElement(node, options) &&
         !isPreTagContent(path)
     );
@@ -48,24 +32,14 @@ export function isInlineElement(
 export function isBlockElement(node: Node, options: ParserOptions): node is ElementNode {
     return (
         node &&
-        (node.type === 'Element' || node.type === 'RegularElement') &&
+        node.type === 'RegularElement' &&
         options.htmlWhitespaceSensitivity !== 'strict' &&
         (options.htmlWhitespaceSensitivity === 'ignore' ||
             blockElements.includes(node.name as TagName))
     );
 }
 
-export function isSvelteBlock(
-    node: Node,
-): node is
-    | IfBlockNode
-    | AwaitBlockNode
-    | CatchBlockNode
-    | EachBlockNode
-    | ElseBlockNode
-    | KeyBlockNode
-    | PendingBlockNode
-    | ThenBlockNode {
+export function isSvelteBlock(node: Node): boolean {
     return ['IfBlock', 'SnippetBlock', 'AwaitBlock', 'EachBlock', 'KeyBlock'].includes(node.type);
 }
 
@@ -212,15 +186,7 @@ export function isIgnoreEndDirective(node: Node | undefined | null): boolean {
 }
 
 export function printRaw(
-    node:
-        | ElementNode
-        | InlineComponentNode
-        | SlotNode
-        | WindowNode
-        | HeadNode
-        | TitleNode
-        | SvelteBoundary
-        | SlotTemplateNode,
+    node: ElementNode | SvelteBoundary,
     originalText: string,
     stripLeadingAndTrailingNewline: boolean = false,
 ): string {
@@ -328,7 +294,7 @@ export function isScss(node: Node) {
 
 export function isPugTemplate(node: Node): boolean {
     return (
-        (node.type === 'Element' || node.type === 'RegularElement') &&
+        node.type === 'RegularElement' &&
         node.name === 'template' &&
         getLangAttribute(node) === 'pug'
     );
@@ -340,13 +306,10 @@ export function isLoneMustacheTag(node: true | Node[] | Node): boolean {
     }
 
     if (Array.isArray(node)) {
-        return (
-            node.length === 1 &&
-            (node[0].type === 'ExpressionTag' || node[0].type === 'MustacheTag')
-        );
+        return node.length === 1 && node[0].type === 'ExpressionTag';
     }
 
-    return node.type === 'ExpressionTag' || node.type === 'MustacheTag';
+    return node.type === 'ExpressionTag';
 }
 
 export function isAttributeShorthand(node: true | Node[] | Node): boolean {

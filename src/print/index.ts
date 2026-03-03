@@ -166,8 +166,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     // so that other things don't break in unexpected places
                     if (
                         parent.name === 'class' &&
-                        (path.getParentNode(1).type === 'Element' ||
-                            path.getParentNode(1).type === 'RegularElement')
+                        path.getParentNode(1).type === 'RegularElement'
                     ) {
                         // Special treatment for class attribute on html elements. Prettier
                         // will force everything into one line, we deviate from that and preserve lines.
@@ -199,26 +198,19 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 }
                 return rawText;
             }
-        case 'Element':
         case 'RegularElement':
-        case 'InlineComponent':
         case 'Component':
         case 'SvelteComponent':
         case 'SvelteSelf':
-        case 'Slot':
         case 'SlotElement':
-        case 'SlotTemplate':
         case 'SvelteFragment':
-        case 'Window':
         case 'SvelteWindow':
-        case 'Head':
         case 'SvelteHead':
         case 'SvelteBody':
         case 'SvelteDocument':
         case 'SvelteElement':
         // Svelte 5 only
         case 'SvelteBoundary':
-        case 'Title':
         case 'TitleElement': {
             const isSupportedLanguage = !(
                 node.name === 'template' && !isNodeSupportedLanguage(node)
@@ -230,26 +222,19 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
 
             const isSelfClosingTag =
                 isEmpty &&
-                (((node.type === 'Element' ||
-                    node.type === 'RegularElement' ||
-                    node.type === 'Head' ||
+                (((node.type === 'RegularElement' ||
                     node.type === 'SvelteHead' ||
-                    node.type === 'InlineComponent' ||
                     node.type === 'Component' ||
                     node.type === 'SvelteComponent' ||
                     node.type === 'SvelteSelf' ||
-                    node.type === 'Slot' ||
                     node.type === 'SlotElement' ||
-                    node.type === 'SlotTemplate' ||
                     node.type === 'SvelteFragment' ||
                     node.type === 'SvelteBoundary' ||
-                    node.type === 'Title' ||
                     node.type === 'TitleElement' ||
                     node.type === 'SvelteBody' ||
                     node.type === 'SvelteDocument' ||
                     node.type === 'SvelteElement') &&
                     didSelfClose) ||
-                    node.type === 'Window' ||
                     node.type === 'SvelteWindow' ||
                     selfClosingTags.indexOf(node.name) !== -1 ||
                     isDoctypeTag);
@@ -445,15 +430,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             if (options.svelteSortOrder !== 'none') {
                 throw new Error('Options tags should have been handled by prepareChildren');
             }
-        // else fall through to Body
-        case 'Body':
-        case 'Document':
-        case 'SvelteBody':
-        case 'SvelteDocument':
-        // Svelte 5 only
-        case 'SvelteHTML':
-        case 'SvelteWindow':
-        case 'SvelteHead':
             return group([
                 '<',
                 node.name,
@@ -486,9 +462,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             ]);
         case 'VariableDeclarator':
             return [printJS(path, print, 'id'), ' = ', printJS(path, print, 'init')];
-        case 'AttributeShorthand': {
-            return (node.expression as any).name;
-        }
         case 'Attribute': {
             if (isOrCanBeConvertedToShorthand(node)) {
                 if (options.svelteAllowShorthand) {
@@ -510,7 +483,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 }
             }
         }
-        case 'MustacheTag':
         case 'ExpressionTag':
             return ['{', printJS(path, print, 'expression'), '}'];
         case 'IfBlock': {
@@ -528,39 +500,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             def.push('{/if}');
 
             return group([def, breakParent]);
-        }
-        case 'ElseBlock': {
-            // Else if
-            const parent = path.getParentNode() as Node;
-
-            if (
-                node.children.length === 1 &&
-                node.children[0].type === 'IfBlock' &&
-                parent.type !== 'EachBlock'
-            ) {
-                const ifNode = node.children[0] as IfBlockNode;
-                const def: Doc[] = [
-                    '{:else if ',
-                    path.map((ifPath) => printJS(ifPath, print, 'expression'), 'children')[0],
-                    '}',
-                    path.map(
-                        (ifPath) => printSvelteBlockChildren(ifPath, print, options),
-                        'children',
-                    )[0],
-                ];
-
-                if (ifNode.else) {
-                    def.push(
-                        path.map(
-                            (ifPath: AstPath<any>) => ifPath.call(print, 'else'),
-                            'children',
-                        )[0],
-                    );
-                }
-                return def;
-            }
-
-            return ['{:else}', printSvelteBlockChildren(path, print, options)];
         }
         case 'EachBlock': {
             const def: Doc[] = ['{#each ', printJS(path, print, 'expression')];
@@ -662,7 +601,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             snippet.push('}', printSvelteBlockChildren(path, print, options), '{/snippet}');
             return snippet;
         }
-        case 'EventHandler':
         case 'OnDirective':
             return [
                 'on:',
@@ -670,7 +608,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 node.modifiers && node.modifiers.length ? ['|', join('|', node.modifiers)] : '',
                 node.expression ? ['=', ...printJsExpression()] : '',
             ];
-        case 'Binding':
         case 'BindDirective':
             return [
                 'bind:',
@@ -681,7 +618,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     ? ''
                     : ['=', ...printJsExpression()],
             ];
-        case 'Class':
         case 'ClassDirective':
             return [
                 'class:',
@@ -714,7 +650,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     return [...prefix, '=', attrNodeValue];
                 }
             }
-        case 'Let':
         case 'LetDirective':
             return [
                 'let:',
@@ -733,8 +668,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     : '',
                 '}',
             ];
-        case 'Ref':
-            return ['ref:', node.name];
         case 'Comment': {
             const nodeAfterComment = getNextNode(path);
 
@@ -759,7 +692,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
 
             return printComment(node);
         }
-        case 'Transition':
         case 'TransitionDirective':
             const kind = node.intro && node.outro ? 'transition' : node.intro ? 'in' : 'out';
             return [
@@ -769,13 +701,10 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 node.modifiers && node.modifiers.length ? ['|', join('|', node.modifiers)] : '',
                 node.expression ? ['=', ...printJsExpression()] : '',
             ];
-        case 'Action':
         case 'UseDirective':
             return ['use:', node.name, node.expression ? ['=', ...printJsExpression()] : ''];
-        case 'Animation':
         case 'AnimateDirective':
             return ['animate:', node.name, node.expression ? ['=', ...printJsExpression()] : ''];
-        case 'RawMustacheTag':
         case 'HtmlTag':
             return ['{@html ', printJS(path, print, 'expression'), '}'];
         // Svelte 5 only
@@ -784,7 +713,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         // Svelte 5 only
         case 'AttachTag':
             return ['{@attach ', printJS(path, print, 'expression'), '}'];
-        case 'Spread':
         case 'SpreadAttribute':
             return ['{...', printJS(path, print, 'expression'), '}'];
         case 'ConstTag':
