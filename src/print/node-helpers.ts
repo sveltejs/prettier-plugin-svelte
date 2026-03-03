@@ -49,48 +49,48 @@ export function isNodeWithChildren(node: Node): node is Node & { children: Node[
     return !!getChildren(node).length || hasChildrenContainer(node);
 }
 
-export function getChildren(node: Node): Node[] {
-    const typed_node = node as any;
+export function getChildren(_node: Node): Node[] {
+    const node = _node as any;
 
-    if (!typed_node || typeof typed_node !== 'object') {
+    if (!node || typeof node !== 'object') {
         return [];
     }
 
-    if (Array.isArray(typed_node.children)) {
-        return typed_node.children;
+    if (Array.isArray(node.children)) {
+        return node.children;
     }
 
-    if (Array.isArray(typed_node.nodes)) {
-        return typed_node.nodes;
+    if (Array.isArray(node.nodes)) {
+        return node.nodes;
     }
 
-    if (typed_node.fragment?.nodes) {
-        return typed_node.fragment.nodes;
+    if (node.fragment?.nodes) {
+        return node.fragment.nodes;
     }
 
-    if (typed_node.body?.nodes) {
-        return typed_node.body.nodes;
+    if (node.body?.nodes) {
+        return node.body.nodes;
     }
 
-    if (typed_node.consequent?.nodes) {
-        return typed_node.consequent.nodes;
+    if (node.consequent?.nodes) {
+        return node.consequent.nodes;
     }
 
-    if (typed_node.type === 'IfBlock' && typed_node.alternate?.type === 'Fragment') {
-        return typed_node.alternate.nodes;
+    if (node.type === 'IfBlock' && node.alternate?.type === 'Fragment') {
+        return node.alternate.nodes;
     }
 
     return [];
 }
 
-function hasChildrenContainer(node: Node) {
-    const typed_node = node as any;
+function hasChildrenContainer(_node: Node) {
+    const node = _node as any;
     return !!(
-        Array.isArray(typed_node?.children) ||
-        Array.isArray(typed_node?.nodes) ||
-        typed_node?.fragment?.nodes ||
-        typed_node?.body?.nodes ||
-        typed_node?.consequent?.nodes
+        Array.isArray(node?.children) ||
+        Array.isArray(node?.nodes) ||
+        node?.fragment?.nodes ||
+        node?.body?.nodes ||
+        node?.consequent?.nodes
     );
 }
 

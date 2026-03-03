@@ -30,6 +30,7 @@ import {
     StyleNode,
 } from './print/nodes';
 import { base64ToString } from './base64-string';
+import { AST } from 'svelte/compiler';
 
 const {
     builders: { group, hardline, softline, indent, dedent, literalline },
@@ -122,8 +123,7 @@ export function embed(path: AstPath, _options: Options) {
             printJS(parent, 'expression', {});
             break;
         case 'ConstTag':
-            (parent as any).expression =
-                parent.declaration?.declarations?.[0] ?? parent.declaration;
+            (parent as any).expression = (parent as AST.ConstTag).declaration.declarations[0];
             printJS(parent, 'expression', { removeParentheses: true });
             break;
         case 'BindDirective':
