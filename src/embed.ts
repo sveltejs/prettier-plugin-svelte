@@ -67,7 +67,7 @@ export function embed(path: FastPath, _options: Options) {
 
     if (isASTNode(node)) {
         assignCommentsToNodes(node);
-        attachAttributeComments(node);
+        attachAttributeComments(node, options.originalText);
         if (node.module) {
             node.module.type = 'Script';
             node.module.attributes = extractAttributes(getText(node.module, options));
@@ -449,7 +449,7 @@ function printJS(
  * attribute-level comments to their neighbouring attribute nodes via
  * Prettier's `util.addLeadingComment` / `util.addTrailingComment`.
  */
-function attachAttributeComments(ast: ASTNode): void {
+function attachAttributeComments(ast: ASTNode, original_text: string): void {
     const comments: any[] | undefined = ast._comments;
     if (!comments || comments.length === 0) return;
 
@@ -459,10 +459,10 @@ function attachAttributeComments(ast: ASTNode): void {
         commentsByStart.set(c.start, c);
     }
 
-    walkAndAttach(ast.html, commentsByStart);
+    walkAndAttach(ast.html, commentsByStart, original_text);
 }
 
-function walkAndAttach(node: Node, commentsByStart: Map<number, any>): void {
+function walkAndAttach(node: Node, commentsByStart: Map<number, any>, original_text: string): void {
     if (!node || typeof node !== 'object') return;
 
     if ('attributes' in node && Array.isArray(node.attributes) && node.attributes.length > 0) {
@@ -482,20 +482,30 @@ function walkAndAttach(node: Node, commentsByStart: Map<number, any>): void {
                 commentsByStart,
             );
         }
+
+        const last_attr = attrs[attrs.length - 1];
+        const opening_tag_end =
+            original_text && typeof node.end === 'number'
+                ? original_text.indexOf('>', last_attr.end)
+                : -1;
+
+        if (opening_tag_end >= 0 && opening_tag_end <= node.end) {
+            attachCommentsInRange(last_attr.end, opening_tag_end, last_attr, null, commentsByStart);
+        }
     }
 
     // Recurse into children and block branches
     for (const child of getChildren(node)) {
-        walkAndAttach(child, commentsByStart);
+        walkAndAttach(child, commentsByStart, original_text);
     }
 
     if ((node.type === 'IfBlock' || node.type === 'EachBlock') && node.else) {
-        walkAndAttach(node.else, commentsByStart);
+        walkAndAttach(node.else, commentsByStart, original_text);
     }
     if (node.type === 'AwaitBlock') {
-        if (node.pending) walkAndAttach(node.pending, commentsByStart);
-        if (node.then) walkAndAttach(node.then, commentsByStart);
-        if (node.catch) walkAndAttach(node.catch, commentsByStart);
+        if (node.pending) walkAndAttach(node.pending, commentsByStart, original_text);
+        if (node.then) walkAndAttach(node.then, commentsByStart, original_text);
+        if (node.catch) walkAndAttach(node.catch, commentsByStart, original_text);
     }
 }
 
