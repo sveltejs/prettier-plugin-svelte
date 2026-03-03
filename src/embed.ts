@@ -29,8 +29,8 @@ import {
     ScriptNode,
     StyleNode,
 } from './print/nodes';
-import { extractAttributes } from './lib/extractAttributes';
 import { base64ToString } from './base64-string';
+import { AST } from 'svelte/compiler';
 
 const {
     builders: { group, hardline, softline, indent, dedent, literalline },
@@ -59,7 +59,7 @@ export function getVisitorKeys(node: any, nonTraversableKeys: Set<string>): stri
 // - if embed returns a function, it will be called after the traversal in a second pass, in the same order (deepest first)
 // For performance reasons we try to only return functions when we're sure we need to transform something.
 export function embed(path: AstPath, _options: Options) {
-    const node: Node = path.getNode();
+    const node = path.getNode() as any;
     const options = _options as ParserOptions;
     if (!options.locStart || !options.locEnd || !options.originalText) {
         throw new Error('Missing required options');
@@ -68,34 +68,21 @@ export function embed(path: AstPath, _options: Options) {
     if (isASTNode(node)) {
         assignCommentsToNodes(node);
         attachAttributeComments(node);
-        if (node.module) {
-            node.module.type = 'Script';
-            node.module.attributes = extractAttributes(getText(node.module, options));
-        }
-        if (node.instance) {
-            node.instance.type = 'Script';
-            node.instance.attributes = extractAttributes(getText(node.instance, options));
-        }
-        if (node.css) {
-            node.css.type = 'Style';
-            node.css.content.type = 'StyleProgram';
-        }
         return null;
     }
 
     // embed does depth first traversal with deepest node called first, therefore we need to
     // check the parent to see if we are inside an expression that should be embedded.
-    const parent: Node = path.getParentNode();
+    const parent = path.getParentNode() as any;
     const printJsExpression = () =>
         (parent as any).expression ? printJS(parent, 'expression', {}) : undefined;
     const printSvelteBlockJS = (name: string) => printJS(parent, name, { forceSingleLine: true });
 
     switch (parent.type) {
         case 'IfBlock':
-        case 'ElseBlock':
         case 'AwaitBlock':
         case 'KeyBlock':
-            printSvelteBlockJS('expression');
+            printSvelteBlockJS(parent.type === 'IfBlock' ? 'test' : 'expression');
             break;
         case 'EachBlock':
             printSvelteBlockJS('expression');
@@ -117,27 +104,29 @@ export function embed(path: AstPath, _options: Options) {
                 node.asFunction = true;
             }
             break;
-        case 'Element':
+        case 'RegularElement':
+        case 'SvelteElement':
             printJS(parent, 'tag', {});
             break;
-        case 'MustacheTag':
+        case 'ExpressionTag':
             printJS(parent, 'expression', {
                 forceSingleQuote: isInsideQuotedAttribute(path, options),
             });
             break;
-        case 'RawMustacheTag':
+        case 'HtmlTag':
             printJS(parent, 'expression', {});
             break;
-        case 'Spread':
+        case 'SpreadAttribute':
             printJS(parent, 'expression', {});
             break;
         case 'AttachTag':
             printJS(parent, 'expression', {});
             break;
         case 'ConstTag':
+            (parent as any).expression = (parent as AST.ConstTag).declaration.declarations[0];
             printJS(parent, 'expression', { removeParentheses: true });
             break;
-        case 'Binding':
+        case 'BindDirective':
             printJS(parent, 'expression', {
                 removeParentheses: parent.expression.type === 'SequenceExpression',
                 surroundWithSoftline: true,
@@ -160,14 +149,14 @@ export function embed(path: AstPath, _options: Options) {
                 printJS(parent, 'expression', {});
             }
             break;
-        case 'EventHandler':
-        case 'Binding':
-        case 'Class':
-        case 'Let':
-        case 'Transition':
-        case 'Action':
-        case 'Animation':
-        case 'InlineComponent':
+        case 'OnDirective':
+        case 'BindDirective':
+        case 'ClassDirective':
+        case 'LetDirective':
+        case 'TransitionDirective':
+        case 'UseDirective':
+        case 'AnimateDirective':
+        case 'SvelteComponent':
             printJsExpression();
             break;
     }
@@ -256,9 +245,9 @@ export function embed(path: AstPath, _options: Options) {
     switch (node.type) {
         case 'Script':
             return embedScript(true);
-        case 'Style':
+        case 'StyleSheet':
             return embedStyle(true);
-        case 'Element': {
+        case 'RegularElement': {
             if (node.name === 'script') {
                 return embedScript(false);
             } else if (node.name === 'style') {
@@ -359,12 +348,12 @@ async function embedTag(
     isTopLevel: boolean,
     options: ParserOptions,
 ) {
-    const node: ScriptNode | StyleNode | ElementNode = path.getNode();
+    const node = path.getNode() as ScriptNode | StyleNode | ElementNode;
     const content =
         tag === 'template' ? printRaw(node as ElementNode, text) : getSnippedContent(node);
     const previousComments =
-        node.type === 'Script' || node.type === 'Style'
-            ? node.comments
+        node.type === 'Script' || node.type === 'StyleSheet'
+            ? node.comments ?? []
             : [getLeadingComment(path)]
                   .filter(Boolean)
                   .map((comment) => ({ comment: comment as CommentNode, emptyLineAfter: false }));
@@ -453,10 +442,10 @@ function attachAttributeComments(ast: ASTNode): void {
         commentsByStart.set(c.start, c);
     }
 
-    walkAndAttach(ast.html, commentsByStart);
+    walkAndAttach(ast.fragment as any, commentsByStart);
 }
 
-function walkAndAttach(node: Node, commentsByStart: Map<number, any>): void {
+function walkAndAttach(node: Node | AST.Fragment, commentsByStart: Map<number, any>): void {
     if (!node || typeof node !== 'object') return;
 
     if ('attributes' in node && Array.isArray(node.attributes) && node.attributes.length > 0) {
@@ -479,17 +468,32 @@ function walkAndAttach(node: Node, commentsByStart: Map<number, any>): void {
     }
 
     // Recurse into children and block branches
-    for (const child of getChildren(node)) {
-        walkAndAttach(child, commentsByStart);
-    }
-
-    if ((node.type === 'IfBlock' || node.type === 'EachBlock') && node.else) {
-        walkAndAttach(node.else, commentsByStart);
-    }
-    if (node.type === 'AwaitBlock') {
-        if (node.pending) walkAndAttach(node.pending, commentsByStart);
-        if (node.then) walkAndAttach(node.then, commentsByStart);
-        if (node.catch) walkAndAttach(node.catch, commentsByStart);
+    // Some of these have multiple fragment nodes so we need to recurse them separately
+    if (node.type === 'IfBlock') {
+        if (node.consequent) {
+            walkAndAttach(node.consequent!, commentsByStart);
+        }
+        if (node.alternate) {
+            walkAndAttach(node.alternate!, commentsByStart);
+        }
+    } else if (node.type === 'EachBlock') {
+        if (node.body) {
+            walkAndAttach(node.body!, commentsByStart);
+        }
+        if (node.fallback) {
+            walkAndAttach(node.fallback!, commentsByStart);
+        }
+    } else if (node.type === 'AwaitBlock') {
+        if ((node as AST.AwaitBlock).pending)
+            walkAndAttach((node as AST.AwaitBlock).pending!, commentsByStart);
+        if ((node as AST.AwaitBlock).then)
+            walkAndAttach((node as AST.AwaitBlock).then!, commentsByStart);
+        if ((node as AST.AwaitBlock).catch)
+            walkAndAttach((node as AST.AwaitBlock).catch!, commentsByStart);
+    } else {
+        for (const child of getChildren(node)) {
+            walkAndAttach(child, commentsByStart);
+        }
     }
 }
 

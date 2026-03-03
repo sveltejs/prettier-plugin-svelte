@@ -4,7 +4,7 @@ import { hasPragma, print } from './print';
 import { ASTNode } from './print/nodes';
 import { embed, getVisitorKeys } from './embed';
 import { snipScriptAndStyleTagContent } from './lib/snipTagContent';
-import { parse, VERSION } from 'svelte/compiler';
+import { parse } from 'svelte/compiler';
 import { ParserOptions } from './options';
 
 const babelParser = prettierPluginBabel.parsers.babel;
@@ -45,18 +45,17 @@ export const parsers: Record<string, Parser> = {
                     }
                 }
 
-                const root = _parse(text) as Record<string, any>;
+                const root = _parse(text, { modern: true }) as Record<string, any>;
                 (root as ASTNode).__isRoot = true;
 
-                // TODO this will need to be done once we switch to the modern parser output:
                 // Prettier does a sanity check on ast.comments after printing
                 // to verify all comments were printed. Since the comments array
                 // includes script/style comments already handled by embedded
                 // parsers, we stash the full array on _comments and remove
                 // comments so Prettier doesn't try to process them itself.
                 // We then manually attach attribute comments in embed().
-                // (root as ASTNode)._comments = root.comments;
-                // delete root.comments;
+                (root as ASTNode)._comments = root.comments;
+                delete root.comments;
 
                 return root;
             } catch (err: any) {
