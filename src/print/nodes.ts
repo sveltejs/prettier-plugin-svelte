@@ -1,4 +1,5 @@
 import { Node as ESTreeNode, Comment } from 'estree';
+import type { AST } from '../../template';
 
 export interface BaseNode {
     start: number;
@@ -389,9 +390,10 @@ export type Node =
  * The Svelte AST root node
  */
 export interface ASTNode {
-    html: Node;
+    type: 'Root';
+    fragment: AST.Fragment;
+    options: AST.SvelteOptions | null;
     css?: StyleNode;
-    js?: ScriptNode;
     instance?: ScriptNode;
     module?: ScriptNode;
     /** JS-style comments (line and block) stashed from the Svelte parser's comments array */

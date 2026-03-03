@@ -29,7 +29,6 @@ import {
     ScriptNode,
     StyleNode,
 } from './print/nodes';
-import { extractAttributes } from './lib/extractAttributes';
 import { base64ToString } from './base64-string';
 
 const {
@@ -68,18 +67,6 @@ export function embed(path: AstPath, _options: Options) {
     if (isASTNode(node)) {
         assignCommentsToNodes(node);
         attachAttributeComments(node);
-        if (node.module) {
-            node.module.type = 'Script';
-            node.module.attributes = extractAttributes(getText(node.module, options));
-        }
-        if (node.instance) {
-            node.instance.type = 'Script';
-            node.instance.attributes = extractAttributes(getText(node.instance, options));
-        }
-        if (node.css) {
-            node.css.type = 'Style';
-            node.css.content.type = 'StyleProgram';
-        }
         return null;
     }
 
@@ -92,10 +79,9 @@ export function embed(path: AstPath, _options: Options) {
 
     switch (parent.type) {
         case 'IfBlock':
-        case 'ElseBlock':
         case 'AwaitBlock':
         case 'KeyBlock':
-            printSvelteBlockJS('expression');
+            printSvelteBlockJS(parent.type === 'IfBlock' ? 'test' : 'expression');
             break;
         case 'EachBlock':
             printSvelteBlockJS('expression');
@@ -118,26 +104,33 @@ export function embed(path: AstPath, _options: Options) {
             }
             break;
         case 'Element':
+        case 'SvelteElement':
             printJS(parent, 'tag', {});
             break;
         case 'MustacheTag':
+        case 'ExpressionTag':
             printJS(parent, 'expression', {
                 forceSingleQuote: isInsideQuotedAttribute(path, options),
             });
             break;
         case 'RawMustacheTag':
+        case 'HtmlTag':
             printJS(parent, 'expression', {});
             break;
         case 'Spread':
+        case 'SpreadAttribute':
             printJS(parent, 'expression', {});
             break;
         case 'AttachTag':
             printJS(parent, 'expression', {});
             break;
         case 'ConstTag':
+            (parent as any).expression =
+                parent.declaration?.declarations?.[0] ?? parent.declaration;
             printJS(parent, 'expression', { removeParentheses: true });
             break;
         case 'Binding':
+        case 'BindDirective':
             printJS(parent, 'expression', {
                 removeParentheses: parent.expression.type === 'SequenceExpression',
                 surroundWithSoftline: true,
@@ -161,13 +154,21 @@ export function embed(path: AstPath, _options: Options) {
             }
             break;
         case 'EventHandler':
+        case 'OnDirective':
         case 'Binding':
+        case 'BindDirective':
         case 'Class':
+        case 'ClassDirective':
         case 'Let':
+        case 'LetDirective':
         case 'Transition':
+        case 'TransitionDirective':
         case 'Action':
+        case 'UseDirective':
         case 'Animation':
+        case 'AnimateDirective':
         case 'InlineComponent':
+        case 'SvelteComponent':
             printJsExpression();
             break;
     }
@@ -257,8 +258,10 @@ export function embed(path: AstPath, _options: Options) {
         case 'Script':
             return embedScript(true);
         case 'Style':
+        case 'StyleSheet':
             return embedStyle(true);
-        case 'Element': {
+        case 'Element':
+        case 'RegularElement': {
             if (node.name === 'script') {
                 return embedScript(false);
             } else if (node.name === 'style') {
@@ -363,7 +366,7 @@ async function embedTag(
     const content =
         tag === 'template' ? printRaw(node as ElementNode, text) : getSnippedContent(node);
     const previousComments =
-        node.type === 'Script' || node.type === 'Style'
+        node.type === 'Script' || node.type === 'Style' || node.type === 'StyleSheet'
             ? node.comments
             : [getLeadingComment(path)]
                   .filter(Boolean)
@@ -453,7 +456,7 @@ function attachAttributeComments(ast: ASTNode): void {
         commentsByStart.set(c.start, c);
     }
 
-    walkAndAttach(ast.html, commentsByStart);
+    walkAndAttach(ast.fragment as any, commentsByStart);
 }
 
 function walkAndAttach(node: Node, commentsByStart: Map<number, any>): void {
@@ -483,13 +486,16 @@ function walkAndAttach(node: Node, commentsByStart: Map<number, any>): void {
         walkAndAttach(child, commentsByStart);
     }
 
-    if ((node.type === 'IfBlock' || node.type === 'EachBlock') && node.else) {
-        walkAndAttach(node.else, commentsByStart);
+    if (node.type === 'IfBlock' && (node as any).alternate) {
+        walkAndAttach((node as any).alternate, commentsByStart);
+    }
+    if (node.type === 'EachBlock' && (node as any).fallback) {
+        walkAndAttach((node as any).fallback, commentsByStart);
     }
     if (node.type === 'AwaitBlock') {
-        if (node.pending) walkAndAttach(node.pending, commentsByStart);
-        if (node.then) walkAndAttach(node.then, commentsByStart);
-        if (node.catch) walkAndAttach(node.catch, commentsByStart);
+        if ((node as any).pending) walkAndAttach((node as any).pending, commentsByStart);
+        if ((node as any).then) walkAndAttach((node as any).then, commentsByStart);
+        if ((node as any).catch) walkAndAttach((node as any).catch, commentsByStart);
     }
 }
 

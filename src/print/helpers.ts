@@ -36,7 +36,8 @@ export function isPreTagContent(path: AstPath): boolean {
 
     return stack.some(
         (node) =>
-            (node.type === 'Element' && node.name.toLowerCase() === 'pre') ||
+            ((node.type === 'Element' || node.type === 'RegularElement') &&
+                node.name.toLowerCase() === 'pre') ||
             (node.type === 'Attribute' && !formattableAttributes.includes(node.name)),
     );
 }
@@ -90,10 +91,11 @@ export function getAttributeLine(
 ) {
     const { hardline, line } = doc.builders;
     const hasThisBinding =
-        (node.type === 'InlineComponent' && !!node.expression) ||
-        (node.type === 'Element' && !!node.tag);
+        ((node.type === 'InlineComponent' || node.type === 'SvelteComponent') &&
+            !!(node as any).expression) ||
+        ((node.type === 'Element' || node.type === 'SvelteElement') && !!(node as any).tag);
 
-    const attributes = (node.attributes as Array<AttributeNode>).filter(
+    const attributes = ((node as any).attributes as Array<AttributeNode>).filter(
         (attribute) => attribute.name !== snippedTagContentAttribute,
     );
     return options.singleAttributePerLine &&
@@ -122,7 +124,7 @@ export function printWithPrependedAttributeLine(
     print: PrintFn,
 ): PrintFn {
     return (path) =>
-        path.getNode().name !== snippedTagContentAttribute
+        (path.getNode() as any).name !== snippedTagContentAttribute
             ? [getAttributeLine(node, options), path.call(print)]
             : '';
 }

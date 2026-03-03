@@ -38,14 +38,17 @@ export function isInlineElement(
     node: Node,
 ): node is ElementNode {
     return (
-        node && node.type === 'Element' && !isBlockElement(node, options) && !isPreTagContent(path)
+        node &&
+        (node.type === 'Element' || node.type === 'RegularElement') &&
+        !isBlockElement(node, options) &&
+        !isPreTagContent(path)
     );
 }
 
 export function isBlockElement(node: Node, options: ParserOptions): node is ElementNode {
     return (
         node &&
-        node.type === 'Element' &&
+        (node.type === 'Element' || node.type === 'RegularElement') &&
         options.htmlWhitespaceSensitivity !== 'strict' &&
         (options.htmlWhitespaceSensitivity === 'ignore' ||
             blockElements.includes(node.name as TagName))
@@ -63,25 +66,56 @@ export function isSvelteBlock(
     | KeyBlockNode
     | PendingBlockNode
     | ThenBlockNode {
-    return [
-        'IfBlock',
-        'SnippetBlock',
-        'AwaitBlock',
-        'CatchBlock',
-        'EachBlock',
-        'ElseBlock',
-        'KeyBlock',
-        'PendingBlock',
-        'ThenBlock',
-    ].includes(node.type);
+    return ['IfBlock', 'SnippetBlock', 'AwaitBlock', 'EachBlock', 'KeyBlock'].includes(node.type);
 }
 
 export function isNodeWithChildren(node: Node): node is Node & { children: Node[] } {
-    return (node as any).children;
+    return !!getChildren(node).length || hasChildrenContainer(node);
 }
 
 export function getChildren(node: Node): Node[] {
-    return isNodeWithChildren(node) ? node.children : [];
+    const typed_node = node as any;
+
+    if (!typed_node || typeof typed_node !== 'object') {
+        return [];
+    }
+
+    if (Array.isArray(typed_node.children)) {
+        return typed_node.children;
+    }
+
+    if (Array.isArray(typed_node.nodes)) {
+        return typed_node.nodes;
+    }
+
+    if (typed_node.fragment?.nodes) {
+        return typed_node.fragment.nodes;
+    }
+
+    if (typed_node.body?.nodes) {
+        return typed_node.body.nodes;
+    }
+
+    if (typed_node.consequent?.nodes) {
+        return typed_node.consequent.nodes;
+    }
+
+    if (typed_node.type === 'IfBlock' && typed_node.alternate?.type === 'Fragment') {
+        return typed_node.alternate.nodes;
+    }
+
+    return [];
+}
+
+function hasChildrenContainer(node: Node) {
+    const typed_node = node as any;
+    return !!(
+        Array.isArray(typed_node?.children) ||
+        Array.isArray(typed_node?.nodes) ||
+        typed_node?.fragment?.nodes ||
+        typed_node?.body?.nodes ||
+        typed_node?.consequent?.nodes
+    );
 }
 
 /**
@@ -91,7 +125,7 @@ export function getSiblings(path: AstPath): Node[] {
     let parent: Node = path.getParentNode();
 
     if (isASTNode(parent)) {
-        parent = parent.html;
+        parent = parent.fragment as any;
     }
 
     return getChildren(parent);
@@ -150,7 +184,7 @@ export function doesEmbedStartAfterNode(node: Node, path: AstPath, siblings = ge
     const position = node.end;
     const root = path.stack[0];
 
-    const embeds = [root.css, root.html, root.instance, root.js, root.module] as Node[];
+    const embeds = [root.css, root.instance, root.module] as Node[];
 
     const nextNode = siblings[siblings.indexOf(node) + 1];
     return embeds.find((n) => n && n.start >= position && (!nextNode || n.end <= nextNode.start));
@@ -158,7 +192,7 @@ export function doesEmbedStartAfterNode(node: Node, path: AstPath, siblings = ge
 
 export function isNodeTopLevelHTML(node: Node, path: AstPath): boolean {
     const root = path.stack[0];
-    return !!root.html && !!root.html.children && root.html.children.includes(node);
+    return !!root.fragment && !!root.fragment.nodes && root.fragment.nodes.includes(node);
 }
 
 export function isEmptyTextNode(node: Node | undefined): node is TextNode {
@@ -190,12 +224,13 @@ export function printRaw(
     originalText: string,
     stripLeadingAndTrailingNewline: boolean = false,
 ): string {
-    if (node.children.length === 0) {
+    const children = getChildren(node as any);
+    if (children.length === 0) {
         return '';
     }
 
-    const firstChild = node.children[0];
-    const lastChild = node.children[node.children.length - 1];
+    const firstChild = children[0];
+    const lastChild = children[children.length - 1];
 
     let raw = originalText.substring(firstChild.start, lastChild.end);
 
@@ -292,15 +327,38 @@ export function isScss(node: Node) {
 }
 
 export function isPugTemplate(node: Node): boolean {
-    return node.type === 'Element' && node.name === 'template' && getLangAttribute(node) === 'pug';
+    return (
+        (node.type === 'Element' || node.type === 'RegularElement') &&
+        node.name === 'template' &&
+        getLangAttribute(node) === 'pug'
+    );
 }
 
-export function isLoneMustacheTag(node: true | Node[]): node is [MustacheTagNode] {
-    return node !== true && node.length === 1 && node[0].type === 'MustacheTag';
+export function isLoneMustacheTag(node: true | Node[] | Node): boolean {
+    if (node === true || node == null) {
+        return false;
+    }
+
+    if (Array.isArray(node)) {
+        return (
+            node.length === 1 &&
+            (node[0].type === 'ExpressionTag' || node[0].type === 'MustacheTag')
+        );
+    }
+
+    return node.type === 'ExpressionTag' || node.type === 'MustacheTag';
 }
 
-export function isAttributeShorthand(node: true | Node[]): node is [AttributeShorthandNode] {
-    return node !== true && node.length === 1 && node[0].type === 'AttributeShorthand';
+export function isAttributeShorthand(node: true | Node[] | Node): boolean {
+    if (node === true || node == null) {
+        return false;
+    }
+
+    if (Array.isArray(node)) {
+        return node.length === 1 && node[0].type === 'AttributeShorthand';
+    }
+
+    return node.type === 'AttributeShorthand';
 }
 
 /**
@@ -312,7 +370,9 @@ export function isOrCanBeConvertedToShorthand(node: AttributeNode | StyleDirecti
     }
 
     if (isLoneMustacheTag(node.value)) {
-        const expression = node.value[0].expression;
+        const expression = Array.isArray(node.value)
+            ? node.value[0].expression
+            : (node.value as any).expression;
         return expression.type === 'Identifier' && expression.name === node.name;
     }
 
@@ -419,7 +479,7 @@ export function shouldHugStart(
         return false;
     }
 
-    const children: Node[] = node.children;
+    const children: Node[] = getChildren(node);
     if (children.length === 0) {
         return true;
     }
@@ -457,7 +517,7 @@ export function shouldHugEnd(
         return false;
     }
 
-    const children: Node[] = node.children;
+    const children: Node[] = getChildren(node);
     if (children.length === 0) {
         return true;
     }
@@ -477,11 +537,11 @@ export function checkWhitespaceAtStartOfSvelteBlock(
     node: Node,
     options: ParserOptions,
 ): 'none' | 'space' | 'line' {
-    if (!isSvelteBlock(node) || !isNodeWithChildren(node)) {
+    if (!isNodeWithChildren(node)) {
         return 'none';
     }
 
-    const children: Node[] = node.children;
+    const children: Node[] = getChildren(node);
     if (children.length === 0) {
         return 'none';
     }
@@ -514,11 +574,11 @@ export function checkWhitespaceAtEndOfSvelteBlock(
     node: Node,
     options: ParserOptions,
 ): 'none' | 'space' | 'line' {
-    if (!isSvelteBlock(node) || !isNodeWithChildren(node)) {
+    if (!isNodeWithChildren(node)) {
         return 'none';
     }
 
-    const children: Node[] = node.children;
+    const children: Node[] = getChildren(node);
     if (children.length === 0) {
         return 'none';
     }
@@ -607,7 +667,7 @@ export function assignCommentsToNodes(ast: ASTNode) {
  * Returns the comments that are above the current node and deletes them from the html ast.
  */
 function removeAndGetLeadingComments(ast: ASTNode, current: Node): CommentInfo[] {
-    const siblings = getChildren(ast.html);
+    const siblings = getChildren(ast.fragment as any);
     const comments: CommentNode[] = [];
     const newlines: TextNode[] = [];
 
