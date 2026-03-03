@@ -49,49 +49,63 @@ export function isNodeWithChildren(node: Node): node is Node & { children: Node[
     return !!getChildren(node).length || hasChildrenContainer(node);
 }
 
-export function getChildren(_node: Node): Node[] {
+type ChildrenContainerPath =
+    | ['children']
+    | ['nodes']
+    | ['fragment', 'nodes']
+    | ['body', 'nodes']
+    | ['consequent', 'nodes']
+    | ['alternate', 'nodes'];
+
+export function getChildrenContainerPath(_node: Node): ChildrenContainerPath | undefined {
     const node = _node as any;
 
     if (!node || typeof node !== 'object') {
-        return [];
+        return;
     }
 
     if (Array.isArray(node.children)) {
-        return node.children;
+        return ['children'];
     }
 
     if (Array.isArray(node.nodes)) {
-        return node.nodes;
+        return ['nodes'];
     }
 
-    if (node.fragment?.nodes) {
-        return node.fragment.nodes;
+    if (Array.isArray(node.fragment?.nodes)) {
+        return ['fragment', 'nodes'];
     }
 
-    if (node.body?.nodes) {
-        return node.body.nodes;
+    if (Array.isArray(node.body?.nodes)) {
+        return ['body', 'nodes'];
     }
 
-    if (node.consequent?.nodes) {
-        return node.consequent.nodes;
+    if (Array.isArray(node.consequent?.nodes)) {
+        return ['consequent', 'nodes'];
     }
 
-    if (node.type === 'IfBlock' && node.alternate?.type === 'Fragment') {
-        return node.alternate.nodes;
+    if (node.type === 'IfBlock' && Array.isArray(node.alternate?.nodes)) {
+        return ['alternate', 'nodes'];
+    }
+}
+
+export function getChildren(_node: Node): Node[] {
+    const node = _node as any;
+    const children_path = getChildrenContainerPath(_node);
+
+    if (!children_path) {
+        return [];
     }
 
-    return [];
+    if (children_path.length === 1) {
+        return node[children_path[0]];
+    }
+
+    return node[children_path[0]][children_path[1]];
 }
 
 function hasChildrenContainer(_node: Node) {
-    const node = _node as any;
-    return !!(
-        Array.isArray(node?.children) ||
-        Array.isArray(node?.nodes) ||
-        node?.fragment?.nodes ||
-        node?.body?.nodes ||
-        node?.consequent?.nodes
-    );
+    return !!getChildrenContainerPath(_node);
 }
 
 /**
@@ -593,12 +607,16 @@ function hugsStartOfNextNode(node: Node, options: ParserOptions): boolean {
 }
 
 function isLastChildWithinParentBlockElement(path: AstPath, options: ParserOptions): boolean {
-    const parent = path.getParentNode() as Node | undefined;
+    let parent = path.getParentNode() as Node | undefined;
+    if (parent?.type === 'Fragment') {
+        parent = path.getParentNode(1) as Node | undefined;
+    }
+
     if (!parent || !isBlockElement(parent, options)) {
         return false;
     }
 
-    const children = getChildren(parent);
+    const children = getChildren(parent).filter((child) => !isEmptyTextNode(child));
     const lastChild = children[children.length - 1];
     return lastChild === path.getNode();
 }

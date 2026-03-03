@@ -313,13 +313,25 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                         ? () => line
                         : () => (bracketSameLine ? softline : '');
             } else if (isPreTagContent(path)) {
-                body = () => printPre(node, options.originalText, path, print);
+                body = () =>
+                    path.call(
+                        (fragment_path) => printPre(options.originalText, fragment_path, print),
+                        'fragment',
+                    );
             } else if (!isSupportedLanguage) {
                 body = () => printRaw(node, options.originalText, true);
             } else if (isInlineElement(path, options, node) && !isPreTagContent(path)) {
-                body = () => printChildren(path, print, options);
+                body = () =>
+                    path.call(
+                        (fragment_path) => printChildren(fragment_path, print, options),
+                        'fragment',
+                    );
             } else {
-                body = () => printChildren(path, print, options);
+                body = () =>
+                    path.call(
+                        (fragment_path) => printChildren(fragment_path, print, options),
+                        'fragment',
+                    );
             }
 
             const openingTag = [
@@ -491,7 +503,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 '{#if ',
                 printJS(path, print, 'test'),
                 '}',
-                printSvelteBlockChildren(path, print, options),
+                printBlockFragment(path, print, options, 'consequent'),
             ];
 
             if (node.alternate) {
@@ -517,7 +529,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 def.push(' (', printJS(path, print, 'key'), ')');
             }
 
-            def.push('}', printSvelteBlockChildren(path, print, options));
+            def.push('}', printBlockFragment(path, print, options, 'body'));
 
             if (node.fallback) {
                 def.push(printEachBlockFallback(path, print, options));
@@ -546,7 +558,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                         expandNode(node.value, options.originalText),
                         '}',
                     ]),
-                    printAwaitFragment(path, print, options, 'then'),
+                    printBlockFragment(path, print, options, 'then'),
                 );
             } else if (!hasPendingBlock && hasCatchBlock) {
                 block.push(
@@ -557,19 +569,19 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                         expandNode(node.error, options.originalText),
                         '}',
                     ]),
-                    printAwaitFragment(path, print, options, 'catch'),
+                    printBlockFragment(path, print, options, 'catch'),
                 );
             } else {
                 block.push(group(['{#await ', printJS(path, print, 'expression'), '}']));
 
                 if (hasPendingBlock) {
-                    block.push(printAwaitFragment(path, print, options, 'pending'));
+                    block.push(printBlockFragment(path, print, options, 'pending'));
                 }
 
                 if (hasThenBlock) {
                     block.push(
                         group(['{:then', expandNode(node.value, options.originalText), '}']),
-                        printAwaitFragment(path, print, options, 'then'),
+                        printBlockFragment(path, print, options, 'then'),
                     );
                 }
             }
@@ -577,7 +589,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             if ((hasPendingBlock || hasThenBlock) && hasCatchBlock) {
                 block.push(
                     group(['{:catch', expandNode(node.error, options.originalText), '}']),
-                    printAwaitFragment(path, print, options, 'catch'),
+                    printBlockFragment(path, print, options, 'catch'),
                 );
             }
 
@@ -590,7 +602,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 '{#key ',
                 printJS(path, print, 'expression'),
                 '}',
-                printSvelteBlockChildren(path, print, options),
+                printBlockFragment(path, print, options, 'fragment'),
             ];
 
             def.push('{/key}');
@@ -599,7 +611,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         }
         case 'SnippetBlock': {
             const snippet = ['{#snippet ', printJS(path, print, 'expression')];
-            snippet.push('}', printSvelteBlockChildren(path, print, options), '{/snippet}');
+            snippet.push('}', printBlockFragment(path, print, options, 'body'), '{/snippet}');
             return snippet;
         }
         case 'OnDirective':
@@ -851,14 +863,14 @@ function printAttributeNodeValue(
 }
 
 function printSvelteBlockChildren(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
-    const node = path.getValue();
-    const children = getChildren(node);
-    if (!children || children.length === 0) {
+    const fragment = path.getValue() as { nodes?: Node[] };
+    const children = fragment?.nodes ?? [];
+    if (children.length === 0) {
         return '';
     }
 
-    const whitespaceAtStartOfBlock = checkWhitespaceAtStartOfSvelteBlock(node, options);
-    const whitespaceAtEndOfBlock = checkWhitespaceAtEndOfSvelteBlock(node, options);
+    const whitespaceAtStartOfBlock = checkWhitespaceAtStartOfSvelteBlock(fragment as any, options);
+    const whitespaceAtEndOfBlock = checkWhitespaceAtEndOfSvelteBlock(fragment as any, options);
     const startline =
         whitespaceAtStartOfBlock === 'none'
             ? ''
@@ -884,6 +896,18 @@ function printSvelteBlockChildren(path: AstPath, print: PrintFn, options: Parser
     return [indent([startline, group(printChildren(path, print, options))]), endline];
 }
 
+function printBlockFragment(
+    path: AstPath,
+    print: PrintFn,
+    options: ParserOptions,
+    to: string,
+): Doc {
+    return path.call(
+        (fragment_path) => printSvelteBlockChildren(fragment_path, print, options),
+        to,
+    );
+}
+
 function printIfBlockAlternate(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
     const node = path.getValue() as any;
     const alternate = node.alternate;
@@ -899,7 +923,7 @@ function printIfBlockAlternate(path: AstPath, print: PrintFn, options: ParserOpt
                 path.call((if_path) => printJS(if_path, print, 'test'), 'alternate', 'nodes', 0),
                 '}',
                 path.call(
-                    (if_path) => printSvelteBlockChildren(if_path, print, options),
+                    (if_path) => printBlockFragment(if_path, print, options, 'consequent'),
                     'alternate',
                     'nodes',
                     0,
@@ -920,19 +944,10 @@ function printIfBlockAlternate(path: AstPath, print: PrintFn, options: ParserOpt
             return def;
         }
 
-        return [
-            '{:else}',
-            path.call(
-                (alt_path) => printSvelteBlockChildren(alt_path, print, options),
-                'alternate',
-            ),
-        ];
+        return ['{:else}', printBlockFragment(path, print, options, 'alternate')];
     }
 
-    return [
-        '{:else}',
-        path.call((alt_path) => printSvelteBlockChildren(alt_path, print, options), 'alternate'),
-    ];
+    return ['{:else}', printBlockFragment(path, print, options, 'alternate')];
 }
 
 function printEachBlockFallback(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
@@ -941,36 +956,17 @@ function printEachBlockFallback(path: AstPath, print: PrintFn, options: ParserOp
     if (!fallback) {
         return '';
     }
-    return [
-        '{:else}',
-        path.call(
-            (fallback_path) => printSvelteBlockChildren(fallback_path, print, options),
-            'fallback',
-        ),
-    ];
+    return ['{:else}', printBlockFragment(path, print, options, 'fallback')];
 }
 
-function printAwaitFragment(
-    path: AstPath,
-    print: PrintFn,
-    options: ParserOptions,
-    name: 'pending' | 'then' | 'catch',
-): Doc {
-    return path.call(
-        (fragment_path) => printSvelteBlockChildren(fragment_path, print, options),
-        name,
-    );
-}
-
-function printPre(
-    node: Parameters<typeof printRaw>[0],
-    originalText: string,
-    path: AstPath,
-    print: PrintFn,
-): Doc {
+function printPre(originalText: string, path: AstPath, print: PrintFn): Doc {
     const result: Doc = [];
-    const children = getChildren(node as any);
-    (path.getValue() as any).children = children;
+    const fragment = path.getValue() as { nodes?: Node[] };
+    const children = fragment?.nodes ?? [];
+    if (children.length === 0) {
+        return '';
+    }
+
     const length = children.length;
     for (let i = 0; i < length; i++) {
         const child = children[i];
@@ -981,34 +977,30 @@ function printPre(
                 result.push(line);
             });
         } else {
-            result.push(path.call(print, 'children', i));
+            result.push(path.call(print, 'nodes', i));
         }
     }
     return result;
 }
 
 function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
+    const current_value = path.getValue() as { nodes?: Node[] };
+
     if (isPreTagContent(path)) {
-        const current_value = path.getValue() as any;
-        current_value.children = getChildren(current_value);
-        return path.map(print, 'children');
+        return path.map(print, 'nodes');
     }
 
-    const current_value = path.getValue() as any;
-    current_value.children = getChildren(current_value);
-    const original_children = current_value.children ?? [];
-    const childNodes: Node[] = prepareChildren(original_children, path, print, options);
-    // modify original array because it's accessed later through map(print, 'children', idx)
-    current_value.children = childNodes;
-    if (childNodes.length === 0) {
+    const original_children = current_value.nodes ?? [];
+    const prepared_children = prepareChildren(original_children, path, print, options);
+    if (prepared_children.length === 0) {
         return '';
     }
 
     const childDocs: Doc[] = [];
     let handleWhitespaceOfPrevTextNode = false;
 
-    for (let i = 0; i < childNodes.length; i++) {
-        const childNode = childNodes[i];
+    for (let i = 0; i < prepared_children.length; i++) {
+        const childNode = prepared_children[i].node;
         if (childNode.type === 'Text') {
             handleTextChild(i, childNode);
         } else if (isBlockElement(childNode, options)) {
@@ -1023,7 +1015,8 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
 
     // If there's at least one block element and more than one node, break content
     const forceBreakContent =
-        childNodes.length > 1 && childNodes.some((child) => isBlockElement(child, options));
+        prepared_children.length > 1 &&
+        prepared_children.some((child) => isBlockElement(child.node, options));
     if (forceBreakContent) {
         childDocs.push(breakParent);
     }
@@ -1031,7 +1024,7 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
     return childDocs;
 
     function printChild(idx: number): Doc {
-        return path.call(print, 'children', idx);
+        return path.call(print, 'nodes', prepared_children[idx].index);
     }
 
     /**
@@ -1053,7 +1046,7 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
      * kind of whitespace handling is done in the parent already.
      */
     function handleBlockChild(idx: number) {
-        const prevChild = childNodes[idx - 1];
+        const prevChild = prepared_children[idx - 1]?.node;
         if (
             prevChild &&
             !isBlockElement(prevChild, options) &&
@@ -1066,7 +1059,7 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
 
         childDocs.push(printChild(idx));
 
-        const nextChild = childNodes[idx + 1];
+        const nextChild = prepared_children[idx + 1]?.node;
         if (
             nextChild &&
             (nextChild.type !== 'Text' ||
@@ -1074,7 +1067,8 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
                 // or is empty but followed by an inline element. The latter is done
                 // so that if the children break, the inline element afterwards is in a separate line.
                 ((!isEmptyTextNode(nextChild) ||
-                    (childNodes[idx + 2] && isInlineElement(path, options, childNodes[idx + 2]))) &&
+                    (prepared_children[idx + 2] &&
+                        isInlineElement(path, options, prepared_children[idx + 2].node))) &&
                     !isTextNodeStartingWithLinebreak(nextChild)))
         ) {
             childDocs.push(softline);
@@ -1094,13 +1088,13 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
     function handleTextChild(idx: number, childNode: TextNode) {
         handleWhitespaceOfPrevTextNode = false;
 
-        if (idx === 0 || idx === childNodes.length - 1) {
+        if (idx === 0 || idx === prepared_children.length - 1) {
             childDocs.push(printChild(idx));
             return;
         }
 
-        const prevNode = childNodes[idx - 1];
-        const nextNode = childNodes[idx + 1];
+        const prevNode = prepared_children[idx - 1].node;
+        const nextNode = prepared_children[idx + 1].node;
 
         if (
             isTextNodeStartingWithWhitespace(childNode) &&
@@ -1139,6 +1133,11 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
     }
 }
 
+interface PreparedChild {
+    node: Node;
+    index: number;
+}
+
 /**
  * `svelte:options` is part of the html part but needs to be snipped out and handled
  * separately to reorder it as configured. The comment above it should be moved with it.
@@ -1149,9 +1148,9 @@ function prepareChildren(
     path: AstPath,
     print: PrintFn,
     options: ParserOptions,
-): Node[] {
+): PreparedChild[] {
     let svelteOptionsComment: Doc | undefined;
-    const childrenWithoutOptions = [];
+    const childrenWithoutOptions: PreparedChild[] = [];
     const bracketSameLine = isBracketSameLine(options);
 
     for (let idx = 0; idx < children.length; idx++) {
@@ -1179,19 +1178,19 @@ function prepareChildren(
             }
         }
 
-        childrenWithoutOptions.push(currentChild);
+        childrenWithoutOptions.push({ node: currentChild, index: idx });
     }
 
-    const mergedChildrenWithoutOptions = [];
+    const mergedChildrenWithoutOptions: PreparedChild[] = [];
 
     for (let idx = 0; idx < childrenWithoutOptions.length; idx++) {
         const currentChild = childrenWithoutOptions[idx];
         const nextChild = childrenWithoutOptions[idx + 1];
 
-        if (currentChild.type === 'Text' && nextChild && nextChild.type === 'Text') {
+        if (currentChild.node.type === 'Text' && nextChild && nextChild.node.type === 'Text') {
             // A tag was snipped out (f.e. svelte:options). Join text
-            currentChild.raw += nextChild.raw;
-            currentChild.data += nextChild.data;
+            currentChild.node.raw += nextChild.node.raw;
+            currentChild.node.data += nextChild.node.data;
             idx++;
         }
 
@@ -1214,7 +1213,7 @@ function prepareChildren(
                     group([
                         ...path.map(
                             printWithPrependedAttributeLine(node, options, print),
-                            'children',
+                            'nodes',
                             idx,
                             'attributes',
                         ),
