@@ -37,10 +37,11 @@ export function extractAttributes(html: string): AttributeNode[] {
         attrs.push({
             type: 'Attribute',
             name,
+            name_loc: null,
             value: valueNode,
             start: attrStart,
             end: attrStart + all.length,
-        });
+        } as AttributeNode);
     }
 
     return attrs;

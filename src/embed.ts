@@ -58,7 +58,7 @@ export function getVisitorKeys(node: any, nonTraversableKeys: Set<string>): stri
 // - if embed returns a function, it will be called after the traversal in a second pass, in the same order (deepest first)
 // For performance reasons we try to only return functions when we're sure we need to transform something.
 export function embed(path: AstPath, _options: Options) {
-    const node: Node = path.getNode();
+    const node = path.getNode() as any;
     const options = _options as ParserOptions;
     if (!options.locStart || !options.locEnd || !options.originalText) {
         throw new Error('Missing required options');
@@ -72,7 +72,7 @@ export function embed(path: AstPath, _options: Options) {
 
     // embed does depth first traversal with deepest node called first, therefore we need to
     // check the parent to see if we are inside an expression that should be embedded.
-    const parent: Node = path.getParentNode();
+    const parent = path.getParentNode() as any;
     const printJsExpression = () =>
         (parent as any).expression ? printJS(parent, 'expression', {}) : undefined;
     const printSvelteBlockJS = (name: string) => printJS(parent, name, { forceSingleLine: true });
@@ -348,12 +348,12 @@ async function embedTag(
     isTopLevel: boolean,
     options: ParserOptions,
 ) {
-    const node: ScriptNode | StyleNode | ElementNode = path.getNode();
+    const node = path.getNode() as ScriptNode | StyleNode | ElementNode;
     const content =
         tag === 'template' ? printRaw(node as ElementNode, text) : getSnippedContent(node);
     const previousComments =
-        node.type === 'Script' || node.type === 'Style' || node.type === 'StyleSheet'
-            ? node.comments
+        node.type === 'Script' || node.type === 'StyleSheet'
+            ? node.comments ?? []
             : [getLeadingComment(path)]
                   .filter(Boolean)
                   .map((comment) => ({ comment: comment as CommentNode, emptyLineAfter: false }));

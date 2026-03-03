@@ -21,12 +21,6 @@ export interface BaseNode {
 export type TextNode = AST.Text;
 export type AttributeNode = AST.Attribute;
 export type StyleDirectiveNode = AST.StyleDirective;
-export type MustacheTagNode = AST.ExpressionTag;
-export type AttributeShorthandNode = AST.ExpressionTag;
-export type IfBlockNode = AST.IfBlock;
-export type AwaitBlockNode = AST.AwaitBlock;
-export type EachBlockNode = AST.EachBlock;
-export type KeyBlockNode = AST.KeyBlock;
 export type CommentNode = AST.Comment;
 export type ScriptNode = AST.Script & { comments?: CommentInfo[] };
 export type StyleNode = AST.CSS.StyleSheet & { comments?: CommentInfo[] };

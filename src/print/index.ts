@@ -46,7 +46,6 @@ import {
     ASTNode,
     AttributeNode,
     CommentNode,
-    IfBlockNode,
     Node,
     OptionsNode,
     StyleDirectiveNode,
@@ -262,8 +261,10 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                                   typeof (node.tag as any).value === 'string'
                               ) {
                                   const literal_value = (node.tag as any).value;
+                                  const tag_start = (node.tag as any).start;
                                   const expression_wrapped =
-                                      options.originalText[node.tag.start - 1] === '{';
+                                      typeof tag_start === 'number' &&
+                                      options.originalText[tag_start - 1] === '{';
                                   if (expression_wrapped) {
                                       return [open, `"${literal_value}"`, close];
                                   }

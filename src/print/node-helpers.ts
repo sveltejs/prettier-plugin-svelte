@@ -7,6 +7,8 @@ import {
     StyleDirectiveNode,
     ASTNode,
     CommentInfo,
+    ScriptNode,
+    StyleNode,
     SvelteBoundary,
 } from './nodes';
 import { blockElements, TagName } from '../lib/elements';
@@ -233,7 +235,8 @@ export function getAttributeTextValue(attributeName: string, node: Node): string
     const value = getAttributeValue(attributeName, node);
 
     if (value != null && typeof value === 'object') {
-        const textValue = value.find(isTextNode);
+        const value_nodes = Array.isArray(value) ? value : [value];
+        const textValue = value_nodes.find(isTextNode);
 
         if (textValue) {
             return textValue.data;
@@ -312,30 +315,16 @@ export function isLoneMustacheTag(node: true | Node[] | Node): boolean {
     return node.type === 'ExpressionTag';
 }
 
-export function isAttributeShorthand(node: true | Node[] | Node): boolean {
-    if (node === true || node == null) {
-        return false;
-    }
-
-    if (Array.isArray(node)) {
-        return node.length === 1 && node[0].type === 'AttributeShorthand';
-    }
-
-    return node.type === 'AttributeShorthand';
-}
-
 /**
  * True if node is of type `{a}` or `a={a}`
  */
 export function isOrCanBeConvertedToShorthand(node: AttributeNode | StyleDirectiveNode): boolean {
-    if (isAttributeShorthand(node.value)) {
-        return true;
-    }
-
     if (isLoneMustacheTag(node.value)) {
-        const expression = Array.isArray(node.value)
-            ? node.value[0].expression
-            : (node.value as any).expression;
+        const value_node = Array.isArray(node.value) ? node.value[0] : (node.value as any);
+        const expression = value_node.type === 'ExpressionTag' ? value_node.expression : null;
+        if (!expression) {
+            return false;
+        }
         return expression.type === 'Identifier' && expression.name === node.name;
     }
 
@@ -616,13 +605,16 @@ function isLastChildWithinParentBlockElement(path: AstPath, options: ParserOptio
 
 export function assignCommentsToNodes(ast: ASTNode) {
     if (ast.module) {
-        ast.module.comments = removeAndGetLeadingComments(ast, ast.module);
+        (ast.module as ScriptNode).comments = removeAndGetLeadingComments(ast, ast.module as any);
     }
     if (ast.instance) {
-        ast.instance.comments = removeAndGetLeadingComments(ast, ast.instance);
+        (ast.instance as ScriptNode).comments = removeAndGetLeadingComments(
+            ast,
+            ast.instance as any,
+        );
     }
     if (ast.css) {
-        ast.css.comments = removeAndGetLeadingComments(ast, ast.css);
+        (ast.css as StyleNode).comments = removeAndGetLeadingComments(ast, ast.css as any);
     }
 }
 
