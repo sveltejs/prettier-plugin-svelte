@@ -445,7 +445,7 @@ function attachAttributeComments(ast: ASTNode): void {
     walkAndAttach(ast.fragment as any, commentsByStart);
 }
 
-function walkAndAttach(node: Node, commentsByStart: Map<number, any>): void {
+function walkAndAttach(node: Node | AST.Fragment, commentsByStart: Map<number, any>): void {
     if (!node || typeof node !== 'object') return;
 
     if ('attributes' in node && Array.isArray(node.attributes) && node.attributes.length > 0) {
@@ -468,20 +468,32 @@ function walkAndAttach(node: Node, commentsByStart: Map<number, any>): void {
     }
 
     // Recurse into children and block branches
-    for (const child of getChildren(node)) {
-        walkAndAttach(child, commentsByStart);
-    }
-
-    if (node.type === 'IfBlock' && (node as any).alternate) {
-        walkAndAttach((node as any).alternate, commentsByStart);
-    }
-    if (node.type === 'EachBlock' && (node as any).fallback) {
-        walkAndAttach((node as any).fallback, commentsByStart);
-    }
-    if (node.type === 'AwaitBlock') {
-        if ((node as any).pending) walkAndAttach((node as any).pending, commentsByStart);
-        if ((node as any).then) walkAndAttach((node as any).then, commentsByStart);
-        if ((node as any).catch) walkAndAttach((node as any).catch, commentsByStart);
+    // Some of these have multiple fragment nodes so we need to recurse them separately
+    if (node.type === 'IfBlock') {
+        if (node.consequent) {
+            walkAndAttach(node.consequent!, commentsByStart);
+        }
+        if (node.alternate) {
+            walkAndAttach(node.alternate!, commentsByStart);
+        }
+    } else if (node.type === 'EachBlock') {
+        if (node.body) {
+            walkAndAttach(node.body!, commentsByStart);
+        }
+        if (node.fallback) {
+            walkAndAttach(node.fallback!, commentsByStart);
+        }
+    } else if (node.type === 'AwaitBlock') {
+        if ((node as AST.AwaitBlock).pending)
+            walkAndAttach((node as AST.AwaitBlock).pending!, commentsByStart);
+        if ((node as AST.AwaitBlock).then)
+            walkAndAttach((node as AST.AwaitBlock).then!, commentsByStart);
+        if ((node as AST.AwaitBlock).catch)
+            walkAndAttach((node as AST.AwaitBlock).catch!, commentsByStart);
+    } else {
+        for (const child of getChildren(node)) {
+            walkAndAttach(child, commentsByStart);
+        }
     }
 }
 

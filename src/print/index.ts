@@ -51,6 +51,7 @@ import {
     StyleDirectiveNode,
     TextNode,
 } from './nodes';
+import { AST } from 'svelte/compiler';
 
 const { join, line, group, indent, dedent, softline, hardline, fill, breakParent, literalline } =
     doc.builders;
@@ -78,7 +79,7 @@ let svelteOptionsDoc: Doc | undefined;
 export function print(path: AstPath, options: ParserOptions, print: PrintFn): Doc {
     const bracketSameLine = isBracketSameLine(options);
 
-    const n = path.getValue();
+    const n = path.node;
     if (!n) {
         return '';
     }
@@ -108,7 +109,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
 
     switch (node.type) {
         case 'Fragment':
-            const children = getChildren(node);
+            const children = node.nodes;
 
             if (children.length === 0 || children.every(isEmptyTextNode)) {
                 return '';
@@ -742,8 +743,8 @@ function printTopLevelParts(
     path: AstPath<any>,
     print: PrintFn,
 ): Doc {
-    if (n.options && Array.isArray((n.fragment as any).nodes)) {
-        const nodes = (n.fragment as any).nodes as Node[];
+    if (n.options) {
+        const nodes = n.fragment.nodes as Node[];
         const has_options_node = nodes.some((node: any) => node.type === 'Options');
         if (!has_options_node) {
             nodes.push({
@@ -774,7 +775,7 @@ function printTopLevelParts(
             topLevelPartsByStart[n.css.start] = n.css;
         }
 
-        const children = getChildren(n.fragment as any);
+        const children = n.fragment.nodes as Node[];
         for (let i = 0; i < children.length; i++) {
             const node = children[i];
             if (topLevelPartsByEnd[node.start]) {
@@ -863,14 +864,14 @@ function printAttributeNodeValue(
 }
 
 function printSvelteBlockChildren(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
-    const fragment = path.getValue() as { nodes?: Node[] };
+    const fragment = path.node as AST.Fragment;
     const children = fragment?.nodes ?? [];
     if (children.length === 0) {
         return '';
     }
 
-    const whitespaceAtStartOfBlock = checkWhitespaceAtStartOfSvelteBlock(fragment as any, options);
-    const whitespaceAtEndOfBlock = checkWhitespaceAtEndOfSvelteBlock(fragment as any, options);
+    const whitespaceAtStartOfBlock = checkWhitespaceAtStartOfSvelteBlock(fragment, options);
+    const whitespaceAtEndOfBlock = checkWhitespaceAtEndOfSvelteBlock(fragment, options);
     const startline =
         whitespaceAtStartOfBlock === 'none'
             ? ''
@@ -909,7 +910,7 @@ function printBlockFragment(
 }
 
 function printIfBlockAlternate(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
-    const node = path.getValue() as any;
+    const node = path.node as any;
     const alternate = node.alternate;
 
     if (!alternate) {
@@ -951,7 +952,7 @@ function printIfBlockAlternate(path: AstPath, print: PrintFn, options: ParserOpt
 }
 
 function printEachBlockFallback(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
-    const node = path.getValue() as any;
+    const node = path.node as any;
     const fallback = node.fallback;
     if (!fallback) {
         return '';
@@ -961,7 +962,7 @@ function printEachBlockFallback(path: AstPath, print: PrintFn, options: ParserOp
 
 function printPre(originalText: string, path: AstPath, print: PrintFn): Doc {
     const result: Doc = [];
-    const fragment = path.getValue() as { nodes?: Node[] };
+    const fragment = path.node as { nodes?: Node[] };
     const children = fragment?.nodes ?? [];
     if (children.length === 0) {
         return '';
@@ -984,7 +985,7 @@ function printPre(originalText: string, path: AstPath, print: PrintFn): Doc {
 }
 
 function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
-    const current_value = path.getValue() as { nodes?: Node[] };
+    const current_value = path.node as { nodes?: Node[] };
 
     if (isPreTagContent(path)) {
         return path.map(print, 'nodes');

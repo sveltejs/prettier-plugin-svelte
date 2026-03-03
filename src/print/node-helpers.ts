@@ -15,6 +15,7 @@ import { blockElements, TagName } from '../lib/elements';
 import { AstPath } from 'prettier';
 import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
 import { ParserOptions, isBracketSameLine } from '../options';
+import { AST } from 'svelte/compiler';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
 
@@ -45,80 +46,36 @@ export function isSvelteBlock(node: Node): boolean {
     return ['IfBlock', 'SnippetBlock', 'AwaitBlock', 'EachBlock', 'KeyBlock'].includes(node.type);
 }
 
-export function isNodeWithChildren(node: Node): node is Node & { children: Node[] } {
-    return !!getChildren(node).length || hasChildrenContainer(node);
+export function isNodeWithChildren(node: Node): boolean {
+    return !!getMaybeChildren(node);
 }
 
-type ChildrenContainerPath =
-    | ['children']
-    | ['nodes']
-    | ['fragment', 'nodes']
-    | ['body', 'nodes']
-    | ['consequent', 'nodes']
-    | ['alternate', 'nodes'];
+function getMaybeChildren(_node: Node | AST.Fragment): Node[] | undefined {
+    if (_node.type === 'Fragment') return _node.nodes as Node[];
 
-export function getChildrenContainerPath(_node: Node): ChildrenContainerPath | undefined {
-    const node = _node as any;
-
-    if (!node || typeof node !== 'object') {
-        return;
-    }
-
-    if (Array.isArray(node.children)) {
-        return ['children'];
-    }
-
-    if (Array.isArray(node.nodes)) {
-        return ['nodes'];
-    }
-
-    if (Array.isArray(node.fragment?.nodes)) {
-        return ['fragment', 'nodes'];
-    }
-
-    if (Array.isArray(node.body?.nodes)) {
-        return ['body', 'nodes'];
-    }
-
-    if (Array.isArray(node.consequent?.nodes)) {
-        return ['consequent', 'nodes'];
-    }
-
-    if (node.type === 'IfBlock' && Array.isArray(node.alternate?.nodes)) {
-        return ['alternate', 'nodes'];
+    for (const key of Object.keys(_node)) {
+        const value = (_node as any)[key] as AST.SvelteNode;
+        if (typeof value === 'object' && value != null && value.type === 'Fragment') {
+            return value.nodes as Node[];
+        }
     }
 }
 
-export function getChildren(_node: Node): Node[] {
-    const node = _node as any;
-    const children_path = getChildrenContainerPath(_node);
-
-    if (!children_path) {
-        return [];
-    }
-
-    if (children_path.length === 1) {
-        return node[children_path[0]];
-    }
-
-    return node[children_path[0]][children_path[1]];
-}
-
-function hasChildrenContainer(_node: Node) {
-    return !!getChildrenContainerPath(_node);
+export function getChildren(_node: Node | AST.Fragment): Node[] {
+    return getMaybeChildren(_node) || [];
 }
 
 /**
  * Returns siblings, that is, the children of the parent.
  */
 export function getSiblings(path: AstPath): Node[] {
-    let parent: Node = path.getParentNode();
+    let parent = path.getParentNode();
 
     if (isASTNode(parent)) {
         parent = parent.fragment as any;
     }
 
-    return getChildren(parent);
+    return (parent as AST.Fragment).nodes;
 }
 
 /**
@@ -500,14 +457,14 @@ export function shouldHugEnd(
  * Check for a svelte block if there's whitespace at the start and if it's a space or a line.
  */
 export function checkWhitespaceAtStartOfSvelteBlock(
-    node: Node,
+    node: AST.Fragment,
     options: ParserOptions,
 ): 'none' | 'space' | 'line' {
-    if (!isNodeWithChildren(node)) {
+    if (!isNodeWithChildren(node as Node)) {
         return 'none';
     }
 
-    const children: Node[] = getChildren(node);
+    const children: Node[] = node.nodes;
     if (children.length === 0) {
         return 'none';
     }
@@ -537,14 +494,14 @@ export function checkWhitespaceAtStartOfSvelteBlock(
  * Check for a svelte block if there's whitespace at the end and if it's a space or a line.
  */
 export function checkWhitespaceAtEndOfSvelteBlock(
-    node: Node,
+    node: AST.Fragment,
     options: ParserOptions,
 ): 'none' | 'space' | 'line' {
-    if (!isNodeWithChildren(node)) {
+    if (!isNodeWithChildren(node as Node)) {
         return 'none';
     }
 
-    const children: Node[] = getChildren(node);
+    const children: Node[] = node.nodes;
     if (children.length === 0) {
         return 'none';
     }
@@ -607,16 +564,14 @@ function hugsStartOfNextNode(node: Node, options: ParserOptions): boolean {
 }
 
 function isLastChildWithinParentBlockElement(path: AstPath, options: ParserOptions): boolean {
-    let parent = path.getParentNode() as Node | undefined;
-    if (parent?.type === 'Fragment') {
-        parent = path.getParentNode(1) as Node | undefined;
-    }
+    const fragment = path.getParentNode() as Node | undefined;
+    const parent = path.getParentNode(1) as Node | undefined;
 
-    if (!parent || !isBlockElement(parent, options)) {
+    if (!fragment || !parent || !isBlockElement(parent, options)) {
         return false;
     }
 
-    const children = getChildren(parent).filter((child) => !isEmptyTextNode(child));
+    const children = (fragment as AST.Fragment).nodes.filter((child) => !isEmptyTextNode(child));
     const lastChild = children[children.length - 1];
     return lastChild === path.getNode();
 }
@@ -640,7 +595,7 @@ export function assignCommentsToNodes(ast: ASTNode) {
  * Returns the comments that are above the current node and deletes them from the html ast.
  */
 function removeAndGetLeadingComments(ast: ASTNode, current: Node): CommentInfo[] {
-    const siblings = getChildren(ast.fragment as any);
+    const siblings = ast.fragment.nodes as Node[];
     const comments: CommentNode[] = [];
     const newlines: TextNode[] = [];
 
