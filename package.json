@@ -15,7 +15,10 @@
             "types": "./index.d.ts",
             "default": "./plugin.js"
         },
-        "./browser": "./browser.js",
+        "./browser": {
+            "types": "./index.d.ts",
+            "default": "./browser.js"
+        },
         "./package.json": "./package.json"
     },
     "scripts": {
