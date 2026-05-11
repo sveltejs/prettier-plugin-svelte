@@ -39,7 +39,7 @@ const {
 
 const leaveAlone = new Set([
     'Script',
-    'Style',
+    'StyleSheet',
     'Identifier',
     'MemberExpression',
     'CallExpression',
@@ -80,9 +80,11 @@ export function embed(path: AstPath, _options: Options) {
 
     switch (parent.type) {
         case 'IfBlock':
+            printSvelteBlockJS('test');
+            break;
         case 'AwaitBlock':
         case 'KeyBlock':
-            printSvelteBlockJS(parent.type === 'IfBlock' ? 'test' : 'expression');
+            printSvelteBlockJS('expression');
             break;
         case 'EachBlock':
             printSvelteBlockJS('expression');
@@ -445,7 +447,11 @@ function attachAttributeComments(ast: ASTNode, original_text: string): void {
     walkAndAttach(ast.fragment as any, commentsByStart, original_text);
 }
 
-function walkAndAttach(node: Node | AST.Fragment, commentsByStart: Map<number, any>, original_text: string): void {
+function walkAndAttach(
+    node: Node | AST.Fragment,
+    commentsByStart: Map<number, any>,
+    original_text: string,
+): void {
     if (!node || typeof node !== 'object') return;
 
     if ('attributes' in node && Array.isArray(node.attributes) && node.attributes.length > 0) {

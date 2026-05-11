@@ -210,7 +210,6 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         case 'SvelteBody':
         case 'SvelteDocument':
         case 'SvelteElement':
-        // Svelte 5 only
         case 'SvelteBoundary':
         case 'TitleElement': {
             const isSupportedLanguage = !(
@@ -267,6 +266,8 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                                   const expression_wrapped =
                                       typeof tag_start === 'number' &&
                                       options.originalText[tag_start - 1] === '{';
+                                  // Preserve <svelte:element this={"literal"}>
+                                  // because in Svelte 6 this="literal" will be invalid
                                   if (expression_wrapped) {
                                       return [open, `"${literal_value}"`, close];
                                   }
@@ -545,9 +546,9 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             const pending_children = node.pending?.nodes ?? [];
             const then_children = node.then?.nodes ?? [];
             const catch_children = node.catch?.nodes ?? [];
-            const hasPendingBlock = pending_children.some((n) => !isEmptyTextNode(n as any));
-            const hasThenBlock = then_children.some((n) => !isEmptyTextNode(n as any));
-            const hasCatchBlock = catch_children.some((n) => !isEmptyTextNode(n as any));
+            const hasPendingBlock = pending_children.some((n) => !isEmptyTextNode(n));
+            const hasThenBlock = then_children.some((n) => !isEmptyTextNode(n));
+            const hasCatchBlock = catch_children.some((n) => !isEmptyTextNode(n));
 
             let block = [];
 
@@ -722,10 +723,8 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             return ['animate:', node.name, node.expression ? ['=', ...printJsExpression()] : ''];
         case 'HtmlTag':
             return ['{@html ', printJS(path, print, 'expression'), '}'];
-        // Svelte 5 only
         case 'RenderTag':
             return ['{@render ', printJS(path, print, 'expression'), '}'];
-        // Svelte 5 only
         case 'AttachTag':
             return ['{@attach ', printJS(path, print, 'expression'), '}'];
         case 'SpreadAttribute':
@@ -853,7 +852,7 @@ function printAttributeNodeValue(
     quotes: boolean,
     node: AttributeNode | StyleDirectiveNode,
 ) {
-    const valueDocs = Array.isArray((node as any).value)
+    const valueDocs = Array.isArray(node.value)
         ? path.map((childPath) => childPath.call(print), 'value')
         : [path.call(print, 'value')];
 
@@ -911,7 +910,7 @@ function printBlockFragment(
 }
 
 function printIfBlockAlternate(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
-    const node = path.node as any;
+    const node = path.node as AST.IfBlock;
     const alternate = node.alternate;
 
     if (!alternate) {
@@ -919,7 +918,11 @@ function printIfBlockAlternate(path: AstPath, print: PrintFn, options: ParserOpt
     }
 
     if (alternate.type === 'Fragment') {
-        if (alternate.nodes.length === 1 && alternate.nodes[0].type === 'IfBlock') {
+        if (
+            alternate.nodes.length === 1 &&
+            alternate.nodes[0].type === 'IfBlock' &&
+            alternate.nodes[0].elseif
+        ) {
             const def: Doc[] = [
                 '{:else if ',
                 path.call((if_path) => printJS(if_path, print, 'test'), 'alternate', 'nodes', 0),
@@ -953,7 +956,7 @@ function printIfBlockAlternate(path: AstPath, print: PrintFn, options: ParserOpt
 }
 
 function printEachBlockFallback(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
-    const node = path.node as any;
+    const node = path.node as AST.EachBlock;
     const fallback = node.fallback;
     if (!fallback) {
         return '';
@@ -986,7 +989,7 @@ function printPre(originalText: string, path: AstPath, print: PrintFn): Doc {
 }
 
 function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): Doc {
-    const current_value = path.node as { nodes?: Node[] };
+    const current_value = path.node as AST.Fragment;
 
     if (isPreTagContent(path)) {
         return path.map(print, 'nodes');
