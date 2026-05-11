@@ -101,13 +101,6 @@ export function getPreviousNode(path: AstPath): Node | undefined {
 }
 
 /**
- * Returns the next sibling node.
- */
-export function getNextNode(path: AstPath, node: Node = path.getNode()): Node | undefined {
-    return getSiblings(path).find((child) => child.start === node.end);
-}
-
-/**
  * Returns the comment that is above the current node.
  */
 export function getLeadingComment(path: AstPath): CommentNode | undefined {
@@ -129,26 +122,6 @@ export function getLeadingComment(path: AstPath): CommentNode | undefined {
             return undefined;
         }
     }
-}
-
-/**
- * Did there use to be any embedded object (that has been snipped out of the AST to be moved)
- * at the specified position?
- */
-export function doesEmbedStartAfterNode(node: Node, path: AstPath, siblings = getSiblings(path)) {
-    // If node is not at the top level of html, an embed cannot start after it,
-    // because embeds are only at the top level
-    if (!isNodeTopLevelHTML(node, path)) {
-        return false;
-    }
-
-    const position = node.end;
-    const root = path.stack[0];
-
-    const embeds = [root.css, root.instance, root.module] as Node[];
-
-    const nextNode = siblings[siblings.indexOf(node) + 1];
-    return embeds.find((n) => n && n.start >= position && (!nextNode || n.end <= nextNode.start));
 }
 
 export function isNodeTopLevelHTML(node: Node, path: AstPath): boolean {
@@ -363,21 +336,11 @@ export function trimTextNodeLeft(node: TextNode): void {
  * Remove all leading whitespace up until the first non-empty text node,
  * and all trailing whitespace from the last non-empty text node onwards.
  */
-export function trimChildren(children: Node[], path: AstPath): void {
-    let firstNonEmptyNode = children.findIndex(
-        (n) => !isEmptyTextNode(n) && !doesEmbedStartAfterNode(n, path),
-    );
+export function trimChildren(children: Node[]): void {
+    let firstNonEmptyNode = children.findIndex((n) => !isEmptyTextNode(n));
     firstNonEmptyNode = firstNonEmptyNode === -1 ? children.length - 1 : firstNonEmptyNode;
 
-    let lastNonEmptyNode = findLastIndex((n, idx) => {
-        // Last node is ok to end at the start of an embedded region,
-        // if it's not a comment (which should stick to the region)
-        return (
-            !isEmptyTextNode(n) &&
-            ((idx === children.length - 1 && n.type !== 'Comment') ||
-                !doesEmbedStartAfterNode(n, path))
-        );
-    }, children);
+    let lastNonEmptyNode = findLastIndex((n) => !isEmptyTextNode(n), children);
     lastNonEmptyNode = lastNonEmptyNode === -1 ? 0 : lastNonEmptyNode;
 
     for (let i = 0; i <= firstNonEmptyNode; i++) {

@@ -15,10 +15,8 @@ import {
     canOmitSoftlineBeforeClosingTag,
     checkWhitespaceAtEndOfSvelteBlock,
     checkWhitespaceAtStartOfSvelteBlock,
-    doesEmbedStartAfterNode,
     endsWithLinebreak,
     getChildren,
-    getNextNode,
     getUnencodedText,
     isBlockElement,
     isEmptyTextNode,
@@ -75,7 +73,6 @@ export function hasPragma(text: string) {
 
 let ignoreNext = false;
 let ignoreRange = false;
-let svelteOptionsDoc: Doc | undefined;
 
 export function print(path: AstPath, options: ParserOptions, print: PrintFn): Doc {
     const bracketSameLine = isBracketSameLine(options);
@@ -116,7 +113,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 return '';
             }
             if (!isPreTagContent(path)) {
-                trimChildren(children, path);
+                trimChildren(children);
                 const output = trim(
                     [printChildren(path, print, options)],
                     (n) =>
@@ -685,23 +682,10 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 '}',
             ];
         case 'Comment': {
-            const nodeAfterComment = getNextNode(path);
-
             if (isIgnoreStartDirective(node) && isNodeTopLevelHTML(node, path)) {
                 ignoreRange = true;
             } else if (isIgnoreEndDirective(node) && isNodeTopLevelHTML(node, path)) {
                 ignoreRange = false;
-            } else if (
-                // If there is no sibling node that starts right after us but the parent indicates
-                // that there used to be, that means that node was actually an embedded `<style>`
-                // or `<script>` node that was cut out.
-                // If so, the comment does not refer to the next line we will see.
-                // The `embed` function handles printing the comment in the right place.
-                doesEmbedStartAfterNode(node, path) ||
-                (isEmptyTextNode(nodeAfterComment) &&
-                    doesEmbedStartAfterNode(nodeAfterComment, path))
-            ) {
-                return '';
             } else if (isIgnoreDirective(node)) {
                 ignoreNext = true;
             }
@@ -737,28 +721,139 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
     throw new Error('unknown node type: ' + node.type);
 }
 
+type RootOptions = NonNullable<ASTNode['options']>;
+
+/** When reordering top-level parts, remove the leading comment above `<svelte:options>` and print it */
+function stripSvelteOptionsComment(n: ASTNode): Doc | undefined {
+    const rootOptions = n.options;
+    if (!rootOptions) {
+        return undefined;
+    }
+
+    let leadingCommentDoc: Doc | undefined;
+    const nodes = n.fragment.nodes;
+
+    for (let idx = 0; idx < nodes.length; idx++) {
+        const node = nodes[idx];
+        if (node.type !== 'Comment' || isIgnoreEndDirective(node) || isIgnoreStartDirective(node)) {
+            continue;
+        }
+
+        if (node.end === rootOptions.start) {
+            leadingCommentDoc = printComment(node);
+            nodes.splice(idx, 1);
+            break;
+        } else {
+            let k = idx + 1;
+            if (
+                k < nodes.length &&
+                isEmptyTextNode(nodes[k]) &&
+                nodes[k].end === rootOptions.start
+            ) {
+                leadingCommentDoc = printComment(node);
+                nodes.splice(idx, 2);
+                break;
+            }
+        }
+    }
+
+    return leadingCommentDoc;
+}
+
+function mergeAdjacentTextNodesInFragment(nodes: Node[]): void {
+    for (let i = 0; i < nodes.length - 1; ) {
+        const current = nodes[i];
+        const next = nodes[i + 1];
+        if (current.type === 'Text' && next.type === 'Text') {
+            // Trim right side so that something like
+            //
+            // <div>hello</div>
+            // <script>...</script>
+            // <div>world</div>
+            //
+            // doesn't become
+            //
+            // <div>hello</div>
+            //
+            // <div>world</div>
+            trimTextNodeRight(current);
+            current.raw += next.raw;
+            current.data += next.data;
+            current.end = next.end;
+            nodes.splice(i + 1, 1);
+        } else {
+            i++;
+        }
+    }
+}
+
+function printSvelteOptions(
+    path: AstPath<any>,
+    parserOptions: ParserOptions,
+    print: PrintFn,
+    rootOptions: RootOptions,
+    leadingCommentDoc: Doc | undefined,
+): Doc {
+    const bracketSameLine = isBracketSameLine(parserOptions);
+    const optsNode: OptionsNode = {
+        type: 'Options',
+        name: 'svelte:options',
+        start: rootOptions.start,
+        end: rootOptions.end,
+        attributes: rootOptions.attributes,
+    };
+
+    let doc: Doc = group([
+        [
+            '<',
+            optsNode.name,
+            indent(
+                group([
+                    ...path.call(
+                        (optionsPath) =>
+                            optionsPath.map(
+                                printWithPrependedAttributeLine(optsNode, parserOptions, print),
+                                'attributes',
+                            ),
+                        'options',
+                    ),
+                    bracketSameLine ? '' : dedent(line),
+                ]),
+            ),
+            ...[bracketSameLine ? ' ' : '', '/>'],
+        ],
+        hardline,
+    ]);
+
+    if (leadingCommentDoc) {
+        doc = group([leadingCommentDoc, hardline, doc]);
+    }
+
+    return doc;
+}
+
 function printTopLevelParts(
     n: ASTNode,
     options: ParserOptions,
     path: AstPath<any>,
     print: PrintFn,
 ): Doc {
-    if (n.options) {
-        const nodes = n.fragment.nodes as Node[];
-        const has_options_node = nodes.some((node: any) => node.type === 'Options');
-        if (!has_options_node) {
-            nodes.push({
-                type: 'Options',
-                name: 'svelte:options',
-                start: n.options.start,
-                end: n.options.end,
-                attributes: n.options.attributes,
-            } as any);
-            nodes.sort((a: any, b: any) => a.start - b.start);
-        }
-    }
-
     if (options.svelteSortOrder === 'none') {
+        if (n.options) {
+            const nodes = n.fragment.nodes as Node[];
+            const has_options_node = nodes.some((node: any) => node.type === 'Options');
+            if (!has_options_node) {
+                nodes.push({
+                    type: 'Options',
+                    name: 'svelte:options',
+                    start: n.options.start,
+                    end: n.options.end,
+                    attributes: n.options.attributes,
+                } as any);
+                nodes.sort((a: any, b: any) => a.start - b.start);
+            }
+        }
+
         const topLevelPartsByEnd: Record<number, any> = {};
         const topLevelPartsByStart: Record<number, any> = {};
 
@@ -785,6 +880,8 @@ function printTopLevelParts(
                 children.push(topLevelPartsByStart[node.end]);
             }
         }
+
+        mergeAdjacentTextNodesInFragment(children);
 
         const result = path.call(print, 'fragment');
         if (options.insertPragma && !hasPragma(options.originalText)) {
@@ -815,12 +912,17 @@ function printTopLevelParts(
     }
 
     // markup
+    if (n.options) {
+        parts.options.push(
+            printSvelteOptions(path, options, print, n.options, stripSvelteOptionsComment(n)),
+        );
+    }
+
+    mergeAdjacentTextNodesInFragment(n.fragment.nodes);
+
     const htmlDoc = path.call(print, 'fragment');
     if (htmlDoc) {
         parts.markup.push(htmlDoc);
-    }
-    if (svelteOptionsDoc) {
-        parts.options.push(svelteOptionsDoc);
     }
 
     const docs = flatten(parseSortOrder(options.svelteSortOrder).map((p) => parts[p]));
@@ -828,7 +930,6 @@ function printTopLevelParts(
     // Need to reset these because they are global and could affect the next formatting run
     ignoreNext = false;
     ignoreRange = false;
-    svelteOptionsDoc = undefined;
 
     // If this is invoked as an embed of markdown, remove the last hardline.
     // The markdown parser tries this, too, but fails because it does not
@@ -996,7 +1097,7 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
     }
 
     const original_children = current_value.nodes ?? [];
-    const prepared_children = prepareChildren(original_children, path, print, options);
+    const prepared_children = prepareChildren(original_children, path);
     if (prepared_children.length === 0) {
         return '';
     }
@@ -1143,20 +1244,8 @@ interface PreparedChild {
     index: number;
 }
 
-/**
- * `svelte:options` is part of the html part but needs to be snipped out and handled
- * separately to reorder it as configured. The comment above it should be moved with it.
- * Do that here.
- */
-function prepareChildren(
-    children: Node[],
-    path: AstPath,
-    print: PrintFn,
-    options: ParserOptions,
-): PreparedChild[] {
-    let svelteOptionsComment: Doc | undefined;
-    const childrenWithoutOptions: PreparedChild[] = [];
-    const bracketSameLine = isBracketSameLine(options);
+function prepareChildren(children: Node[], path: AstPath): PreparedChild[] {
+    const prepared: PreparedChild[] = [];
 
     for (let idx = 0; idx < children.length; idx++) {
         const currentChild = children[idx];
@@ -1165,91 +1254,10 @@ function prepareChildren(
             continue;
         }
 
-        if (isEmptyTextNode(currentChild) && doesEmbedStartAfterNode(currentChild, path)) {
-            continue;
-        }
-
-        if (options.svelteSortOrder !== 'none') {
-            if (isCommentFollowedByOptions(currentChild, idx)) {
-                svelteOptionsComment = printComment(currentChild);
-                const nextChild = children[idx + 1];
-                idx += nextChild && isEmptyTextNode(nextChild) ? 1 : 0;
-                continue;
-            }
-
-            if (currentChild.type === 'Options') {
-                printSvelteOptions(currentChild, idx, path, print);
-                continue;
-            }
-        }
-
-        childrenWithoutOptions.push({ node: currentChild, index: idx });
+        prepared.push({ node: currentChild, index: idx });
     }
 
-    const mergedChildrenWithoutOptions: PreparedChild[] = [];
-
-    for (let idx = 0; idx < childrenWithoutOptions.length; idx++) {
-        const currentChild = childrenWithoutOptions[idx];
-        const nextChild = childrenWithoutOptions[idx + 1];
-
-        if (currentChild.node.type === 'Text' && nextChild && nextChild.node.type === 'Text') {
-            // A tag was snipped out (f.e. svelte:options). Join text
-            currentChild.node.raw += nextChild.node.raw;
-            currentChild.node.data += nextChild.node.data;
-            idx++;
-        }
-
-        mergedChildrenWithoutOptions.push(currentChild);
-    }
-
-    return mergedChildrenWithoutOptions;
-
-    function printSvelteOptions(
-        node: OptionsNode,
-        idx: number,
-        path: AstPath,
-        print: PrintFn,
-    ): void {
-        svelteOptionsDoc = group([
-            [
-                '<',
-                node.name,
-                indent(
-                    group([
-                        ...path.map(
-                            printWithPrependedAttributeLine(node, options, print),
-                            'nodes',
-                            idx,
-                            'attributes',
-                        ),
-                        bracketSameLine ? '' : dedent(line),
-                    ]),
-                ),
-                ...[bracketSameLine ? ' ' : '', '/>'],
-            ],
-            hardline,
-        ]);
-        if (svelteOptionsComment) {
-            svelteOptionsDoc = group([svelteOptionsComment, hardline, svelteOptionsDoc]);
-        }
-    }
-
-    function isCommentFollowedByOptions(node: Node, idx: number): node is CommentNode {
-        if (node.type !== 'Comment' || isIgnoreEndDirective(node) || isIgnoreStartDirective(node)) {
-            return false;
-        }
-
-        const nextChild = children[idx + 1];
-        if (nextChild) {
-            if (isEmptyTextNode(nextChild)) {
-                const afterNext = children[idx + 2];
-                return afterNext && afterNext.type === 'Options';
-            }
-            return nextChild.type === 'Options';
-        }
-
-        return false;
-    }
+    return prepared;
 }
 
 /**
