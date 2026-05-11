@@ -1219,11 +1219,7 @@ function _expandNode(node: any, original: string, parent?: any): string {
                 ']'
             );
         case 'AssignmentPattern':
-            return (
-                _expandNode(node.left, original) +
-                ' =' +
-                _expandNode(node.right, original)
-            );
+            return _expandNode(node.left, original) + ' =' + _expandNode(node.right, original);
         case 'Identifier':
             return ' ' + node.name;
         case 'Literal':
@@ -1236,9 +1232,7 @@ function _expandNode(node: any, original: string, parent?: any): string {
             );
         case 'ObjectPattern':
             return (
-                ' {' +
-                node.properties.map((p: any) => _expandNode(p, original)).join(',') +
-                ' }'
+                ' {' + node.properties.map((p: any) => _expandNode(p, original)).join(',') + ' }'
             );
         case 'Property': {
             let computedKeyInner = '';
