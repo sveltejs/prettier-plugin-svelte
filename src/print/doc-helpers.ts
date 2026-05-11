@@ -155,7 +155,42 @@ function getParts(doc: Doc): Doc[] | undefined {
 
 /**
  * `(foo = bar)` => `foo = bar`
+ * Also handles leading comments and line breaks before "(".
  */
 export function removeParentheses(doc: Doc): Doc {
-    return trim([doc], (_doc: Doc) => _doc === '(' || _doc === ')')[0];
+    if (!Array.isArray(doc)) return trim([doc], (_doc: Doc) => _doc === '(' || _doc === ')')[0];
+
+    const transformed: Doc[] = [];
+    let i = 0;
+    let opened = false;
+
+    for (; i < doc.length; i++) {
+        const part = doc[i];
+
+        if (typeof part === 'string' && part.startsWith('//')) {
+            transformed.push(part);
+        } else if (typeof part === 'string' && part.startsWith('/*')) {
+            transformed.push(part);
+            opened = true;
+        } else if (opened) {
+            transformed.push(part);
+            opened = typeof part !== 'string' || !part.trim().endsWith('*/');
+        } else if (transformed.length > 0 && isLine(part)) {
+            transformed.push(part);
+            i++;
+
+            const next = doc[i];
+            if (typeof next !== 'string' && !Array.isArray(next) && next.type === 'break-parent') {
+                transformed.push(next);
+                i++;
+            }
+
+            break;
+        } else {
+            break;
+        }
+    }
+
+    transformed.push(...trim(doc.slice(i), (_doc: Doc) => _doc === '(' || _doc === ')'));
+    return transformed;
 }
