@@ -19,6 +19,20 @@ import { AST } from 'svelte/compiler';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
 
+/**
+ * Characters treated as interchangeable/collapsible HTML whitespace for layout.
+ * Excludes NBSP (U+00A0) and other Unicode separators — see prettier/prettier#5796.
+ */
+const ONLY_HTML_COLLAPSE_WHITESPACE_RE = /^[\t\n\f\r ]*$/;
+const STARTS_WITH_HTML_COLLAPSE_WHITESPACE_RE = /^[\t\n\f\r ]/;
+const ENDS_WITH_HTML_COLLAPSE_WHITESPACE_RE = /[\t\n\f\r ]$/;
+const LEADING_HTML_COLLAPSE_WHITESPACE_RE = /^[\t\n\f\r ]+/;
+const TRAILING_HTML_COLLAPSE_WHITESPACE_RE = /[\t\n\f\r ]+$/;
+
+export function isOnlyHtmlCollapseWhitespace(text: string): boolean {
+    return ONLY_HTML_COLLAPSE_WHITESPACE_RE.test(text);
+}
+
 export function isInlineElement(
     path: AstPath,
     options: ParserOptions,
@@ -143,7 +157,7 @@ export function isNodeTopLevelHTML(node: Node, path: AstPath): boolean {
 }
 
 export function isEmptyTextNode(node: Node | undefined): node is TextNode {
-    return !!node && node.type === 'Text' && getUnencodedText(node).trim() === '';
+    return !!node && node.type === 'Text' && isOnlyHtmlCollapseWhitespace(getUnencodedText(node));
 }
 
 export function isIgnoreDirective(node: Node | undefined | null): boolean {
@@ -324,21 +338,25 @@ export function endsWithLinebreak(text: string, nrLines = 1): boolean {
 }
 
 export function isTextNodeStartingWithWhitespace(node: Node): node is TextNode {
-    return node.type === 'Text' && /^\s/.test(getUnencodedText(node));
+    return (
+        node.type === 'Text' && STARTS_WITH_HTML_COLLAPSE_WHITESPACE_RE.test(getUnencodedText(node))
+    );
 }
 
 export function isTextNodeEndingWithWhitespace(node: Node): node is TextNode {
-    return node.type === 'Text' && /\s$/.test(getUnencodedText(node));
+    return (
+        node.type === 'Text' && ENDS_WITH_HTML_COLLAPSE_WHITESPACE_RE.test(getUnencodedText(node))
+    );
 }
 
 export function trimTextNodeRight(node: TextNode): void {
-    node.raw = node.raw && node.raw.trimRight();
-    node.data = node.data && node.data.trimRight();
+    node.raw = node.raw && node.raw.replace(TRAILING_HTML_COLLAPSE_WHITESPACE_RE, '');
+    node.data = node.data && node.data.replace(TRAILING_HTML_COLLAPSE_WHITESPACE_RE, '');
 }
 
 export function trimTextNodeLeft(node: TextNode): void {
-    node.raw = node.raw && node.raw.trimLeft();
-    node.data = node.data && node.data.trimLeft();
+    node.raw = node.raw && node.raw.replace(LEADING_HTML_COLLAPSE_WHITESPACE_RE, '');
+    node.data = node.data && node.data.replace(LEADING_HTML_COLLAPSE_WHITESPACE_RE, '');
 }
 
 /**
@@ -482,7 +500,7 @@ export function checkWhitespaceAtStartOfSvelteBlock(
     const parentOpeningEnd = options.originalText.lastIndexOf('}', firstChild.start);
     if (parentOpeningEnd > 0 && firstChild.start > parentOpeningEnd + 1) {
         const textBetween = options.originalText.substring(parentOpeningEnd + 1, firstChild.start);
-        if (textBetween.trim() === '') {
+        if (ONLY_HTML_COLLAPSE_WHITESPACE_RE.test(textBetween)) {
             return startsWithLinebreak(textBetween) ? 'line' : 'space';
         }
     }
@@ -518,7 +536,7 @@ export function checkWhitespaceAtEndOfSvelteBlock(
     const parentClosingStart = options.originalText.indexOf('{', lastChild.end);
     if (parentClosingStart > 0 && lastChild.end < parentClosingStart) {
         const textBetween = options.originalText.substring(lastChild.end, parentClosingStart);
-        if (textBetween.trim() === '') {
+        if (ONLY_HTML_COLLAPSE_WHITESPACE_RE.test(textBetween)) {
             return endsWithLinebreak(textBetween) ? 'line' : 'space';
         }
     }
@@ -560,7 +578,7 @@ function hugsStartOfNextNode(node: Node, options: ParserOptions): boolean {
         return false;
     }
 
-    return !options.originalText.substring(node.end).match(/^\s/);
+    return !STARTS_WITH_HTML_COLLAPSE_WHITESPACE_RE.test(options.originalText.substring(node.end));
 }
 
 function isLastChildWithinParentBlockElement(path: AstPath, options: ParserOptions): boolean {

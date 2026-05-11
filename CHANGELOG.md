@@ -1,5 +1,15 @@
 # prettier-plugin-svelte changelog
 
+## 3.5.2
+
+-   (fix) Preserve non-breaking spaces
+-   (fix) handle comments in `bind:` get/set tuple
+-   (fix) handle computed properties in e.g. `{#each}` blocks
+
+## 3.5.1
+
+-   (fix) Svelte 5: print trailing attribute comments
+
 ## 3.5.0
 
 -   (feat) Svelte 5: print attribute comments
