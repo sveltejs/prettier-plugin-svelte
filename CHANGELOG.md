@@ -3,6 +3,7 @@
 ## 3.5.2
 
 -   (fix) Preserve non-breaking spaces
+-   (fix) handle comments in `bind:` get/set tuple
 
 ## 3.5.1
 
