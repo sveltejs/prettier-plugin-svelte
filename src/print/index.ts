@@ -29,6 +29,7 @@ import {
     isLoneMustacheTag,
     isNodeSupportedLanguage,
     isNodeTopLevelHTML,
+    isOnlyHtmlCollapseWhitespace,
     isOrCanBeConvertedToShorthand,
     isTextNodeEndingWithLinebreak,
     isTextNodeEndingWithWhitespace,
@@ -121,7 +122,7 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
                     [printChildren(path, print, options)],
                     (n) =>
                         isLine(n) ||
-                        (typeof n === 'string' && n.trim() === '') ||
+                        (typeof n === 'string' && isOnlyHtmlCollapseWhitespace(n)) ||
                         // Because printChildren may append this at the end and
                         // may hide other lines before it
                         n === breakParent,
@@ -136,10 +137,10 @@ export function print(path: FastPath, options: ParserOptions, print: PrintFn): D
         case 'Text':
             if (!isPreTagContent(path)) {
                 if (isEmptyTextNode(node)) {
-                    const hasWhiteSpace =
-                        getUnencodedText(node).trim().length < getUnencodedText(node).length;
-                    const hasOneOrMoreNewlines = /\n/.test(getUnencodedText(node));
-                    const hasTwoOrMoreNewlines = /\n\r?\s*\n\r?/.test(getUnencodedText(node));
+                    const text = getUnencodedText(node);
+                    const hasWhiteSpace = text.length > 0;
+                    const hasOneOrMoreNewlines = /\n/.test(text);
+                    const hasTwoOrMoreNewlines = /\n\r?[\t\n\f\r ]*\n\r?/.test(text);
                     if (hasTwoOrMoreNewlines) {
                         return [hardline, hardline];
                     }

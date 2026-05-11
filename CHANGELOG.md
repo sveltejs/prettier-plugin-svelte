@@ -1,5 +1,9 @@
 # prettier-plugin-svelte changelog
 
+## 3.5.2
+
+-   (fix) Preserve non-breaking spaces
+
 ## 3.5.1
 
 -   (fix) Svelte 5: print trailing attribute comments
