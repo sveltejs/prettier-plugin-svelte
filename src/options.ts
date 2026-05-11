@@ -15,7 +15,7 @@ export const options: Record<keyof PluginConfig, SupportOption> = {
         category: 'Svelte',
         type: 'string',
         default: '',
-        description: 'Only set this when using Svelte 5! Path to the Svelte 5 compiler',
+        description: "Path to the Svelte compiler. You normally don't need to set this.",
     },
     svelteSortOrder: {
         category: 'Svelte',
@@ -96,6 +96,6 @@ export function isBracketSameLine(options: ParserOptions): boolean {
     return options.svelteBracketNewLine != null
         ? !options.svelteBracketNewLine
         : options.bracketSameLine != null
-        ? options.bracketSameLine
-        : false;
+          ? options.bracketSameLine
+          : false;
 }

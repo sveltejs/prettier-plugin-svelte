@@ -3,32 +3,19 @@ import {
     ElementNode,
     TextNode,
     AttributeNode,
-    MustacheTagNode,
-    AttributeShorthandNode,
-    HeadNode,
-    InlineComponentNode,
-    SlotNode,
-    TitleNode,
-    WindowNode,
-    IfBlockNode,
-    AwaitBlockNode,
-    CatchBlockNode,
-    EachBlockNode,
-    ElseBlockNode,
-    KeyBlockNode,
-    PendingBlockNode,
-    ThenBlockNode,
     CommentNode,
-    SlotTemplateNode,
     StyleDirectiveNode,
     ASTNode,
     CommentInfo,
+    ScriptNode,
+    StyleNode,
     SvelteBoundary,
 } from './nodes';
 import { blockElements, TagName } from '../lib/elements';
 import { AstPath } from 'prettier';
 import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
 import { ParserOptions, isBracketSameLine } from '../options';
+import { AST } from 'svelte/compiler';
 
 const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
 
@@ -52,63 +39,57 @@ export function isInlineElement(
     node: Node,
 ): node is ElementNode {
     return (
-        node && node.type === 'Element' && !isBlockElement(node, options) && !isPreTagContent(path)
+        node &&
+        node.type === 'RegularElement' &&
+        !isBlockElement(node, options) &&
+        !isPreTagContent(path)
     );
 }
 
 export function isBlockElement(node: Node, options: ParserOptions): node is ElementNode {
     return (
         node &&
-        node.type === 'Element' &&
+        node.type === 'RegularElement' &&
         options.htmlWhitespaceSensitivity !== 'strict' &&
         (options.htmlWhitespaceSensitivity === 'ignore' ||
             blockElements.includes(node.name as TagName))
     );
 }
 
-export function isSvelteBlock(
-    node: Node,
-): node is
-    | IfBlockNode
-    | AwaitBlockNode
-    | CatchBlockNode
-    | EachBlockNode
-    | ElseBlockNode
-    | KeyBlockNode
-    | PendingBlockNode
-    | ThenBlockNode {
-    return [
-        'IfBlock',
-        'SnippetBlock',
-        'AwaitBlock',
-        'CatchBlock',
-        'EachBlock',
-        'ElseBlock',
-        'KeyBlock',
-        'PendingBlock',
-        'ThenBlock',
-    ].includes(node.type);
+export function isSvelteBlock(node: Node): boolean {
+    return ['IfBlock', 'SnippetBlock', 'AwaitBlock', 'EachBlock', 'KeyBlock'].includes(node.type);
 }
 
-export function isNodeWithChildren(node: Node): node is Node & { children: Node[] } {
-    return (node as any).children;
+export function isNodeWithChildren(node: Node): boolean {
+    return !!getMaybeChildren(node);
 }
 
-export function getChildren(node: Node): Node[] {
-    return isNodeWithChildren(node) ? node.children : [];
+function getMaybeChildren(_node: Node | AST.Fragment): Node[] | undefined {
+    if (_node.type === 'Fragment') return _node.nodes as Node[];
+
+    for (const key of Object.keys(_node)) {
+        const value = (_node as any)[key] as AST.SvelteNode;
+        if (typeof value === 'object' && value != null && value.type === 'Fragment') {
+            return value.nodes as Node[];
+        }
+    }
+}
+
+export function getChildren(_node: Node | AST.Fragment): Node[] {
+    return getMaybeChildren(_node) || [];
 }
 
 /**
  * Returns siblings, that is, the children of the parent.
  */
 export function getSiblings(path: AstPath): Node[] {
-    let parent: Node = path.getParentNode();
+    let parent = path.getParentNode();
 
     if (isASTNode(parent)) {
-        parent = parent.html;
+        parent = parent.fragment as any;
     }
 
-    return getChildren(parent);
+    return (parent as AST.Fragment).nodes;
 }
 
 /**
@@ -117,13 +98,6 @@ export function getSiblings(path: AstPath): Node[] {
 export function getPreviousNode(path: AstPath): Node | undefined {
     const node: Node = path.getNode();
     return getSiblings(path).find((child) => child.end === node.start);
-}
-
-/**
- * Returns the next sibling node.
- */
-export function getNextNode(path: AstPath, node: Node = path.getNode()): Node | undefined {
-    return getSiblings(path).find((child) => child.start === node.end);
 }
 
 /**
@@ -150,29 +124,9 @@ export function getLeadingComment(path: AstPath): CommentNode | undefined {
     }
 }
 
-/**
- * Did there use to be any embedded object (that has been snipped out of the AST to be moved)
- * at the specified position?
- */
-export function doesEmbedStartAfterNode(node: Node, path: AstPath, siblings = getSiblings(path)) {
-    // If node is not at the top level of html, an embed cannot start after it,
-    // because embeds are only at the top level
-    if (!isNodeTopLevelHTML(node, path)) {
-        return false;
-    }
-
-    const position = node.end;
-    const root = path.stack[0];
-
-    const embeds = [root.css, root.html, root.instance, root.js, root.module] as Node[];
-
-    const nextNode = siblings[siblings.indexOf(node) + 1];
-    return embeds.find((n) => n && n.start >= position && (!nextNode || n.end <= nextNode.start));
-}
-
 export function isNodeTopLevelHTML(node: Node, path: AstPath): boolean {
     const root = path.stack[0];
-    return !!root.html && !!root.html.children && root.html.children.includes(node);
+    return !!root.fragment && !!root.fragment.nodes && root.fragment.nodes.includes(node);
 }
 
 export function isEmptyTextNode(node: Node | undefined): node is TextNode {
@@ -192,24 +146,17 @@ export function isIgnoreEndDirective(node: Node | undefined | null): boolean {
 }
 
 export function printRaw(
-    node:
-        | ElementNode
-        | InlineComponentNode
-        | SlotNode
-        | WindowNode
-        | HeadNode
-        | TitleNode
-        | SvelteBoundary
-        | SlotTemplateNode,
+    node: ElementNode | SvelteBoundary,
     originalText: string,
     stripLeadingAndTrailingNewline: boolean = false,
 ): string {
-    if (node.children.length === 0) {
+    const children = getChildren(node as any);
+    if (children.length === 0) {
         return '';
     }
 
-    const firstChild = node.children[0];
-    const lastChild = node.children[node.children.length - 1];
+    const firstChild = children[0];
+    const lastChild = children[children.length - 1];
 
     let raw = originalText.substring(firstChild.start, lastChild.end);
 
@@ -246,7 +193,8 @@ export function getAttributeTextValue(attributeName: string, node: Node): string
     const value = getAttributeValue(attributeName, node);
 
     if (value != null && typeof value === 'object') {
-        const textValue = value.find(isTextNode);
+        const value_nodes = Array.isArray(value) ? value : [value];
+        const textValue = value_nodes.find(isTextNode);
 
         if (textValue) {
             return textValue.data;
@@ -306,27 +254,35 @@ export function isScss(node: Node) {
 }
 
 export function isPugTemplate(node: Node): boolean {
-    return node.type === 'Element' && node.name === 'template' && getLangAttribute(node) === 'pug';
+    return (
+        node.type === 'RegularElement' &&
+        node.name === 'template' &&
+        getLangAttribute(node) === 'pug'
+    );
 }
 
-export function isLoneMustacheTag(node: true | Node[]): node is [MustacheTagNode] {
-    return node !== true && node.length === 1 && node[0].type === 'MustacheTag';
-}
+export function isLoneMustacheTag(node: true | Node[] | Node): boolean {
+    if (node === true || node == null) {
+        return false;
+    }
 
-export function isAttributeShorthand(node: true | Node[]): node is [AttributeShorthandNode] {
-    return node !== true && node.length === 1 && node[0].type === 'AttributeShorthand';
+    if (Array.isArray(node)) {
+        return node.length === 1 && node[0].type === 'ExpressionTag';
+    }
+
+    return node.type === 'ExpressionTag';
 }
 
 /**
  * True if node is of type `{a}` or `a={a}`
  */
 export function isOrCanBeConvertedToShorthand(node: AttributeNode | StyleDirectiveNode): boolean {
-    if (isAttributeShorthand(node.value)) {
-        return true;
-    }
-
     if (isLoneMustacheTag(node.value)) {
-        const expression = node.value[0].expression;
+        const value_node = Array.isArray(node.value) ? node.value[0] : (node.value as any);
+        const expression = value_node.type === 'ExpressionTag' ? value_node.expression : null;
+        if (!expression) {
+            return false;
+        }
         return expression.type === 'Identifier' && expression.name === node.name;
     }
 
@@ -380,21 +336,11 @@ export function trimTextNodeLeft(node: TextNode): void {
  * Remove all leading whitespace up until the first non-empty text node,
  * and all trailing whitespace from the last non-empty text node onwards.
  */
-export function trimChildren(children: Node[], path: AstPath): void {
-    let firstNonEmptyNode = children.findIndex(
-        (n) => !isEmptyTextNode(n) && !doesEmbedStartAfterNode(n, path),
-    );
+export function trimChildren(children: Node[]): void {
+    let firstNonEmptyNode = children.findIndex((n) => !isEmptyTextNode(n));
     firstNonEmptyNode = firstNonEmptyNode === -1 ? children.length - 1 : firstNonEmptyNode;
 
-    let lastNonEmptyNode = findLastIndex((n, idx) => {
-        // Last node is ok to end at the start of an embedded region,
-        // if it's not a comment (which should stick to the region)
-        return (
-            !isEmptyTextNode(n) &&
-            ((idx === children.length - 1 && n.type !== 'Comment') ||
-                !doesEmbedStartAfterNode(n, path))
-        );
-    }, children);
+    let lastNonEmptyNode = findLastIndex((n) => !isEmptyTextNode(n), children);
     lastNonEmptyNode = lastNonEmptyNode === -1 ? 0 : lastNonEmptyNode;
 
     for (let i = 0; i <= firstNonEmptyNode; i++) {
@@ -437,7 +383,7 @@ export function shouldHugStart(
         return false;
     }
 
-    const children: Node[] = node.children;
+    const children: Node[] = getChildren(node);
     if (children.length === 0) {
         return true;
     }
@@ -475,7 +421,7 @@ export function shouldHugEnd(
         return false;
     }
 
-    const children: Node[] = node.children;
+    const children: Node[] = getChildren(node);
     if (children.length === 0) {
         return true;
     }
@@ -492,14 +438,14 @@ export function shouldHugEnd(
  * Check for a svelte block if there's whitespace at the start and if it's a space or a line.
  */
 export function checkWhitespaceAtStartOfSvelteBlock(
-    node: Node,
+    node: AST.Fragment,
     options: ParserOptions,
 ): 'none' | 'space' | 'line' {
-    if (!isSvelteBlock(node) || !isNodeWithChildren(node)) {
+    if (!isNodeWithChildren(node as Node)) {
         return 'none';
     }
 
-    const children: Node[] = node.children;
+    const children: Node[] = node.nodes;
     if (children.length === 0) {
         return 'none';
     }
@@ -529,14 +475,14 @@ export function checkWhitespaceAtStartOfSvelteBlock(
  * Check for a svelte block if there's whitespace at the end and if it's a space or a line.
  */
 export function checkWhitespaceAtEndOfSvelteBlock(
-    node: Node,
+    node: AST.Fragment,
     options: ParserOptions,
 ): 'none' | 'space' | 'line' {
-    if (!isSvelteBlock(node) || !isNodeWithChildren(node)) {
+    if (!isNodeWithChildren(node as Node)) {
         return 'none';
     }
 
-    const children: Node[] = node.children;
+    const children: Node[] = node.nodes;
     if (children.length === 0) {
         return 'none';
     }
@@ -599,25 +545,30 @@ function hugsStartOfNextNode(node: Node, options: ParserOptions): boolean {
 }
 
 function isLastChildWithinParentBlockElement(path: AstPath, options: ParserOptions): boolean {
-    const parent = path.getParentNode() as Node | undefined;
-    if (!parent || !isBlockElement(parent, options)) {
+    const fragment = path.getParentNode() as Node | undefined;
+    const parent = path.getParentNode(1) as Node | undefined;
+
+    if (!fragment || !parent || !isBlockElement(parent, options)) {
         return false;
     }
 
-    const children = getChildren(parent);
+    const children = (fragment as AST.Fragment).nodes.filter((child) => !isEmptyTextNode(child));
     const lastChild = children[children.length - 1];
     return lastChild === path.getNode();
 }
 
 export function assignCommentsToNodes(ast: ASTNode) {
     if (ast.module) {
-        ast.module.comments = removeAndGetLeadingComments(ast, ast.module);
+        (ast.module as ScriptNode).comments = removeAndGetLeadingComments(ast, ast.module as any);
     }
     if (ast.instance) {
-        ast.instance.comments = removeAndGetLeadingComments(ast, ast.instance);
+        (ast.instance as ScriptNode).comments = removeAndGetLeadingComments(
+            ast,
+            ast.instance as any,
+        );
     }
     if (ast.css) {
-        ast.css.comments = removeAndGetLeadingComments(ast, ast.css);
+        (ast.css as StyleNode).comments = removeAndGetLeadingComments(ast, ast.css as any);
     }
 }
 
@@ -625,7 +576,7 @@ export function assignCommentsToNodes(ast: ASTNode) {
  * Returns the comments that are above the current node and deletes them from the html ast.
  */
 function removeAndGetLeadingComments(ast: ASTNode, current: Node): CommentInfo[] {
-    const siblings = getChildren(ast.html);
+    const siblings = ast.fragment.nodes as Node[];
     const comments: CommentNode[] = [];
     const newlines: TextNode[] = [];
 
