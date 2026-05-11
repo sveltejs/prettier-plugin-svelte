@@ -6,10 +6,10 @@ Format your Svelte components using Prettier.
 
 ## Features
 
--   Format your HTML, CSS, and JavaScript using prettier
--   Format Svelte syntax, e.g. each loops, if statements, await blocks, etc.
--   Format the JavaScript expressions embedded in the Svelte syntax
-    -   e.g. expressions inside of `{}`, event bindings `on:click=""`, and more
+- Format your HTML, CSS, and JavaScript using prettier
+- Format Svelte syntax, e.g. each loops, if statements, await blocks, etc.
+- Format the JavaScript expressions embedded in the Svelte syntax
+    - e.g. expressions inside of `{}`, event bindings `on:click=""`, and more
 
 ## VS Code Extension
 
@@ -21,16 +21,16 @@ The extension lets you define options through extension-specific configuration. 
 
 Installing the plugin as a package allows:
 
--   customizing the formatting behavior
--   using the command line to format
--   using a different IDE
--   using the official VS Code [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) extension to format Svelte files
+- customizing the formatting behavior
+- using the command line to format
+- using a different IDE
+- using the official VS Code [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) extension to format Svelte files
 
 ### Compatibility
 
--   `prettier-plugin-svelte@4` only works with `prettier@3`
--   `prettier-plugin-svelte@3` only works with `prettier@3`
--   `prettier-plugin-svelte@2` only works with `prettier@2`
+- `prettier-plugin-svelte@4` only works with `prettier@3`
+- `prettier-plugin-svelte@3` only works with `prettier@3`
+- `prettier-plugin-svelte@2` only works with `prettier@2`
 
 ### Setup
 
@@ -48,7 +48,7 @@ Then create a `.prettierrc` [configuration file](https://prettier.io/docs/en/con
     // ..
     "plugins": ["prettier-plugin-svelte"],
     "pluginSearchDirs": ["."], // should be removed in v3
-    "overrides": [{ "files": "*.svelte", "options": { "parser": "svelte" } }]
+    "overrides": [{ "files": "*.svelte", "options": { "parser": "svelte" } }],
 }
 ```
 
@@ -69,8 +69,8 @@ As part of your scripts in `package.json`:
 {
     // ..
     "scripts": {
-        "format": "prettier --write ."
-    }
+        "format": "prettier --write .",
+    },
 }
 ```
 
@@ -175,8 +175,8 @@ Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte
 
 ## Usage with Tailwind Prettier Plugin
 
--   VS Code Extension: Use it as the default formatter for Svelte files
--   Prettier Plugin: Load the Tailwind plugin in the end - [Tailwind docs](https://github.com/tailwindlabs/prettier-plugin-tailwindcss#compatibility-with-other-prettier-plugins)
+- VS Code Extension: Use it as the default formatter for Svelte files
+- Prettier Plugin: Load the Tailwind plugin in the end - [Tailwind docs](https://github.com/tailwindlabs/prettier-plugin-tailwindcss#compatibility-with-other-prettier-plugins)
 
 ```jsonc
 // .prettierrc
@@ -184,8 +184,8 @@ Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte
     // ..
     "plugins": [
         "prettier-plugin-svelte",
-        "prettier-plugin-tailwindcss" // MUST come last
-    ]
+        "prettier-plugin-tailwindcss", // MUST come last
+    ],
 }
 ```
 
@@ -195,7 +195,7 @@ Since we are using configuration overrides to handle svelte files, you might als
 // settings.json
 {
     // ..
-    "prettier.documentSelectors": ["**/*.svelte"]
+    "prettier.documentSelectors": ["**/*.svelte"],
 }
 ```
 

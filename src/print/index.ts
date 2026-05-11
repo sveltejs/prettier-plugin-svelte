@@ -246,35 +246,35 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 node.type === 'SvelteComponent' && node.expression
                     ? [attributeLine, 'this=', ...printJsExpression()]
                     : node.type === 'SvelteElement' && node.tag
-                    ? [
-                          attributeLine,
-                          'this=',
-                          ...(() => {
-                              if (typeof node.tag === 'string') {
-                                  return [`"${node.tag}"`];
-                              }
+                      ? [
+                            attributeLine,
+                            'this=',
+                            ...(() => {
+                                if (typeof node.tag === 'string') {
+                                    return [`"${node.tag}"`];
+                                }
 
-                              if (
-                                  node.tag?.type === 'Literal' &&
-                                  typeof (node.tag as any).value === 'string'
-                              ) {
-                                  const literal_value = (node.tag as any).value;
-                                  const tag_start = (node.tag as any).start;
-                                  const expression_wrapped =
-                                      typeof tag_start === 'number' &&
-                                      options.originalText[tag_start - 1] === '{';
-                                  // Preserve <svelte:element this={"literal"}>
-                                  // because in Svelte 6 this="literal" will be invalid
-                                  if (expression_wrapped) {
-                                      return [open, `"${literal_value}"`, close];
-                                  }
-                                  return [`"${literal_value}"`];
-                              }
+                                if (
+                                    node.tag?.type === 'Literal' &&
+                                    typeof (node.tag as any).value === 'string'
+                                ) {
+                                    const literal_value = (node.tag as any).value;
+                                    const tag_start = (node.tag as any).start;
+                                    const expression_wrapped =
+                                        typeof tag_start === 'number' &&
+                                        options.originalText[tag_start - 1] === '{';
+                                    // Preserve <svelte:element this={"literal"}>
+                                    // because in Svelte 6 this="literal" will be invalid
+                                    if (expression_wrapped) {
+                                        return [open, `"${literal_value}"`, close];
+                                    }
+                                    return [`"${literal_value}"`];
+                                }
 
-                              return [open, printJS(path, print, 'tag'), close];
-                          })(),
-                      ]
-                    : '';
+                                return [open, printJS(path, print, 'tag'), close];
+                            })(),
+                        ]
+                      : '';
 
             if (isSelfClosingTag) {
                 return group([
@@ -345,8 +345,8 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                         hugStart && !isEmpty
                             ? ''
                             : !bracketSameLine && !isPreTagContent(path)
-                            ? dedent(softline)
-                            : '',
+                              ? dedent(softline)
+                              : '',
                     ]),
                 ),
             ];
@@ -977,14 +977,14 @@ function printSvelteBlockChildren(path: AstPath, print: PrintFn, options: Parser
         whitespaceAtStartOfBlock === 'none'
             ? ''
             : whitespaceAtEndOfBlock === 'line' || whitespaceAtStartOfBlock === 'line'
-            ? hardline
-            : line;
+              ? hardline
+              : line;
     const endline =
         whitespaceAtEndOfBlock === 'none'
             ? ''
             : whitespaceAtEndOfBlock === 'line' || whitespaceAtStartOfBlock === 'line'
-            ? hardline
-            : line;
+              ? hardline
+              : line;
 
     const firstChild = children[0];
     const lastChild = children[children.length - 1];

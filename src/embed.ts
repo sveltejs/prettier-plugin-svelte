@@ -355,7 +355,7 @@ async function embedTag(
         tag === 'template' ? printRaw(node as ElementNode, text) : getSnippedContent(node);
     const previousComments =
         node.type === 'Script' || node.type === 'StyleSheet'
-            ? node.comments ?? []
+            ? (node.comments ?? [])
             : [getLeadingComment(path)]
                   .filter(Boolean)
                   .map((comment) => ({ comment: comment as CommentNode, emptyLineAfter: false }));
@@ -377,8 +377,8 @@ async function embedTag(
         ? content.trim() !== ''
             ? await formatBodyContent(content)
             : content === ''
-            ? ''
-            : hardline
+              ? ''
+              : hardline
         : preformattedBody(content);
 
     const openingTag = group([

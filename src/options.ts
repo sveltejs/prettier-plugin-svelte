@@ -96,6 +96,6 @@ export function isBracketSameLine(options: ParserOptions): boolean {
     return options.svelteBracketNewLine != null
         ? !options.svelteBracketNewLine
         : options.bracketSameLine != null
-        ? options.bracketSameLine
-        : false;
+          ? options.bracketSameLine
+          : false;
 }
