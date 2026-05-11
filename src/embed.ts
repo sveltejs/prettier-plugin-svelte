@@ -365,7 +365,13 @@ async function embedTag(
         !isIgnoreDirective(previousComments[previousComments.length - 1]?.comment) &&
         (tag !== 'template' ||
             options.plugins.some(
-                (plugin) => typeof plugin !== 'string' && plugin.parsers && plugin.parsers.pug,
+                (plugin) =>
+                    typeof plugin !== 'string' &&
+                    !(plugin instanceof URL) &&
+                    // @ts-expect-error Prettier's type definitions don't include name anymore for some reason
+                    plugin.name === 'prettier-plugin-svelte' &&
+                    plugin.parsers &&
+                    plugin.parsers.pug,
             ));
     const body: Doc = canFormat
         ? content.trim() !== ''

@@ -119,7 +119,6 @@ export const printers: Record<string, Printer> = {
     'svelte-ast': {
         print,
         embed,
-        // @ts-expect-error Prettier's type definitions don't include getVisitorKeys
         getVisitorKeys,
         isBlockComment(comment: any) {
             return comment.type === 'Block';
