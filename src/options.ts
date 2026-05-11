@@ -50,13 +50,6 @@ export const options: Record<keyof PluginConfig, SupportOption> = {
             makeChoice('none'),
         ],
     },
-    // todo: remove in v4
-    svelteBracketNewLine: {
-        category: 'Svelte',
-        type: 'boolean',
-        description: 'Put the `>` of a multiline element on a new line',
-        deprecated: '2.5.0',
-    },
     svelteAllowShorthand: {
         category: 'Svelte',
         type: 'boolean',
@@ -93,9 +86,5 @@ export function parseSortOrder(
 }
 
 export function isBracketSameLine(options: ParserOptions): boolean {
-    return options.svelteBracketNewLine != null
-        ? !options.svelteBracketNewLine
-        : options.bracketSameLine != null
-          ? options.bracketSameLine
-          : false;
+    return options.bracketSameLine != null ? options.bracketSameLine : false;
 }

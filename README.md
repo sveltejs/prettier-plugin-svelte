@@ -9,7 +9,7 @@ Format your Svelte components using Prettier.
 - Format your HTML, CSS, and JavaScript using prettier
 - Format Svelte syntax, e.g. each loops, if statements, await blocks, etc.
 - Format the JavaScript expressions embedded in the Svelte syntax
-    - e.g. expressions inside of `{}`, event bindings `on:click=""`, and more
+    - e.g. expressions inside of `{}`, event bindings `onclick={...}`, and more
 
 ## VS Code Extension
 
@@ -28,7 +28,7 @@ Installing the plugin as a package allows:
 
 ### Compatibility
 
-- `prettier-plugin-svelte@4` only works with `prettier@3`
+- `prettier-plugin-svelte@4` only works with `prettier@3` and Svelte 5+
 - `prettier-plugin-svelte@3` only works with `prettier@3`
 - `prettier-plugin-svelte@2` only works with `prettier@2`
 
@@ -113,47 +113,6 @@ Example:
 | ------- | --------------------------------- | ------------------------------ |
 | `true`  | `--svelte-allow-shorthand <bool>` | `svelteAllowShorthand: <bool>` |
 
-### Svelte Bracket New Line
-
-> Deprecated since 2.5.0. Use Prettier 2.4.0 and [bracketSameLine](https://prettier.io/docs/en/options.html#bracket-line) instead.
-
-Put the `>` of a multiline element on a new line. Roughly the Svelte equivalent of the [jsxBracketSameLine](https://prettier.io/docs/en/options.html#jsx-brackets) rule. Setting this to `false` will have no effect for whitespace-sensitive tags (inline elements) when there's no whitespace between the `>` of the start tag and the inner content, or when there's no whitespace after the `>` of the end tag. You can read more about HTML whitespace sensitivity [here](https://prettier.io/blog/2018/11/07/1.15.0.html#whitespace-sensitive-formatting). You can adjust whitespace sensitivity through [this setting](https://prettier.io/docs/en/options.html#html-whitespace-sensitivity).
-
-Example:
-
-<!-- prettier-ignore -->
-```html
-<!-- before formatting -->
-<span><div>foo</div><span>bar</span></span>
-<div pretend break>content</div>
-
-<!-- after formatting, svelteBracketNewLine true -->
-<span
-    ><div>foo</div>
-    <span>bar</span></span
->
-<div
-     pretend
-     break
->
-    content
-</div>
-
-<!-- after formatting, svelteBracketNewLine false -->
-<span
-    ><div>foo</div>
-    <span>bar</span></span>
-<div
-     pretend
-     break>
-    content
-</div>
-```
-
-| Default | CLI Override                       | API Override                   |
-| ------- | ---------------------------------- | ------------------------------ |
-| `true`  | `--svelte-bracket-new-line <bool>` | `svelteBracketNewLine: <bool>` |
-
 ### Svelte Indent Script And Style
 
 Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte files. This saves an indentation level, but might break code folding in your editor.
@@ -167,7 +126,6 @@ Whether or not to indent the code inside `<script>` and `<style>` tags in Svelte
 ```json
 {
     "svelteSortOrder": "options-styles-scripts-markup",
-    "svelteBracketNewLine": false,
     "svelteAllowShorthand": false,
     "svelteIndentScriptAndStyle": false
 }
@@ -207,9 +165,9 @@ Usage in the browser is semi-supported. You can import the plugin from `prettier
 
 > For migration to `prettier-plugin-svelte@3` [see here](https://github.com/sveltejs/prettier-plugin-svelte/tree/version-3?tab=readme-ov-file#migration).
 
-Upgrade to Svelte 5 before upgrading to `prettier-plugin-svelte@4`, as it doesn't support older Svelte versions.
-
-`svelteStrictMode` option has been removed. Attributes are now never quoted, because this will mean "stringify this attribute value" in a future Svelte version.
+- Upgrade to Svelte 5 before upgrading to `prettier-plugin-svelte@4`, as it doesn't support older Svelte versions.
+- `svelteStrictMode` option has been removed. Attributes are now never quoted, because this will mean "stringify this attribute value" in a future Svelte version.
+- `svelteBracketNewLine` option has been removed. Use Prettier's [bracketSameLine](https://prettier.io/docs/en/options.html#bracket-line) option instead.
 
 ## FAQ
 

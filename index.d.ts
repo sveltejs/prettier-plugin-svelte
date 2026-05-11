@@ -2,7 +2,6 @@ import { Config } from 'prettier';
 
 export interface PluginConfig {
     svelteSortOrder?: SortOrder;
-    svelteBracketNewLine?: boolean;
     svelteAllowShorthand?: boolean;
     svelteIndentScriptAndStyle?: boolean;
     svelte5CompilerPath?: string;
