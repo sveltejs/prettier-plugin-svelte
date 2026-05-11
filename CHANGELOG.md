@@ -4,6 +4,7 @@
 
 -   (fix) Preserve non-breaking spaces
 -   (fix) handle comments in `bind:` get/set tuple
+-   (fix) handle computed properties in e.g. `{#each}` blocks
 
 ## 3.5.1
 

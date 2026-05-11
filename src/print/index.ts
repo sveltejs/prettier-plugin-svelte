@@ -1183,7 +1183,7 @@ function printJS(path: FastPath, print: PrintFn, name: string) {
 }
 
 function expandNode(node: any, original: string): string {
-    let str = _expandNode(node);
+    let str = _expandNode(node, original);
     if (node?.typeAnnotation) {
         str +=
             ': ' +
@@ -1195,7 +1195,7 @@ function expandNode(node: any, original: string): string {
     return str;
 }
 
-function _expandNode(node: any, parent?: any): string {
+function _expandNode(node: any, original: string, parent?: any): string {
     if (node === null) {
         return '';
     }
@@ -1213,32 +1213,51 @@ function _expandNode(node: any, parent?: any): string {
                 node.elements
                     // handle null specifically here; else it would become the empty string, but that would mean
                     // fewer elements in the array, which would change the meaning of the array
-                    .map((el: any) => (el === null ? ' ' : _expandNode(el)))
+                    .map((el: any) => (el === null ? ' ' : _expandNode(el, original)))
                     .join(',')
                     .slice(1) +
                 ']'
             );
         case 'AssignmentPattern':
-            return _expandNode(node.left) + ' =' + _expandNode(node.right);
+            return _expandNode(node.left, original) + ' =' + _expandNode(node.right, original);
         case 'Identifier':
             return ' ' + node.name;
         case 'Literal':
             return ' ' + node.raw;
         case 'ObjectExpression':
-            return ' {' + node.properties.map((p: any) => _expandNode(p, node)).join(',') + ' }';
+            return (
+                ' {' +
+                node.properties.map((p: any) => _expandNode(p, original, node)).join(',') +
+                ' }'
+            );
         case 'ObjectPattern':
-            return ' {' + node.properties.map(_expandNode).join(',') + ' }';
-        case 'Property':
+            return (
+                ' {' + node.properties.map((p: any) => _expandNode(p, original)).join(',') + ' }'
+            );
+        case 'Property': {
+            let computedKeyInner = '';
+            if (node.computed) {
+                computedKeyInner =
+                    typeof node.key?.start === 'number' && typeof node.key?.end === 'number'
+                        ? original.slice(node.key.start, node.key.end)
+                        : _expandNode(node.key, original).trim();
+            }
+
             if (node.value.type === 'ObjectPattern' || node.value.type === 'ArrayPattern') {
-                return ' ' + node.key.name + ':' + _expandNode(node.value);
+                const keyStr = node.computed ? ' [' + computedKeyInner + ']' : ' ' + node.key.name;
+                return keyStr + ':' + _expandNode(node.value, original);
             } else if (
                 (node.value.type === 'Identifier' && node.key.name !== node.value.name) ||
                 (parent && parent.type === 'ObjectExpression')
             ) {
-                return _expandNode(node.key) + ':' + _expandNode(node.value);
+                const keyStr = node.computed
+                    ? ' [' + computedKeyInner + ']'
+                    : _expandNode(node.key, original);
+                return keyStr + ':' + _expandNode(node.value, original);
             } else {
-                return _expandNode(node.value);
+                return _expandNode(node.value, original);
             }
+        }
         case 'RestElement':
             return ' ...' + node.argument.name;
     }
