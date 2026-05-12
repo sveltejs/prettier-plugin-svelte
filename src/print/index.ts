@@ -133,20 +133,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         case 'Text':
             if (!isPreTagContent(path)) {
                 if (isEmptyTextNode(node)) {
-                    const text = getUnencodedText(node);
-                    const hasWhiteSpace = text.length > 0;
-                    const hasOneOrMoreNewlines = /\n/.test(text);
-                    const hasTwoOrMoreNewlines = /\n\r?[\t\n\f\r ]*\n\r?/.test(text);
-                    if (hasTwoOrMoreNewlines) {
-                        return [hardline, hardline];
-                    }
-                    if (hasOneOrMoreNewlines) {
-                        return hardline;
-                    }
-                    if (hasWhiteSpace) {
-                        return line;
-                    }
-                    return '';
+                    return printWhitespace(getUnencodedText(node));
                 }
 
                 /**
@@ -760,6 +747,75 @@ function stripSvelteOptionsComment(n: ASTNode): Doc | undefined {
     return leadingCommentDoc;
 }
 
+type HoistedKind = 'options' | 'module' | 'instance' | 'css';
+
+/** At most one whitespace-only {@link TextNode} before the `#endregion` comment. */
+type RegionEndTrail = {
+    whitespace?: TextNode;
+    comment: CommentNode;
+};
+
+function hoistedEndsDescending(n: ASTNode): { kind: HoistedKind; end: number }[] {
+    const out: { kind: HoistedKind; end: number }[] = [];
+    if (n.options) {
+        out.push({ kind: 'options', end: n.options.end });
+    }
+    if (n.module) {
+        out.push({ kind: 'module', end: n.module.end });
+    }
+    if (n.instance) {
+        out.push({ kind: 'instance', end: n.instance.end });
+    }
+    if (n.css) {
+        out.push({ kind: 'css', end: n.css.end });
+    }
+    out.sort((a, b) => b.end - a.end);
+    return out;
+}
+
+/**
+ * Hoisted roots (`options`, `module`, `instance`, `css`) are printed outside `fragment.nodes`, but the
+ * next sibling may be `<!-- #endregion -->`. With `svelteSortOrder`, that comment must stay below the
+ * printed block. Peel optional whitespace-only text nodes + the first HTML comment after `hoistedEnd`
+ * only when it matches `#endregion` and there is no non-whitespace in `originalText` between positions.
+ */
+function extractRegionEndTrailAfterHoistedEnd(
+    nodes: Node[],
+    hoistedEnd: number,
+): RegionEndTrail | undefined {
+    const idx = nodes.findIndex((child) => child.start >= hoistedEnd);
+    if (idx === -1) {
+        return;
+    }
+
+    let whitespace: TextNode | undefined;
+
+    for (let i = idx; i < Math.min(idx + 2, nodes.length); i++) {
+        const child = nodes[i];
+
+        if (child.type === 'Text' && isOnlyHtmlCollapseWhitespace(getUnencodedText(child))) {
+            whitespace = child;
+            continue;
+        } else if (child.type === 'Comment' && /#\s*endregion\b/i.test(child.data)) {
+            nodes.splice(idx, i + 1 - idx);
+
+            return { whitespace, comment: child };
+        }
+
+        return;
+    }
+}
+
+function printRegionEndTrailDoc(trail: RegionEndTrail): Doc {
+    const pieces: Doc[] = [];
+    if (trail.whitespace) {
+        const doc = printWhitespace(getUnencodedText(trail.whitespace).replace(/^\r?\n/, ''));
+        pieces.push(...(Array.isArray(doc) ? doc : [doc]));
+    }
+    pieces.push(printComment(trail.comment));
+    return group([...pieces, hardline]);
+}
+
 function mergeAdjacentTextNodesInFragment(nodes: Node[]): void {
     for (let i = 0; i < nodes.length - 1; ) {
         const current = nodes[i];
@@ -898,24 +954,50 @@ function printTopLevelParts(
         styles: [],
     };
 
+    const regionEndTrail: Partial<Record<HoistedKind, RegionEndTrail>> = {};
+    for (const { kind, end } of hoistedEndsDescending(n)) {
+        const trail = extractRegionEndTrailAfterHoistedEnd(n.fragment.nodes as Node[], end);
+        if (trail) {
+            regionEndTrail[kind] = trail;
+        }
+    }
+
     // scripts
     if (n.module) {
-        parts.scripts.push(path.call(print, 'module'));
+        let doc = path.call(print, 'module');
+        const trail = regionEndTrail.module;
+        if (trail) {
+            doc = group([doc, printRegionEndTrailDoc(trail)]);
+        }
+        parts.scripts.push(doc);
     }
     if (n.instance) {
-        parts.scripts.push(path.call(print, 'instance'));
+        let doc = path.call(print, 'instance');
+        const trail = regionEndTrail.instance;
+        if (trail) {
+            doc = group([doc, printRegionEndTrailDoc(trail)]);
+        }
+        parts.scripts.push(doc);
     }
 
     // styles
     if (n.css) {
-        parts.styles.push(path.call(print, 'css'));
+        let doc = path.call(print, 'css');
+        const trail = regionEndTrail.css;
+        if (trail) {
+            doc = group([doc, printRegionEndTrailDoc(trail)]);
+        }
+        parts.styles.push(doc);
     }
 
     // markup
     if (n.options) {
-        parts.options.push(
-            printSvelteOptions(path, options, print, n.options, stripSvelteOptionsComment(n)),
-        );
+        let doc = printSvelteOptions(path, options, print, n.options, stripSvelteOptionsComment(n));
+        const trail = regionEndTrail.options;
+        if (trail) {
+            doc = group([doc, printRegionEndTrailDoc(trail)]);
+        }
+        parts.options.push(doc);
     }
 
     mergeAdjacentTextNodesInFragment(n.fragment.nodes);
@@ -1385,4 +1467,20 @@ function printComment(node: CommentNode) {
     }
 
     return group(['<!--', text, '-->']);
+}
+
+function printWhitespace(text: string): Doc {
+    const hasWhiteSpace = text.length > 0;
+    const hasOneOrMoreNewlines = /\n/.test(text);
+    const hasTwoOrMoreNewlines = /\n\r?[\t\n\f\r ]*\n\r?/.test(text);
+    if (hasTwoOrMoreNewlines) {
+        return [hardline, hardline];
+    }
+    if (hasOneOrMoreNewlines) {
+        return hardline;
+    }
+    if (hasWhiteSpace) {
+        return line;
+    }
+    return '';
 }
