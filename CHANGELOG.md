@@ -1,5 +1,11 @@
 # prettier-plugin-svelte changelog
 
+## 4.0.0
+
+- (breaking) Require Svelte 5
+- (breaking) Remove `sveltebracketNewLine` option
+- (breaking) Remove `svelteStrictMode` option
+
 ## 3.5.2
 
 - (fix) Preserve non-breaking spaces

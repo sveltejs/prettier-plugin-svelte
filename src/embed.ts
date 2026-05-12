@@ -136,18 +136,6 @@ export function embed(path: AstPath, _options: Options) {
             break;
         case 'RenderTag':
             if (node === parent.expression) {
-                // TODO: remove this if block at some point, snippet API changed in .next-..
-                if ('argument' in parent || 'arguments' in parent) {
-                    parent.expression.end =
-                        options.originalText.indexOf(
-                            ')',
-                            parent.argument?.end ??
-                                parent.arguments?.[parent.arguments.length - 1]?.end ??
-                                parent.expression.end,
-                        ) + 1;
-                    parent.argument = null;
-                    parent.arguments = null;
-                }
                 printJS(parent, 'expression', {});
             }
             break;
