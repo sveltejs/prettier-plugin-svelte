@@ -31,7 +31,7 @@ jobs:
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
             - name: Override Svelte version to 5
-              run: pnpm install svelte@^5 --no-save
+              run: pnpm install svelte@^5
             - name: Run tests with Svelte 5
               run: pnpm test
 
@@ -49,7 +49,7 @@ jobs:
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
             - name: Override Prettier to latest 3.x
-              run: pnpm install prettier@^3 --no-save
+              run: pnpm install prettier@^3
             - name: Run tests with latest Prettier 3.x
               run: pnpm test
 
@@ -67,7 +67,7 @@ jobs:
             - name: Install dependencies
               run: pnpm install --frozen-lockfile
             - name: Override Prettier to 3.0.0
-              run: pnpm install prettier@3.0.0 --no-save
+              run: pnpm install prettier@3.0.0
             - name: Run tests with Prettier 3.0.0
               run: pnpm test
 
