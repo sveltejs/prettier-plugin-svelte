@@ -43,6 +43,8 @@
     },
     "homepage": "https://github.com/sveltejs/prettier-plugin-svelte#readme",
     "devDependencies": {
+        "@changesets/cli": "^2.29.8",
+        "@svitejs/changesets-changelog-github-compact": "^1.1.0",
         "@rollup/plugin-alias": "^5.1.0",
         "@rollup/plugin-commonjs": "14.0.0",
         "@rollup/plugin-node-resolve": "11.0.1",
