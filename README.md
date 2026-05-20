@@ -47,7 +47,6 @@ Then create a `.prettierrc` [configuration file](https://prettier.io/docs/en/con
 {
     // ..
     "plugins": ["prettier-plugin-svelte"],
-    "pluginSearchDirs": ["."], // should be removed in v3
     "overrides": [{ "files": "*.svelte", "options": { "parser": "svelte" } }],
 }
 ```

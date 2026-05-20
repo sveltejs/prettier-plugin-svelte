@@ -4,6 +4,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import typescript from 'rollup-plugin-typescript';
 
 export default [
+    // TODO 5.0: ESM build instead
     // CommonJS build
     {
         input: 'src/index.ts',

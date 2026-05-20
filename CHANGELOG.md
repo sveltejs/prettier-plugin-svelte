@@ -3,7 +3,7 @@
 ## 4.0.0
 
 - (breaking) Require Svelte 5
-- (breaking) Remove `sveltebracketNewLine` option
+- (breaking) Remove `svelteBracketNewLine` option
 - (breaking) Remove `svelteStrictMode` option
 - (fix) Keep trailing `<!-- #endregion -->` comments below `svelte:options` / scripts / styles
 

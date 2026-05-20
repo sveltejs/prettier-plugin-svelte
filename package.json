@@ -41,6 +41,9 @@
     "bugs": {
         "url": "https://github.com/sveltejs/prettier-plugin-svelte/issues"
     },
+    "engines": {
+        "node": ">=20"
+    },
     "homepage": "https://github.com/sveltejs/prettier-plugin-svelte#readme",
     "devDependencies": {
         "@changesets/cli": "^2.29.8",
@@ -48,7 +51,7 @@
         "@rollup/plugin-alias": "^5.1.0",
         "@rollup/plugin-commonjs": "14.0.0",
         "@rollup/plugin-node-resolve": "11.0.1",
-        "@types/node": "^14.0.0",
+        "@types/node": "^20",
         "ava": "3.15.0",
         "prettier": "^3.8.0",
         "rollup": "2.36.0",

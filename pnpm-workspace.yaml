@@ -9,3 +9,5 @@ minimumReleaseAgeExclude:
     - svelte-check
     - esm-env
 blockExoticSubdeps: true
+packages:
+    - '.'
