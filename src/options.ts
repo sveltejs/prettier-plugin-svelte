@@ -78,7 +78,6 @@ export function parseSortOrder(
     }
 
     const order = sortOrder.split(sortOrderSeparator) as SortOrderPart[];
-    // For backwards compatibility: Add options to beginning if not present
     if (!order.includes('options')) {
         throw new Error('svelteSortOrder is missing option `options`');
     }

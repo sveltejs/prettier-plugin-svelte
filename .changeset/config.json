@@ -9,6 +9,5 @@
     "linked": [],
     "access": "public",
     "baseBranch": "main",
-    "bumpVersionsWithWorkspaceProtocolOnly": true,
-    "ignore": ["!(prettier-plugin-svelte)"]
+    "bumpVersionsWithWorkspaceProtocolOnly": true
 }
