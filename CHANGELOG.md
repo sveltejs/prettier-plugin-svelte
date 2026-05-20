@@ -2,12 +2,6 @@
 
 ## 4.0.0
 
-### Major Changes
-
-- breaking: 4.0 ([#525](https://github.com/sveltejs/prettier-plugin-svelte/pull/525))
-
-## 4.0.0
-
 - (breaking) Require Svelte 5
 - (breaking) Remove `svelteBracketNewLine` option
 - (breaking) Remove `svelteStrictMode` option
