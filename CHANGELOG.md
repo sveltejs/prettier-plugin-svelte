@@ -1,5 +1,11 @@
 # prettier-plugin-svelte changelog
 
+## 4.0.1
+
+### Patch Changes
+
+- fix: print `@const` correctly ([#530](https://github.com/sveltejs/prettier-plugin-svelte/pull/530))
+
 ## 4.0.0
 
 - (breaking) Require Svelte 5
