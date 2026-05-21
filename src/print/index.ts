@@ -701,7 +701,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         case 'SpreadAttribute':
             return ['{...', printJS(path, print, 'expression'), '}'];
         case 'ConstTag':
-            return ['{@const ', printJS(path, print, 'expression'), '}'];
+            return ['{@const ', printJS(path, print, 'declaration'), '}'];
     }
 
     console.error(JSON.stringify(node, null, 4));
