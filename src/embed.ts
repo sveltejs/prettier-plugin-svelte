@@ -124,10 +124,17 @@ export function embed(path: AstPath, _options: Options) {
         case 'AttachTag':
             printJS(parent, 'expression', {});
             break;
-        case 'ConstTag':
-            (parent as any).expression = (parent as AST.ConstTag).declaration.declarations[0];
-            printJS(parent, 'expression', { removeParentheses: true });
+        case 'VariableDeclarator': {
+            const declaration = path.getParentNode(1);
+            const constTag = path.getParentNode(2);
+
+            if (declaration?.type === 'VariableDeclaration' && constTag?.type === 'ConstTag') {
+                constTag.declaration = parent;
+                printJS(constTag, 'declaration', { removeParentheses: true });
+            }
+
             break;
+        }
         case 'BindDirective':
             printJS(parent, 'expression', {
                 removeParentheses: parent.expression.type === 'SequenceExpression',
