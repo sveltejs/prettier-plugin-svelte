@@ -100,6 +100,14 @@ export const parsers: Record<string, Parser> = {
             return { ...ast, program };
         },
     },
+    svelteStatementParser: {
+        ...babelParser,
+        parse: (text: string, options: any) => {
+            const ast = babelParser.parse(text, options);
+
+            return { ...ast, program: ast.program.body[0] };
+        },
+    },
     svelteTSExpressionParser: {
         ...typescriptParser,
         parse: (text: string, options: any) => {
@@ -111,6 +119,14 @@ export const parsers: Record<string, Parser> = {
             }
 
             return { ...ast, program };
+        },
+    },
+    svelteTSStatementParser: {
+        ...typescriptParser,
+        parse: (text: string, options: any) => {
+            const ast = typescriptParser.parse(text, options);
+
+            return { ...ast, program: ast.program.body[0] };
         },
     },
 };
