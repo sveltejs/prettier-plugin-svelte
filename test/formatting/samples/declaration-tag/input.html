@@ -14,3 +14,12 @@
 <Component>
 {var value=getValue();}
 </Component>
+
+{#if foo}
+    {const bar = await 1;}
+    <div>
+        {const bar = 'shadowing';}
+        {bar}
+    </div>
+    {bar}
+{/if}
