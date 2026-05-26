@@ -1,6 +1,7 @@
 {#each boxes as box}
 {const area=box.width*box.height;}
-{function label(value){return `${value} square pixels`;}}
+{const label = (value) =>
+    `${value} square pixels`}
 <p>{label(area)}</p>
 {/each}
 
@@ -12,7 +13,7 @@
 {/if}
 
 <Component>
-{var value=getValue();}
+{let value=getValue();}
 </Component>
 
 {#if foo}
