@@ -146,6 +146,11 @@ export function embed(path: AstPath, _options: Options) {
                 printJS(parent, 'expression', {});
             }
             break;
+        case 'DeclarationTag':
+            if (node === parent.declaration) {
+                printJS(parent, 'declaration', { asStatement: true });
+            }
+            break;
         case 'OnDirective':
         case 'BindDirective':
         case 'ClassDirective':
@@ -166,9 +171,13 @@ export function embed(path: AstPath, _options: Options) {
                 const embeddedOptions = {
                     // Prettier only allows string references as parsers from v3 onwards,
                     // so we need to have another public parser and defer to that
-                    parser: options._svelte_ts
-                        ? 'svelteTSExpressionParser'
-                        : 'svelteExpressionParser',
+                    parser: node.asStatement
+                        ? options._svelte_ts
+                            ? 'svelteTSStatementParser'
+                            : 'svelteStatementParser'
+                        : options._svelte_ts
+                          ? 'svelteTSExpressionParser'
+                          : 'svelteExpressionParser',
                     singleQuote: node.forceSingleQuote ? true : options.singleQuote,
                     _svelte_asFunction: node.asFunction,
                 };
@@ -177,9 +186,16 @@ export function embed(path: AstPath, _options: Options) {
                 // This happens for example for {@html `<script>{foo}</script>`}
                 const text = getText(node, options, true);
                 let docs = await textToDoc(
-                    node.asFunction ? forceIntoFunction(text) : forceIntoExpression(text),
+                    node.asStatement
+                        ? text
+                        : node.asFunction
+                          ? forceIntoFunction(text)
+                          : forceIntoExpression(text),
                     embeddedOptions,
                 );
+                if (node.asStatement) {
+                    trimRight([docs], (d) => d === ';');
+                }
                 if (node.forceSingleLine) {
                     docs = removeLines(docs);
                 }
@@ -417,6 +433,7 @@ function printJS(
         forceSingleLine?: boolean;
         removeParentheses?: boolean;
         surroundWithSoftline?: boolean;
+        asStatement?: boolean;
     },
 ) {
     const part = node[name] as BaseNode | undefined;
@@ -428,6 +445,7 @@ function printJS(
     part.forceSingleLine = options.forceSingleLine;
     part.removeParentheses = options.removeParentheses;
     part.surroundWithSoftline = options.surroundWithSoftline;
+    part.asStatement = options.asStatement;
 }
 
 /**
