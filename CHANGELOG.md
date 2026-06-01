@@ -1,5 +1,11 @@
 # prettier-plugin-svelte changelog
 
+## 4.1.0
+
+### Minor Changes
+
+- feat: support Svelte 5 declaration tags ([#533](https://github.com/sveltejs/prettier-plugin-svelte/pull/533))
+
 ## 4.0.1
 
 ### Patch Changes
