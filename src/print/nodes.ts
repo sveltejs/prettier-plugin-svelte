@@ -20,11 +20,6 @@ export interface BaseNode {
     surroundWithSoftline?: boolean;
 }
 
-export interface DeclarationTagNode extends BaseNode {
-    type: 'DeclarationTag';
-    declaration: (VariableDeclaration | FunctionDeclaration) & BaseNode;
-}
-
 export type TextNode = AST.Text;
 export type AttributeNode = AST.Attribute;
 export type StyleDirectiveNode = AST.StyleDirective;
@@ -67,7 +62,6 @@ export type Node =
     | (StyleNode & BaseNode)
     | (AST.CSS.Node & BaseNode)
     | (ESTreeNode & BaseNode)
-    | DeclarationTagNode
     | OptionsNode;
 
 export type ASTNode = AST.Root & {
