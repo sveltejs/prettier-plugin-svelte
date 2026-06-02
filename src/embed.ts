@@ -14,6 +14,7 @@ import {
     isInsideQuotedAttribute,
     isJSON,
     isLess,
+    isStylus,
     isNodeSupportedLanguage,
     isPugTemplate,
     isScss,
@@ -222,7 +223,7 @@ export function embed(path: AstPath, _options: Options) {
 
     const embedType = (
         tag: 'script' | 'style' | 'template',
-        parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug' | 'json',
+        parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'stylus' | 'pug' | 'json',
         isTopLevel: boolean,
     ) => {
         return async (
@@ -252,7 +253,7 @@ export function embed(path: AstPath, _options: Options) {
             isTopLevel,
         );
     const embedStyle = (isTopLevel: boolean) =>
-        embedType('style', isLess(node) ? 'less' : isScss(node) ? 'scss' : 'css', isTopLevel);
+        embedType('style', isStylus(node) ? 'stylus' : isLess(node) ? 'less' : isScss(node) ? 'scss' : 'css', isTopLevel);
     const embedPug = () => embedType('template', 'pug', false);
 
     switch (node.type) {
@@ -309,7 +310,7 @@ function getSnippedContent(node: Node) {
 
 async function formatBodyContent(
     content: string,
-    parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'pug' | 'json',
+    parser: 'typescript' | 'babel-ts' | 'css' | 'scss' | 'less' | 'stylus' | 'pug' | 'json',
     textToDoc: (text: string, options: object) => Promise<Doc>,
     options: ParserOptions & { pugTabWidth?: number },
 ) {
@@ -319,17 +320,21 @@ async function formatBodyContent(
         if (parser === 'pug' && typeof body === 'string') {
             // Pug returns no docs but a final string.
             // Therefore prepend the line offsets
-            const whitespace = options.useTabs
-                ? '\t'
-                : ' '.repeat(
-                      options.pugTabWidth && options.pugTabWidth > 0
-                          ? options.pugTabWidth
-                          : options.tabWidth,
-                  );
-            const pugBody = body
-                .split('\n')
-                .map((line) => (line ? whitespace + line : line))
-                .join('\n');
+            let pugBody = body;
+            if(options.svelteIndentScriptAndStyle){
+              const whitespace = options.useTabs
+                  ? '\t'
+                  : ' '.repeat(
+                        options.pugTabWidth && options.pugTabWidth > 0
+                            ? options.pugTabWidth
+                            : options.tabWidth,
+                    );
+              pugBody = body
+                  .split('\n')
+                  .map((line) => (line ? whitespace + line : line))
+                  .join('\n');
+            }
+            if(!pugBody.endsWith('\n')) pugBody += '\n';
             return [hardline, pugBody];
         }
 
