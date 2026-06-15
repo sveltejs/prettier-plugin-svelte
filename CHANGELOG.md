@@ -1,5 +1,15 @@
 # prettier-plugin-svelte changelog
 
+## 4.1.1
+
+### Patch Changes
+
+- fix: preserve nested rest patterns in `{#each}` destructuring ([#537](https://github.com/sveltejs/prettier-plugin-svelte/pull/537))
+
+- fix: preserve whitespace inside `<textarea>` (its content is whitespace-sensitive, like `<pre>`) ([#540](https://github.com/sveltejs/prettier-plugin-svelte/pull/540))
+
+- fix: don't drop `<script>`/`<style>` content when the closing tag has whitespace (`</script >`) ([#539](https://github.com/sveltejs/prettier-plugin-svelte/pull/539))
+
 ## 4.1.0
 
 ### Minor Changes
