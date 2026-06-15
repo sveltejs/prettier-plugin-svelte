@@ -26,7 +26,9 @@ export function isPreTagContent(path: AstPath): boolean {
 
     return stack.some(
         (node) =>
-            (node.type === 'RegularElement' && node.name.toLowerCase() === 'pre') ||
+            // pre and textarea preserve whitespace
+            (node.type === 'RegularElement' &&
+                ['pre', 'textarea'].includes(node.name.toLowerCase())) ||
             (node.type === 'Attribute' && !formattableAttributes.includes(node.name)),
     );
 }
