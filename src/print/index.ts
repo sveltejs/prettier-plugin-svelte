@@ -1454,7 +1454,8 @@ function _expandNode(node: any, original: string, parent?: any): string {
             }
         }
         case 'RestElement':
-            return ' ...' + node.argument.name;
+            // argument may be a nested Array/ObjectPattern, not only an Identifier
+            return ' ...' + _expandNode(node.argument, original).slice(1);
     }
 
     console.error(JSON.stringify(node, null, 4));
