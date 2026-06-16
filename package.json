@@ -13,7 +13,8 @@
     "exports": {
         ".": {
             "types": "./index.d.ts",
-            "default": "./plugin.js"
+            "default": "./plugin.js",
+            "browser": "./browser.js"
         },
         "./browser": "./browser.js",
         "./package.json": "./package.json"
