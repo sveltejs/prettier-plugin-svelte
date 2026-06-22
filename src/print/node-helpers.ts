@@ -17,7 +17,7 @@ import { findLastIndex, isASTNode, isPreTagContent } from './helpers';
 import { ParserOptions, isBracketSameLine } from '../options';
 import { AST } from 'svelte/compiler';
 
-const unsupportedLanguages = ['coffee', 'coffeescript', 'styl', 'stylus', 'sass'];
+const unsupportedLanguages = ['coffee', 'coffeescript', 'sass'];
 
 /**
  * Characters treated as interchangeable/collapsible HTML whitespace for layout.
@@ -246,6 +246,11 @@ export function isJSON(node: Node) {
 export function isLess(node: Node) {
     const lang = getLangAttribute(node) || '';
     return ['less'].includes(lang);
+}
+
+export function isStylus(node: Node) {
+    const lang = getLangAttribute(node) || '';
+    return ['stylus'].includes(lang);
 }
 
 export function isScss(node: Node) {
