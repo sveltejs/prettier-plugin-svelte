@@ -1,0 +1,13 @@
+<script lang="ts"></script>
+
+{#each (Object.entries(modes) as [Mode, string][]) as [id, name]}
+    <button>{name}</button>
+{/each}
+
+{#each (items as Item[]) as item}
+    {item}
+{/each}
+
+{#each (["a"] as const) as item}
+    {item}
+{/each}

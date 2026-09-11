@@ -502,7 +502,12 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             return group([def, breakParent]);
         }
         case 'EachBlock': {
-            const def: Doc[] = ['{#each ', printJS(path, print, 'expression')];
+            const expression = printJS(path, print, 'expression');
+            const def: Doc[] = [
+                '{#each ',
+                // Wrap TS `as` so it isn't parsed as the `{#each}` context.
+                node.expression.type === 'TSAsExpression' ? ['(', expression, ')'] : expression,
+            ];
 
             if (node.context) {
                 def.push(' as', expandNode(node.context, options.originalText));
