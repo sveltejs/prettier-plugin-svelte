@@ -9,6 +9,7 @@ import {
     isASTNode,
     isPreTagContent,
     printWithPrependedAttributeLine,
+    printDanglingTagComments,
     replaceEndOfLineWith,
 } from './helpers';
 import {
@@ -224,10 +225,10 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     isDoctypeTag);
 
             // Order important: print attributes first
-            const attributes = path.map(
-                printWithPrependedAttributeLine(node, options, print),
-                'attributes',
-            );
+            const attributes = [
+                ...path.map(printWithPrependedAttributeLine(node, options, print), 'attributes'),
+                ...printDanglingTagComments(node, bracketSameLine),
+            ];
             const attributeLine = getAttributeLine(node, options);
             const possibleThisBinding =
                 node.type === 'SvelteComponent' && node.expression
