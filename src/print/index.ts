@@ -529,10 +529,10 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
         case 'AwaitBlock': {
             const pending_children = node.pending?.nodes ?? [];
             const then_children = node.then?.nodes ?? [];
-            const catch_children = node.catch?.nodes ?? [];
             const hasPendingBlock = pending_children.some((n) => !isEmptyTextNode(n));
             const hasThenBlock = then_children.some((n) => !isEmptyTextNode(n));
-            const hasCatchBlock = catch_children.some((n) => !isEmptyTextNode(n));
+            // Keep an empty `{:catch}`: without one, Svelte rethrows the rejection
+            const hasCatchBlock = !!node.catch;
 
             let block = [];
 
