@@ -3,8 +3,10 @@
 <button
     onclick={(e: Event) => {
         e as any;
-    }}>foo</button
+    }}
 >
+    foo
+</button>
 
 <button onclick={(e: Event) => e.detail}>{bar as any}</button>
 <input bind:value={(config as Config).value} />

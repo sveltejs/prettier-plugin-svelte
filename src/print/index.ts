@@ -288,8 +288,8 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             // which would wrongfully change the other checks about hugging etc done beforehand
             let body: () => Doc;
 
-            const hugStart = shouldHugStart(node, isSupportedLanguage, options);
-            const hugEnd = shouldHugEnd(node, isSupportedLanguage, options);
+            const hugStart = shouldHugStart(node, isSupportedLanguage, options, path);
+            const hugEnd = shouldHugEnd(node, isSupportedLanguage, options, path);
 
             if (isEmpty) {
                 body =
@@ -331,7 +331,9 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                         ...attributes,
                         hugStart && !isEmpty
                             ? ''
-                            : !bracketSameLine && !isPreTagContent(path)
+                            : !bracketSameLine &&
+                                !isPreTagContent(path) &&
+                                (attributes.length > 0 || possibleThisBinding !== '')
                               ? dedent(softline)
                               : '',
                     ]),
@@ -382,13 +384,20 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                         noHugSeparatorStart = hardline;
                         noHugSeparatorEnd = hardline;
                         didSetEndSeparator = true;
-                    } else if (isInlineElement(path, options, node)) {
+                    } else if (
+                        isInlineElement(path, options, node) &&
+                        isTextNodeStartingWithWhitespace(firstChild)
+                    ) {
                         noHugSeparatorStart = line;
                     }
                     trimTextNodeLeft(firstChild);
                 }
                 if (!hugEnd && lastChild && lastChild.type === 'Text') {
-                    if (isInlineElement(path, options, node) && !didSetEndSeparator) {
+                    if (
+                        isInlineElement(path, options, node) &&
+                        !didSetEndSeparator &&
+                        isTextNodeEndingWithWhitespace(lastChild)
+                    ) {
                         noHugSeparatorEnd = line;
                     }
                     trimTextNodeRight(lastChild);

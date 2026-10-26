@@ -359,13 +359,14 @@ export function trimChildren(children: Node[]): void {
 }
 
 /**
- * Check if given node's start tag should hug its first child. This is the case for inline elements when there's
- * no whitespace between the `>` and the first child.
+ * Check if given node's start tag should hug its first child. An inline element hugs it when there's no whitespace
+ * between the `>` and the first child, but only inside `pre` and `textarea` or with strict whitespace sensitivity.
  */
 export function shouldHugStart(
     node: Node,
     isSupportedLanguage: boolean,
     options: ParserOptions,
+    path: AstPath,
 ): boolean {
     if (!isSupportedLanguage) {
         return true;
@@ -389,6 +390,12 @@ export function shouldHugStart(
     }
 
     if (options.htmlWhitespaceSensitivity === 'ignore') {
+        return false;
+    }
+
+    // Svelte 5 removes whitespace at the start of an element's content, so a line break there can't render.
+    // Only `pre` and `textarea` keep it.
+    if (options.htmlWhitespaceSensitivity !== 'strict' && !isPreTagContent(path)) {
         return false;
     }
 
@@ -397,13 +404,14 @@ export function shouldHugStart(
 }
 
 /**
- * Check if given node's end tag should hug its last child. This is the case for inline elements when there's
- * no whitespace between the last child and the `</`.
+ * Check if given node's end tag should hug its last child. An inline element hugs it when there's no whitespace
+ * between the last child and the `</`, but only inside `pre` and `textarea` or with strict whitespace sensitivity.
  */
 export function shouldHugEnd(
     node: Node,
     isSupportedLanguage: boolean,
     options: ParserOptions,
+    path: AstPath,
 ): boolean {
     if (!isSupportedLanguage) {
         return true;
@@ -427,6 +435,12 @@ export function shouldHugEnd(
     }
 
     if (options.htmlWhitespaceSensitivity === 'ignore') {
+        return false;
+    }
+
+    // Svelte 5 removes whitespace at the end of an element's content, so a line break there can't render.
+    // Only `pre` and `textarea` keep it.
+    if (options.htmlWhitespaceSensitivity !== 'strict' && !isPreTagContent(path)) {
         return false;
     }
 

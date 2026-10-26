@@ -170,23 +170,22 @@ Usage in the browser is semi-supported. You can import the plugin from `prettier
 
 ## FAQ
 
-### Why is the closing or opening tag (`>` or `<`) hugging the inner tag or text?
+### When does the closing or opening tag (`>` or `<`) hug the inner tag or text?
 
-If you are wondering why this code
+Svelte 5 removes whitespace at the start and end of an element's content, so the plugin puts that content on its own lines. This code
 
 <!-- prettier-ignore -->
 ```html
 <span><span>assume very long text</span></span>
 ```
 
-becomes this
+becomes this:
 
 <!-- prettier-ignore -->
 ```html
-<span
-      ><span>assume very long text</span
-    ></span
->
+<span>
+    <span>assume very long text</span>
+</span>
 ```
 
-it's because of whitespace sensitivity. For inline elements (`span`, `a`, etc) it makes a difference when rendered if there's a space (or newline) between them. Since we don't know if your slot inside your Svelte component is surrounded by inline elements, Svelte components are treated as such, too. You can adjust this whitespace sensitivity through [this setting](https://prettier.io/docs/en/options.html#html-whitespace-sensitivity). You can read more about HTML whitespace sensitivity [here](https://prettier.io/blog/2018/11/07/1.15.0.html#whitespace-sensitive-formatting).
+Whitespace between elements and text still renders, so `<b>bold</b>,` keeps the comma right after the closing tag. A tag hugs its content only inside `<pre>` and `<textarea>`, where that whitespace renders, or when you set [`htmlWhitespaceSensitivity`](https://prettier.io/docs/en/options.html#html-whitespace-sensitivity) to `strict`. You can read more about HTML whitespace sensitivity [here](https://prettier.io/blog/2018/11/07/1.15.0.html#whitespace-sensitive-formatting).
