@@ -492,13 +492,44 @@ function walkAndAttach(
         }
 
         const last_attr = attrs[attrs.length - 1];
-        const opening_tag_end =
-            original_text && typeof node.end === 'number'
-                ? original_text.indexOf('>', last_attr.end)
-                : -1;
+        const opening_tag_end = findOpeningTagEnd(
+            original_text,
+            last_attr.end,
+            node.end,
+            commentsByStart,
+        );
 
-        if (opening_tag_end >= 0 && opening_tag_end <= node.end) {
+        if (opening_tag_end >= 0) {
             attachCommentsInRange(last_attr.end, opening_tag_end, last_attr, null, commentsByStart);
+        }
+    } else if (
+        'attributes' in node &&
+        Array.isArray(node.attributes) &&
+        typeof (node as any).name === 'string'
+    ) {
+        // No attributes: comments between the tag name and `>` have nothing to attach to,
+        // so keep them on the element itself and let the element printer print them.
+        // Start after `this={...}` of <svelte:element>/<svelte:component>, whose comments
+        // are printed along with that expression.
+        const this_expression = (node as any).tag ?? (node as any).expression;
+        const tag_name_end = Math.max(
+            node.start + 1 + (node as any).name.length,
+            typeof this_expression?.end === 'number' ? this_expression.end : 0,
+        );
+        const opening_tag_end = findOpeningTagEnd(
+            original_text,
+            tag_name_end,
+            node.end,
+            commentsByStart,
+        );
+
+        if (opening_tag_end >= 0) {
+            for (const [start, comment] of commentsByStart) {
+                if (start >= tag_name_end && comment.end <= opening_tag_end) {
+                    util.addDanglingComment(node, comment, undefined);
+                    commentsByStart.delete(start);
+                }
+            }
         }
     }
 
@@ -549,4 +580,31 @@ function attachCommentsInRange(
             commentsByStart.delete(start);
         }
     }
+}
+
+/**
+ * Returns the position of the `>` that ends an opening tag, starting the search at `from`
+ * (which must be past the last attribute). Skips over comments, so that a `>` inside a
+ * comment isn't mistaken for the end of the tag. Returns -1 if not found.
+ */
+function findOpeningTagEnd(
+    original_text: string,
+    from: number,
+    limit: number,
+    commentsByStart: Map<number, any>,
+): number {
+    if (!original_text || typeof limit !== 'number') return -1;
+
+    let pos = from;
+    while (pos < limit) {
+        const comment = commentsByStart.get(pos);
+        if (comment) {
+            pos = comment.end;
+        } else if (original_text[pos] === '>') {
+            return pos;
+        } else {
+            pos++;
+        }
+    }
+    return -1;
 }

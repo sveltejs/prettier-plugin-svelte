@@ -9,6 +9,7 @@ import {
     isASTNode,
     isPreTagContent,
     printWithPrependedAttributeLine,
+    printDanglingTagComments,
     replaceEndOfLineWith,
 } from './helpers';
 import {
@@ -228,6 +229,9 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                 printWithPrependedAttributeLine(node, options, print),
                 'attributes',
             );
+            const { doc: danglingComments, hasTrailingLineComment } =
+                printDanglingTagComments(node);
+            attributes.push(...danglingComments);
             const attributeLine = getAttributeLine(node, options);
             const possibleThisBinding =
                 node.type === 'SvelteComponent' && node.expression
@@ -272,11 +276,16 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                         group([
                             possibleThisBinding,
                             ...attributes,
-                            bracketSameLine || isDoctypeTag ? '' : dedent(line),
+                            bracketSameLine || isDoctypeTag || hasTrailingLineComment
+                                ? ''
+                                : dedent(line),
                         ]),
                     ),
 
-                    ...[bracketSameLine && !isDoctypeTag ? ' ' : '', `${isDoctypeTag ? '' : '/'}>`],
+                    ...[
+                        bracketSameLine && !isDoctypeTag && !hasTrailingLineComment ? ' ' : '',
+                        `${isDoctypeTag ? '' : '/'}>`,
+                    ],
                 ]);
             }
 
@@ -329,7 +338,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                     group([
                         possibleThisBinding,
                         ...attributes,
-                        hugStart && !isEmpty
+                        hasTrailingLineComment || (hugStart && !isEmpty)
                             ? ''
                             : !bracketSameLine &&
                                 !isPreTagContent(path) &&
@@ -353,7 +362,10 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             }
 
             if (hugStart && hugEnd) {
-                const huggedContent = [softline, group(['>', body(), `</${node.name}`])];
+                const huggedContent = [
+                    hasTrailingLineComment ? '' : softline,
+                    group(['>', body(), `</${node.name}`]),
+                ];
                 const omitSoftlineBeforeClosingTag =
                     (isEmpty && !bracketSameLine) ||
                     canOmitSoftlineBeforeClosingTag(node, path, options);
@@ -407,7 +419,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             if (hugStart) {
                 return group([
                     ...openingTag,
-                    indent([softline, group(['>', body()])]),
+                    indent([hasTrailingLineComment ? '' : softline, group(['>', body()])]),
                     noHugSeparatorEnd,
                     `</${node.name}>`,
                 ]);
