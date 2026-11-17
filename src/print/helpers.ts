@@ -96,26 +96,30 @@ export function printWithPrependedAttributeLine(
  * Prints the comments of an opening tag that has no attributes they could be attached to,
  * e.g. `<div /* comment *\/>` (attached as dangling comments on the element in `embed`).
  */
-export function printDanglingTagComments(node: ElementNode, bracketSameLine: boolean): Doc[] {
+export function printDanglingTagComments(node: ElementNode): {
+    doc: Doc[];
+    hasTrailingLineComment: boolean;
+} {
     const { line, hardline, breakParent, dedent } = doc.builders;
     const comments: any[] = ((node as any).comments ?? []).filter(
         (comment: any) => !comment.leading && !comment.trailing,
     );
     const parts: Doc[] = [];
+    const hasTrailingLineComment = comments[comments.length - 1]?.type === 'Line';
 
-    comments.forEach((comment, i) => {
-        comment.printed = true;
+    comments.forEach((comment) => {
         if (comment.type === 'Line') {
             parts.push(line, '//' + comment.value.replace(/\r$/, ''), breakParent);
-            // Nothing but a line break may follow a line comment, so make sure
-            // the `>` doesn't end up on the same line
-            if (i === comments.length - 1 && bracketSameLine) {
-                parts.push(dedent(hardline));
-            }
         } else {
             parts.push(line, '/*' + comment.value + '*/');
         }
     });
 
-    return parts;
+    // Always terminate a final line comment, even when the tag hugs its content.
+    // The element printer omits its normal separator when this supplies one.
+    if (hasTrailingLineComment) {
+        parts.push(dedent(hardline));
+    }
+
+    return { doc: parts, hasTrailingLineComment };
 }
