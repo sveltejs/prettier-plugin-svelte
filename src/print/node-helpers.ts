@@ -613,7 +613,12 @@ function removeAndGetLeadingComments(ast: ASTNode, current: Node): CommentInfo[]
     }
 
     for (const text of newlines) {
-        siblings.splice(siblings.indexOf(text), 1);
+        // Placeholders for adjacent comments are not in the AST, and
+        // splice(-1, 1) would remove the last node instead.
+        const index = siblings.indexOf(text);
+        if (index !== -1) {
+            siblings.splice(index, 1);
+        }
     }
 
     return comments
