@@ -189,6 +189,7 @@ becomes this:
 ```
 
 Whitespace between elements and text still renders, so `<b>bold</b>,` keeps the comma right after the closing tag. A tag hugs its content only when:
+
 - the content is inside `<pre>`, `<textarea>` or `<title>`, where that whitespace renders
 - you set [`htmlWhitespaceSensitivity`](https://prettier.io/docs/en/options.html#html-whitespace-sensitivity) to `strict`
 - you enable `preserveWhitespace` through `<svelte:options>` (if you use Svelte's compiler configuration for that instead, set `htmlWhitespaceSensitivity` to `strict` because the plugin cannot read that configuration)
