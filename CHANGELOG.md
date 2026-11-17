@@ -1,5 +1,23 @@
 # prettier-plugin-svelte changelog
 
+## 4.2.0
+
+### Minor Changes
+
+- feat: put an element's content on its own lines instead of hugging `>` and `</`, since Svelte 5 removes whitespace at the start and end of an element ([#547](https://github.com/sveltejs/prettier-plugin-svelte/issues/547)) ([#554](https://github.com/sveltejs/prettier-plugin-svelte/pull/554))
+
+### Patch Changes
+
+- fix: don't delete the last node when two adjacent comments precede `<script>` or `<style>` ([#560](https://github.com/sveltejs/prettier-plugin-svelte/pull/560))
+
+- fix: make `menu` correctly a block ([#543](https://github.com/sveltejs/prettier-plugin-svelte/pull/543))
+
+- fix: respect `singleQuote` in `<svelte:element this={'tag'}>` string literals ([#541](https://github.com/sveltejs/prettier-plugin-svelte/pull/541))
+
+- fix: keep empty `{:catch}` in `{#await}` blocks (removing it turns a handled rejection into an unhandled one) ([#553](https://github.com/sveltejs/prettier-plugin-svelte/pull/553))
+
+- fix: don't drop comments in an opening tag without attributes, or containing `>` ([#551](https://github.com/sveltejs/prettier-plugin-svelte/pull/551))
+
 ## 4.1.1
 
 ### Patch Changes
