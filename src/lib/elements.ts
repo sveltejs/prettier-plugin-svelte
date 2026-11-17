@@ -46,6 +46,7 @@ export const blockElements: TagName[] = [
     'hr',
     'li',
     'main',
+    'menu',
     'nav',
     'ol',
     'p',
