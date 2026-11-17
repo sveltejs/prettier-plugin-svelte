@@ -359,13 +359,31 @@ export function trimChildren(children: Node[]): void {
 }
 
 /**
- * Check if given node's start tag should hug its first child. This is the case for inline elements when there's
- * no whitespace between the `>` and the first child.
+ * Svelte trims element edges except in preformatted content, head titles, and components
+ * with preserveWhitespace enabled. Strict sensitivity also keeps the previous hugging behavior.
+ */
+function canIgnoreElementEdgeWhitespace(
+    node: Node,
+    options: ParserOptions,
+    path: AstPath,
+): boolean {
+    const root = path.stack[0] as ASTNode;
+    return (
+        options.htmlWhitespaceSensitivity !== 'strict' &&
+        !root.options?.preserveWhitespace &&
+        node.type !== 'TitleElement' &&
+        !isPreTagContent(path)
+    );
+}
+
+/**
+ * Check whether whitespace sensitivity requires the opening tag to hug its first child.
  */
 export function shouldHugStart(
     node: Node,
     isSupportedLanguage: boolean,
     options: ParserOptions,
+    path: AstPath,
 ): boolean {
     if (!isSupportedLanguage) {
         return true;
@@ -389,6 +407,10 @@ export function shouldHugStart(
     }
 
     if (options.htmlWhitespaceSensitivity === 'ignore') {
+        return false;
+    }
+
+    if (canIgnoreElementEdgeWhitespace(node, options, path)) {
         return false;
     }
 
@@ -397,13 +419,13 @@ export function shouldHugStart(
 }
 
 /**
- * Check if given node's end tag should hug its last child. This is the case for inline elements when there's
- * no whitespace between the last child and the `</`.
+ * Check whether whitespace sensitivity requires the closing tag to hug its last child.
  */
 export function shouldHugEnd(
     node: Node,
     isSupportedLanguage: boolean,
     options: ParserOptions,
+    path: AstPath,
 ): boolean {
     if (!isSupportedLanguage) {
         return true;
@@ -427,6 +449,10 @@ export function shouldHugEnd(
     }
 
     if (options.htmlWhitespaceSensitivity === 'ignore') {
+        return false;
+    }
+
+    if (canIgnoreElementEdgeWhitespace(node, options, path)) {
         return false;
     }
 
