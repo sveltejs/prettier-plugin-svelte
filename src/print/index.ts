@@ -253,7 +253,7 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
                                     // Preserve <svelte:element this={"literal"}>
                                     // because in Svelte 6 this="literal" will be invalid
                                     if (expression_wrapped) {
-                                        return [open, `"${literal_value}"`, close];
+                                        return [open, printJS(path, print, 'tag'), close];
                                     }
                                     return [`"${literal_value}"`];
                                 }
