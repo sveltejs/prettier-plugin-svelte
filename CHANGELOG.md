@@ -1,5 +1,11 @@
 # prettier-plugin-svelte changelog
 
+## 4.2.1
+
+### Patch Changes
+
+- fix: keep the `)` when a leading comment comes before a parenthesized expression, such as `{/* a */ (value)}` ([#564](https://github.com/sveltejs/prettier-plugin-svelte/pull/564))
+
 ## 4.2.0
 
 ### Minor Changes
