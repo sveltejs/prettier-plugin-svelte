@@ -1,0 +1,35 @@
+{#each arr as {a: b = 1}}
+    {b}
+{/each}
+
+{#each arr as {[v]: v}}
+    {v}
+{/each}
+
+{#each arr as {'a': {b}}}
+    {b}
+{/each}
+
+{#each arr as {a = f()}}
+    {a}
+{/each}
+
+{#each arr as {a = f(1, x), b = []}}
+    {a}
+{/each}
+
+{#each arr as {  a,b =''  , ...rest}}
+    {a}
+{/each}
+
+{#each arr as {a: {b = 2, c: [d, e = g()]}}}
+    {b}
+{/each}
+
+{#each arr as [x, y = h(), ...z]}
+    {x}
+{/each}
+
+{#await promise then {a: b = 1}}
+    {b}
+{/await}

@@ -1435,7 +1435,11 @@ function _expandNode(node: any, original: string, parent?: any): string {
                 ']'
             );
         case 'AssignmentPattern':
-            return _expandNode(node.left, original) + ' =' + _expandNode(node.right, original);
+            return (
+                _expandNode(node.left, original) +
+                ' = ' +
+                original.slice(node.right.start, node.right.end)
+            );
         case 'Identifier':
             return ' ' + node.name;
         case 'Literal':
@@ -1459,16 +1463,12 @@ function _expandNode(node: any, original: string, parent?: any): string {
                         : _expandNode(node.key, original).trim();
             }
 
-            if (node.value.type === 'ObjectPattern' || node.value.type === 'ArrayPattern') {
-                const keyStr = node.computed ? ' [' + computedKeyInner + ']' : ' ' + node.key.name;
-                return keyStr + ':' + _expandNode(node.value, original);
-            } else if (
-                (node.value.type === 'Identifier' && node.key.name !== node.value.name) ||
-                (parent && parent.type === 'ObjectExpression')
-            ) {
+            if (!node.shorthand || (parent && parent.type === 'ObjectExpression')) {
                 const keyStr = node.computed
                     ? ' [' + computedKeyInner + ']'
-                    : _expandNode(node.key, original);
+                    : typeof node.key?.start === 'number' && typeof node.key?.end === 'number'
+                      ? ' ' + original.slice(node.key.start, node.key.end)
+                      : _expandNode(node.key, original);
                 return keyStr + ':' + _expandNode(node.value, original);
             } else {
                 return _expandNode(node.value, original);
