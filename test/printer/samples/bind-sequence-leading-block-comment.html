@@ -1,0 +1,77 @@
+<input bind:value={/* a */ get, set} />
+
+<input bind:value={/* a */ /* b */ get, /* c */ set} />
+
+<input bind:value={/** @type {any} */ (get), set} />
+
+<input
+    bind:value={
+        /* a */
+
+        /* b */ get, set
+    }
+/>
+
+<input
+    bind:value={
+        // a
+        /* b */ get, set
+    }
+/>
+
+<input
+    bind:value={
+        // a
+        // b
+        get, set
+    }
+/>
+
+<input
+    bind:value={
+        /**
+         * a
+         */ get, set
+    }
+/>
+
+<input
+    bind:value={
+        /**
+         * a
+         */
+        /* b */ get, set
+    }
+/>
+
+<Foo
+    bind:value={
+        /* a */ () => bar ?? "",
+        (v) => {
+            bar = v;
+        }
+    }
+/>
+
+<input
+    bind:value={
+        /* a */ /*
+ b */
+        get, set
+    }
+/>
+
+<input
+    bind:value={
+        /* a */ /*
+(
+*/ get, set
+    }
+/>
+
+<input
+    bind:value={
+        /*
+// x */ get, set
+    }
+/>

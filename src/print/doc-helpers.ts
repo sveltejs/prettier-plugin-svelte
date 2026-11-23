@@ -167,30 +167,58 @@ export function removeParentheses(doc: Doc): Doc {
     for (; i < doc.length; i++) {
         const part = doc[i];
 
-        if (typeof part === 'string' && part.startsWith('//')) {
-            transformed.push(part);
-        } else if (typeof part === 'string' && part.startsWith('/*')) {
-            transformed.push(part);
-            opened = true;
-        } else if (opened) {
-            transformed.push(part);
-            opened = typeof part !== 'string' || !part.trim().endsWith('*/');
-        } else if (transformed.length > 0 && isLine(part)) {
-            transformed.push(part);
-            i++;
-
-            const next = doc[i];
-            if (typeof next !== 'string' && !Array.isArray(next) && next.type === 'break-parent') {
-                transformed.push(next);
-                i++;
+        if (typeof part === 'string') {
+            const codeStart = skipComments(part, opened);
+            if (codeStart === 0) break;
+            if (codeStart === -1 || codeStart === part.length) {
+                transformed.push(part);
+                opened = codeStart === -1;
+                continue;
             }
-
-            break;
+            // The comment and the "(" can be in one string, such as `/* a */ (`
+            if (part[codeStart] !== '(' || doc[doc.length - 1] !== ')') return doc;
+            transformed.push(part.slice(0, codeStart) + part.slice(codeStart + 1));
+            return [...transformed, ...doc.slice(i + 1, -1)];
+        } else if (opened || (transformed.length > 0 && (isLine(part) || isBreakParent(part)))) {
+            transformed.push(part);
         } else {
             break;
         }
     }
 
-    transformed.push(...trim(doc.slice(i), (_doc: Doc) => _doc === '(' || _doc === ')'));
-    return transformed;
+    if (transformed.length === 0) {
+        return trim(doc, (_doc: Doc) => _doc === '(' || _doc === ')');
+    }
+    if (doc[i] !== '(' || doc[doc.length - 1] !== ')') return doc;
+    return [...transformed, ...doc.slice(i + 1, -1)];
+}
+
+/**
+ * Returns the index where the code after the leading comments of `text` starts,
+ * or -1 when `text` ends inside a block comment.
+ */
+function skipComments(text: string, opened: boolean): number {
+    let i = 0;
+    while (i < text.length) {
+        if (opened) {
+            const commentEnd = text.indexOf('*/', i);
+            if (commentEnd === -1) return -1;
+            i = commentEnd + 2;
+            opened = false;
+        } else if (text.startsWith('/*', i)) {
+            i += 2;
+            opened = true;
+        } else if (text.startsWith('//', i)) {
+            return text.length;
+        } else if (/\s/.test(text[i])) {
+            i++;
+        } else {
+            break;
+        }
+    }
+    return opened ? -1 : i;
+}
+
+function isBreakParent(doc: Doc): boolean {
+    return isDocCommand(doc) && !Array.isArray(doc) && doc.type === 'break-parent';
 }
