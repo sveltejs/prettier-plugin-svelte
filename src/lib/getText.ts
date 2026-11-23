@@ -4,14 +4,15 @@ import { hasSnippedContent, unsnipContent } from './snipTagContent';
 
 export function getText(node: Node, options: ParserOptions, unsnip = false) {
     const leadingComments: Node[] = (node as any).leadingComments;
-    const text = options.originalText.slice(
-        options.locStart(
-            // if there are comments before the node they are not included
-            // in the `start` of the node itself
-            (leadingComments && leadingComments[0]) || node,
-        ),
-        getEnd(node, leadingComments, options),
-    );
+    const text =
+        options.originalText.slice(
+            options.locStart(
+                // if there are comments before the node they are not included
+                // in the `start` of the node itself
+                (leadingComments && leadingComments[0]) || node,
+            ),
+            options.locEnd(node),
+        ) + getClosingParens(node, leadingComments, options);
 
     if (!unsnip || !hasSnippedContent(text)) {
         return text;
@@ -22,12 +23,12 @@ export function getText(node: Node, options: ParserOptions, unsnip = false) {
 
 /**
  * When a leading comment comes before a `(` of the expression, the text from the comment
- * to the end of the node has the `(` but not its `)`. Extend the end over those `)`.
+ * to the end of the node has the `(` but not its `)`. Return the missing `)`.
+ * Comments between the node and the `)` are left out, like other trailing comments.
  */
-function getEnd(node: Node, leadingComments: Node[] | undefined, options: ParserOptions) {
-    let end: number = options.locEnd(node);
+function getClosingParens(node: Node, leadingComments: Node[] | undefined, options: ParserOptions) {
     if (!leadingComments || leadingComments.length === 0) {
-        return end;
+        return '';
     }
 
     const text = options.originalText;
@@ -44,15 +45,16 @@ function getEnd(node: Node, leadingComments: Node[] | undefined, options: Parser
         }
     }
 
-    let index = end;
+    let closingParens = '';
+    let index: number = options.locEnd(node);
     while (openParens > 0) {
         index = skipWhitespaceAndComments(text, index);
         if (text[index] !== ')') break;
         index++;
-        end = index;
+        closingParens += ')';
         openParens--;
     }
-    return end;
+    return closingParens;
 }
 
 function skipWhitespaceAndComments(text: string, index: number) {
