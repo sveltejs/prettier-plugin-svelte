@@ -34,7 +34,7 @@ import { AST } from 'svelte/compiler';
 
 const {
     builders: { group, hardline, softline, indent, dedent, literalline },
-    utils: { removeLines },
+    utils: { mapDoc, removeLines },
 } = doc;
 
 const leaveAlone = new Set([
@@ -197,7 +197,7 @@ export function embed(path: AstPath, _options: Options) {
                     trimRight([docs], (d) => d === ';');
                 }
                 if (node.forceSingleLine) {
-                    docs = removeLines(docs);
+                    docs = removeLines(removeExpandedStates(docs));
                 }
                 if (node.removeParentheses) {
                     docs = removeParentheses(docs);
@@ -272,6 +272,21 @@ export function embed(path: AstPath, _options: Options) {
     }
 
     return null;
+}
+
+/**
+ * Keeps only the first, flat state of conditional groups. Otherwise Prettier falls back to a
+ * more expanded state when the line is too long, which prints as `foo( (x) => x, )` once the
+ * lines are removed.
+ */
+function removeExpandedStates(docs: Doc): Doc {
+    return mapDoc(docs, (doc) => {
+        if (typeof doc === 'object' && !Array.isArray(doc) && doc.type === 'group') {
+            const { expandedStates, ...flat } = doc;
+            return flat;
+        }
+        return doc;
+    });
 }
 
 function forceIntoExpression(statement: string) {
