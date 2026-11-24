@@ -1308,6 +1308,17 @@ function printChildren(path: AstPath, print: PrintFn, options: ParserOptions): D
         const nextNode = prepared_children[idx + 1].node;
 
         if (
+            prevNode.type === 'ExpressionTag' &&
+            nextNode.type === 'ExpressionTag' &&
+            isEmptyTextNode(childNode) &&
+            !isTextNodeStartingWithLinebreak(childNode)
+        ) {
+            // Svelte keeps line breaks between expressions as part of the rendered text.
+            childDocs.push(' ');
+            return;
+        }
+
+        if (
             isTextNodeStartingWithWhitespace(childNode) &&
             // If node is empty, go straight through to checking the right end
             !isEmptyTextNode(childNode)
