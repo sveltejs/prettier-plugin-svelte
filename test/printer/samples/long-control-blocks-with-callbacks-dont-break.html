@@ -1,0 +1,19 @@
+{#each links.filter(([href]) => href?.startsWith(`http`)) as [href, title, icon] (title)}
+    <span>{href} {title} {icon}</span>
+{/each}
+
+{#each items as item (keyFor(item, (value) => value.otherVeryLongPropertyNameForTesting()))}
+    a
+{/each}
+
+{#if items.filter((item) => item.enabled && item.visible).map((item) => item.name).length}
+    a
+{/if}
+
+{#key items.map((item) => ({ id: item.id, label: item.label, value: item.value }))}
+    a
+{/key}
+
+{#await Promise.all(items.map((item) => fetchItem(item.id, item.version))) then results}
+    a
+{/await}
