@@ -281,9 +281,13 @@ export function embed(path: AstPath, _options: Options) {
  */
 function removeExpandedStates(docs: Doc): Doc {
     return mapDoc(docs, (doc) => {
-        if (typeof doc === 'object' && !Array.isArray(doc) && doc.type === 'group') {
-            const { expandedStates, ...flat } = doc;
-            return flat;
+        if (
+            typeof doc === 'object' &&
+            !Array.isArray(doc) &&
+            doc.type === 'group' &&
+            doc.expandedStates
+        ) {
+            return group(doc.contents, { shouldBreak: doc.break, id: doc.id });
         }
         return doc;
     });
