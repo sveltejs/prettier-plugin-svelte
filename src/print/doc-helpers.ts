@@ -194,3 +194,43 @@ export function removeParentheses(doc: Doc): Doc {
     transformed.push(...trim(doc.slice(i), (_doc: Doc) => _doc === '(' || _doc === ')'));
     return transformed;
 }
+
+/**
+ * `/a/.test(b)` => `(/a/).test(b)`
+ * Wraps a regular expression literal at the start of the doc in parentheses.
+ * A leading comment, which also starts with `/`, stays as is.
+ */
+export function parenthesizeLeadingRegex(doc: Doc): Doc {
+    if (typeof doc === 'string') {
+        const regex = doc.match(/^\/(?!\*)(?:[^\\/[\n]|\\.|\[(?:[^\\\]\n]|\\.)*\])+\/[\w$]*/)?.[0];
+        return regex ? ['(', regex, ')', doc.slice(regex.length)] : doc;
+    }
+
+    if (Array.isArray(doc)) {
+        const first = doc.findIndex(
+            (part) => !isEmptyDoc(part) && !(isDocCommand(part) && part.type === 'break-parent'),
+        );
+        if (first < 0) return doc;
+        return [
+            ...doc.slice(0, first),
+            parenthesizeLeadingRegex(doc[first]),
+            ...doc.slice(first + 1),
+        ];
+    }
+
+    if (doc.type === 'group') {
+        return {
+            ...doc,
+            contents: parenthesizeLeadingRegex(doc.contents),
+            ...(doc.expandedStates && {
+                expandedStates: doc.expandedStates.map(parenthesizeLeadingRegex),
+            }),
+        };
+    }
+
+    if (doc.type === 'label') {
+        return { ...doc, contents: parenthesizeLeadingRegex(doc.contents) };
+    }
+
+    return doc;
+}

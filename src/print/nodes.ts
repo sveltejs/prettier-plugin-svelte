@@ -16,6 +16,8 @@ export interface BaseNode {
     asStatement?: boolean;
     /** Whether or not to remove outer `()` when printing as JS */
     removeParentheses?: boolean;
+    /** Whether or not to wrap a regular expression literal at the start in `()` when printing as JS */
+    parenthesizeLeadingRegex?: boolean;
     /** Whether or not to surround the result with a group and softline so that an exceeding print with keeps the output on the same line, if possible */
     surroundWithSoftline?: boolean;
 }
