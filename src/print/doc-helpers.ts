@@ -211,6 +211,18 @@ export function parenthesizeLeadingRegex(doc: Doc): Doc {
             (part) => !isEmptyDoc(part) && !(isDocCommand(part) && part.type === 'break-parent'),
         );
         if (first < 0) return doc;
+        const part = doc[first];
+        if (isDocCommand(part) && part.type === 'if-break' && isEmptyDoc(part.flatContents)) {
+            // `experimentalTernaries` adds `(` before the test only when it breaks
+            return [
+                ...doc.slice(0, first),
+                {
+                    ...part,
+                    breakContents: doc.slice(first),
+                    flatContents: parenthesizeLeadingRegex(doc.slice(first + 1)),
+                },
+            ];
+        }
         return [
             ...doc.slice(0, first),
             parenthesizeLeadingRegex(doc[first]),
@@ -228,7 +240,7 @@ export function parenthesizeLeadingRegex(doc: Doc): Doc {
         };
     }
 
-    if (doc.type === 'label') {
+    if (doc.type === 'label' || doc.type === 'indent') {
         return { ...doc, contents: parenthesizeLeadingRegex(doc.contents) };
     }
 

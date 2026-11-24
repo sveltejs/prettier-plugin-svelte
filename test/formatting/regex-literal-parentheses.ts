@@ -18,13 +18,27 @@ const samples: Record<string, string> = {
     '{#if (/a/).test(value)}x{/if}': '{#if /a/.test(value)}x{/if}',
 };
 
-for (const [input, expected] of Object.entries(samples)) {
-    test(`regular expression at the start of an expression: ${JSON.stringify(input)}`, async (t) => {
-        const options = { parser: 'svelte', plugins: [SveltePlugin] };
+// Prettier 3.0 ignores `experimentalTernaries`, so these print the same without it
+const experimentalTernariesSamples: Record<string, string> = {
+    '<div>{(/^[A-Za-z ]+$/).test(value) ? x : y}</div>':
+        '<div>{(/^[A-Za-z ]+$/).test(value) ? x : y}</div>',
+    '{(/a/).source.length > 0 ? "yes" : "no"}': '{(/a/).source.length > 0 ? "yes" : "no"}',
+};
+
+function testSample(input: string, expected: string, extraOptions: Record<string, unknown> = {}) {
+    test(`regular expression at the start of an expression: ${JSON.stringify(input)} ${JSON.stringify(extraOptions)}`, async (t) => {
+        const options = { parser: 'svelte', plugins: [SveltePlugin], ...extraOptions };
         const output = await format(input, options);
 
         t.is(output, expected + '\n');
         t.notThrows(() => parse(output, { modern: true }));
         t.is(await format(output, options), output);
     });
+}
+
+for (const [input, expected] of Object.entries(samples)) {
+    testSample(input, expected);
+}
+for (const [input, expected] of Object.entries(experimentalTernariesSamples)) {
+    testSample(input, expected, { experimentalTernaries: true });
 }
