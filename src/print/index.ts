@@ -918,8 +918,8 @@ function printTopLevelParts(
     print: PrintFn,
 ): Doc {
     if (options.svelteSortOrder === 'none') {
+        const nodes = n.fragment.nodes as Node[];
         if (n.options) {
-            const nodes = n.fragment.nodes as Node[];
             const has_options_node = nodes.some((node: any) => node.type === 'Options');
             if (!has_options_node) {
                 nodes.push({
@@ -929,38 +929,17 @@ function printTopLevelParts(
                     end: n.options.end,
                     attributes: n.options.attributes,
                 } as any);
-                nodes.sort((a: any, b: any) => a.start - b.start);
             }
         }
 
-        const topLevelPartsByEnd: Record<number, any> = {};
-        const topLevelPartsByStart: Record<number, any> = {};
-
-        if (n.module) {
-            topLevelPartsByEnd[n.module.end] = n.module;
-            topLevelPartsByStart[n.module.start] = n.module;
-        }
-        if (n.instance) {
-            topLevelPartsByEnd[n.instance.end] = n.instance;
-            topLevelPartsByStart[n.instance.start] = n.instance;
-        }
-        if (n.css) {
-            topLevelPartsByEnd[n.css.end] = n.css;
-            topLevelPartsByStart[n.css.start] = n.css;
-        }
-
-        const children = n.fragment.nodes as Node[];
-        for (let i = 0; i < children.length; i++) {
-            const node = children[i];
-            if (topLevelPartsByEnd[node.start]) {
-                children.splice(i, 0, topLevelPartsByEnd[node.start]);
-                delete topLevelPartsByEnd[node.start];
-            } else if (i === children.length - 1 && topLevelPartsByStart[node.end]) {
-                children.push(topLevelPartsByStart[node.end]);
+        for (const part of [n.module, n.instance, n.css]) {
+            if (part && !nodes.includes(part)) {
+                nodes.push(part);
             }
         }
+        nodes.sort((a: any, b: any) => a.start - b.start);
 
-        mergeAdjacentTextNodesInFragment(children);
+        mergeAdjacentTextNodesInFragment(nodes);
 
         const result = path.call(print, 'fragment');
         if (options.insertPragma && !hasPragma(options.originalText)) {
