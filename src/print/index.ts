@@ -618,9 +618,20 @@ export function print(path: AstPath, options: ParserOptions, print: PrintFn): Do
             return group([def, breakParent]);
         }
         case 'SnippetBlock': {
-            const snippet = ['{#snippet ', printJS(path, print, 'expression')];
-            snippet.push('}', printBlockFragment(path, print, options, 'body'), '{/snippet}');
-            return snippet;
+            const opening =
+                options.embeddedLanguageFormatting === 'off'
+                    ? replaceEndOfLineWith(
+                          unsnipContent(
+                              options.originalText.slice(
+                                  node.start,
+                                  node.body.nodes[0]?.start ??
+                                      options.originalText.lastIndexOf('{', node.end - 1),
+                              ),
+                          ),
+                          literalline,
+                      )
+                    : ['{#snippet ', printJS(path, print, 'expression'), '}'];
+            return [opening, printBlockFragment(path, print, options, 'body'), '{/snippet}'];
         }
         case 'OnDirective':
             return [
