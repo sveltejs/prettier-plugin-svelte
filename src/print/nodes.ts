@@ -8,6 +8,8 @@ export interface BaseNode {
     isJS?: boolean;
     /** Whether or not to print this node as a function */
     asFunction?: boolean;
+    /** Whether or not to print this node as a variable declarator */
+    asVariableDeclarator?: boolean;
     /** Whether or not to force single quotes when printing as JS */
     forceSingleQuote?: boolean;
     /** Whether or not to force a single line when printing as JS */

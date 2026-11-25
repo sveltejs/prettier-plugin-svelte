@@ -1,0 +1,14 @@
+<script lang="ts"></script>
+
+{#if condition}
+    {@const x: number = 1}
+    {@const y = b + 1}
+    {@const { a, b }: { a: number; b: string } = obj}
+    {x}{y}{a}{b}
+{/if}
+
+{#await aPromise then result}
+    {@const bar: string = result
+        ? "some super long text which will force the ternary to break"
+        : "etc etc"}
+{/await}

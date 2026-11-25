@@ -130,7 +130,7 @@ export function embed(path: AstPath, _options: Options) {
 
             if (declaration?.type === 'VariableDeclaration' && constTag?.type === 'ConstTag') {
                 constTag.declaration = parent;
-                printJS(constTag, 'declaration', { removeParentheses: true });
+                printJS(constTag, 'declaration', { asVariableDeclarator: true });
             }
 
             break;
@@ -180,6 +180,7 @@ export function embed(path: AstPath, _options: Options) {
                           : 'svelteExpressionParser',
                     singleQuote: node.forceSingleQuote ? true : options.singleQuote,
                     _svelte_asFunction: node.asFunction,
+                    _svelte_asVariableDeclarator: node.asVariableDeclarator,
                 };
 
                 // If we have snipped content, it was done wrongly and we need to unsnip it.
@@ -190,7 +191,9 @@ export function embed(path: AstPath, _options: Options) {
                         ? text
                         : node.asFunction
                           ? forceIntoFunction(text)
-                          : forceIntoExpression(text),
+                          : node.asVariableDeclarator
+                            ? forceIntoConstDeclaration(text)
+                            : forceIntoExpression(text),
                     embeddedOptions,
                 );
                 if (node.asStatement) {
@@ -282,6 +285,10 @@ function forceIntoExpression(statement: string) {
 
 function forceIntoFunction(statement: string) {
     return `function ${statement} {}`;
+}
+
+function forceIntoConstDeclaration(statement: string) {
+    return `const ${statement}\n`;
 }
 
 function preformattedBody(str: string): Doc {
@@ -434,6 +441,7 @@ function printJS(
         removeParentheses?: boolean;
         surroundWithSoftline?: boolean;
         asStatement?: boolean;
+        asVariableDeclarator?: boolean;
     },
 ) {
     const part = node[name] as BaseNode | undefined;
@@ -446,6 +454,7 @@ function printJS(
     part.removeParentheses = options.removeParentheses;
     part.surroundWithSoftline = options.surroundWithSoftline;
     part.asStatement = options.asStatement;
+    part.asVariableDeclarator = options.asVariableDeclarator;
 }
 
 /**
