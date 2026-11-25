@@ -3,7 +3,12 @@ import { getText } from './lib/getText';
 import { snippedTagContentAttribute } from './lib/snipTagContent';
 import { isBracketSameLine, ParserOptions } from './options';
 import { PrintFn } from './print';
-import { isLine, removeParentheses, trimRight } from './print/doc-helpers';
+import {
+    isLine,
+    parenthesizeLeadingRegex,
+    removeParentheses,
+    trimRight,
+} from './print/doc-helpers';
 import { isASTNode, printWithPrependedAttributeLine } from './print/helpers';
 import {
     assignCommentsToNodes,
@@ -113,6 +118,8 @@ export function embed(path: AstPath, _options: Options) {
         case 'ExpressionTag':
             printJS(parent, 'expression', {
                 forceSingleQuote: isInsideQuotedAttribute(path, options),
+                // Svelte reads `{/` in text as a closing tag like `{/if}`
+                parenthesizeLeadingRegex: path.getParentNode(1)?.type === 'Fragment',
             });
             break;
         case 'HtmlTag':
@@ -201,6 +208,9 @@ export function embed(path: AstPath, _options: Options) {
                 }
                 if (node.removeParentheses) {
                     docs = removeParentheses(docs);
+                }
+                if (node.parenthesizeLeadingRegex) {
+                    docs = parenthesizeLeadingRegex(docs);
                 }
                 if (node.asFunction) {
                     if (Array.isArray(docs) && typeof docs[0] === 'string') {
@@ -432,6 +442,7 @@ function printJS(
         forceSingleQuote?: boolean;
         forceSingleLine?: boolean;
         removeParentheses?: boolean;
+        parenthesizeLeadingRegex?: boolean;
         surroundWithSoftline?: boolean;
         asStatement?: boolean;
     },
@@ -444,6 +455,7 @@ function printJS(
     part.forceSingleQuote = options.forceSingleQuote;
     part.forceSingleLine = options.forceSingleLine;
     part.removeParentheses = options.removeParentheses;
+    part.parenthesizeLeadingRegex = options.parenthesizeLeadingRegex;
     part.surroundWithSoftline = options.surroundWithSoftline;
     part.asStatement = options.asStatement;
 }
