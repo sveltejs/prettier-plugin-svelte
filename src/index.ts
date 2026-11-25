@@ -93,7 +93,9 @@ export const parsers: Record<string, Parser> = {
             const ast = babelParser.parse(text, options);
 
             let program = ast.program.body[0];
-            if (!options._svelte_asFunction) {
+            if (options._svelte_asVariableDeclarator) {
+                program = program.declarations[0];
+            } else if (!options._svelte_asFunction) {
                 program = program.expression;
             }
 
@@ -114,7 +116,9 @@ export const parsers: Record<string, Parser> = {
             const ast = typescriptParser.parse(text, options);
 
             let program = ast.program.body[0];
-            if (!options._svelte_asFunction) {
+            if (options._svelte_asVariableDeclarator) {
+                program = program.declarations[0];
+            } else if (!options._svelte_asFunction) {
                 program = program.expression;
             }
 
