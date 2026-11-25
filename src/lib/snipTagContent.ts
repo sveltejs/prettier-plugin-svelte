@@ -3,9 +3,9 @@ import { base64ToString, stringToBase64 } from '../base64-string';
 export const snippedTagContentAttribute = '✂prettier:content✂';
 
 const scriptRegex =
-    /<!--[^]*?-->|<script((?:\s+[^=>'"\/\s]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/\s]+)*\s*)>([^]*?)<\/script\s*>/g;
+    /<!--[^]*?-->|<script((?:\s+[^=>'"\/\s]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/\s]+)*\s*)>([^]*?)(<\/script\s*>)/g;
 const styleRegex =
-    /<!--[^]*?-->|<style((?:\s+[^=>'"\/\s]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/\s]+)*\s*)>([^]*?)<\/style\s*>/g;
+    /<!--[^]*?-->|<style((?:\s+[^=>'"\/\s]+=(?:"[^"]*"|'[^']*'|[^>\s]+)|\s+[^=>'"\/\s]+)*\s*)>([^]*?)(<\/style\s*>)/g;
 const langTsRegex = /\slang=["']?ts["']?/;
 
 export function snipScriptAndStyleTagContent(source: string): {
@@ -46,7 +46,7 @@ export function snipScriptAndStyleTagContent(source: string): {
         let newScriptMatchSpans = scriptMatchSpans;
         let newStyleMatchSpans = styleMatchSpans;
         // Replace valid matches
-        const newSource = _source.replace(regex, (match, attributes, content, index) => {
+        const newSource = _source.replace(regex, (match, attributes, content, closing, index) => {
             if (match.startsWith('<!--') || withinOtherSpan(index)) {
                 return match;
             }
@@ -56,7 +56,7 @@ export function snipScriptAndStyleTagContent(source: string): {
             }
 
             const encodedContent = stringToBase64(content);
-            const newContent = `<${tagName}${attributes} ${snippedTagContentAttribute}="${encodedContent}">${placeholder}</${tagName}>`;
+            const newContent = `<${tagName}${attributes} ${snippedTagContentAttribute}="${encodedContent}">${placeholder}${closing}`;
 
             // Adjust the spans because the source now has a different content length
             const lengthDiff = match.length - newContent.length;
@@ -106,7 +106,8 @@ export function hasSnippedContent(text: string) {
     return text.includes(snippedTagContentAttribute);
 }
 
-const regex = /(<\w+.*?)\s*✂prettier:content✂="(.*?)">.*?(?=<\/)/gi;
+// Remove only the space inserted before the marker, not the original tag whitespace.
+const regex = /(<\w+[^]*?) ✂prettier:content✂="(.*?)">.*?(?=<\/)/gi;
 
 export function unsnipContent(text: string): string {
     return text.replace(regex, (_, start, encodedContent) => {

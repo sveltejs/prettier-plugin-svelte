@@ -19,6 +19,23 @@ const samples: Record<string, string> = {
         '<div>{#snippet foo(a,b)}<p class="x">{a}</p>{/snippet}</div>',
 };
 
+for (const [tag, attributes, content] of [
+    ['script', 'type="module"', 'let x = 1;'],
+    ['style', 'media="screen"', 'p { color:red; }'],
+]) {
+    for (const literal of [
+        `<${tag}\n ${attributes}>${content}</${tag}>`,
+        `<${tag}\n>${content}</${tag}>`,
+        `<${tag} \t>${content}</${tag}>`,
+        `<${tag}>${content}</${tag} >`,
+        `<${tag}>${content}</${tag}\n>`,
+        `<${tag}\n ${attributes} \t>${content}</${tag}\n >`,
+    ]) {
+        const input = '{#snippet foo(a = `' + literal + '`)}{a}{/snippet}';
+        samples[input] = input;
+    }
+}
+
 for (const [input, expected] of Object.entries(samples)) {
     test(`snippet with embedded formatting off: ${JSON.stringify(input)}`, async (t) => {
         const options = {
